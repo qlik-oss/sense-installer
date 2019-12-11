@@ -1,3 +1,3 @@
 
 build: 
-	go build -o bin/qliksense github.com/qlik-oss/qliksense-cli/cmd/qliksense
+	go build -o bin/qliksense github.com/qlik-oss/sense-installer/cmd/qliksense
