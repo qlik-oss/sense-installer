@@ -1,1 +1,1 @@
-# qliksense-cli
+# sense-installer
