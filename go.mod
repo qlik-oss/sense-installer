@@ -3,6 +3,7 @@ module github.com/qlik-oss/sense-installer
 go 1.13
 
 require (
+	get.porter.sh/porter v0.22.0-beta.1
 	github.com/Azure/go-autorest v12.2.0+incompatible
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
@@ -17,7 +18,6 @@ require (
 	github.com/containerd/ttrpc v0.0.0-20191028202541-4f1b8fe65a5c // indirect
 	github.com/containerd/typeurl v0.0.0-20190911142611-5eb25027c9fd // indirect
 	github.com/deislabs/cnab-go v0.7.1-beta1 // indirect
-	github.com/deislabs/porter v0.21.1-beta.1
 	github.com/docker/cli v0.0.0-20191210190034-08eaead288c1 // indirect
 	github.com/docker/cnab-to-oci v0.3.0-beta2 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
@@ -42,6 +42,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.0.1 // indirect
 	github.com/pivotal/image-relocation v0.0.0-20191111101224-e94aff6df06c // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/qri-io/jsonschema v0.1.1 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2

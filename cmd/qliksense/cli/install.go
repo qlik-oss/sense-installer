@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/deislabs/porter/pkg/mixin"
-	"github.com/deislabs/porter/pkg/porter"
+	"get.porter.sh/porter/pkg/mixin"
+	"get.porter.sh/porter/pkg/porter"
 	"github.com/spf13/cobra"
 )
 

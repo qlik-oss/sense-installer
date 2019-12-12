@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/porter/pkg/porter"
+	"get.porter.sh/porter/pkg/porter"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -23,7 +23,7 @@ func RootCmd() *cobra.Command {
 	cobra.OnInitialize(initConfig)
 
 	cmd.AddCommand(installPorterMixin(p))
-
+	cmd.AddCommand(buildCredentialsCommands(p))
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	return cmd
