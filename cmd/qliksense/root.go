@@ -80,7 +80,7 @@ func (p *qlikSenseCmd) installPorter() error {
 	}
 	if downloadPorter {
 		os.Mkdir(porterHome, os.ModePerm)
-		if err = DownloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", filepath.Join(porterHome, porterRuntime)); err != nil {
+		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", filepath.Join(porterHome, porterRuntime)); err != nil {
 			return err
 		}
 		if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
@@ -88,7 +88,7 @@ func (p *qlikSenseCmd) installPorter() error {
 				return err
 			}
 		} else {
-			if err = DownloadFile(porterURLBase+"/"+porterPermaLink+"/"+"porter-"+runtime.GOOS+"-"+runtime.GOARCH, p.porterExe); err != nil {
+			if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/"+"porter-"+runtime.GOOS+"-"+runtime.GOARCH, p.porterExe); err != nil {
 				return err
 			}
 		}
@@ -125,24 +125,26 @@ func (p *qlikSenseCmd) installPorter() error {
 
 }
 
-func DownloadFile(url string, filepath string) error {
+func downloadFile(url string, filepath string) error {
+	var (
+		out  *os.File
+		err  error
+		resp *http.Response
+	)
 	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
+	if out, err = os.Create(filepath); err != nil {
 		return err
 	}
 	defer out.Close()
 
 	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
+	if resp, err = http.Get(url); err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
+	if _, err = io.Copy(out, resp.Body); err != nil {
 		return err
 	}
 
@@ -150,8 +152,13 @@ func DownloadFile(url string, filepath string) error {
 }
 
 func copy(src, dst string) (int64, error) {
-	sourceFileStat, err := os.Stat(src)
-	if err != nil {
+	var (
+		source, destination *os.File
+		sourceFileStat      os.FileInfo
+		err                 error
+		nBytes              int64
+	)
+	if sourceFileStat, err = os.Stat(src); err != nil {
 		return 0, err
 	}
 
@@ -159,23 +166,26 @@ func copy(src, dst string) (int64, error) {
 		return 0, fmt.Errorf("%s is not a regular file", src)
 	}
 
-	source, err := os.Open(src)
-	if err != nil {
+	if source, err = os.Open(src); err != nil {
 		return 0, err
 	}
 	defer source.Close()
 
-	destination, err := os.Create(dst)
-	if err != nil {
+	if destination, err = os.Create(dst); err != nil {
 		return 0, err
 	}
 	defer destination.Close()
-	nBytes, err := io.Copy(destination, source)
+	nBytes, err = io.Copy(destination, source)
 	return nBytes, err
 }
+
 func (p *qlikSenseCmd) RootCmd() *cobra.Command {
-	q := qliksense.New()
-	cmd := &cobra.Command{
+	var (
+		q                     *qliksense.Qliksense
+		cmd, porterCmd, alias *cobra.Command
+	)
+	q = qliksense.New()
+	cmd = &cobra.Command{
 		Use:   "qliksense",
 		Short: "Qliksense cli tool",
 		Long: `qliksense cli tool provides a wrapper around the porter api as well as
@@ -188,18 +198,21 @@ func (p *qlikSenseCmd) RootCmd() *cobra.Command {
 
 	cobra.OnInitialize(initConfig)
 
-	//cmd.AddCommand(installPorterMixin(q))
-
 	// For qliksense overrides/commands
 
 	cmd.AddCommand(pullQliksenseImages(q))
-	cmd.AddCommand(porter(p))
+	porterCmd = porter(p)
+	cmd.AddCommand(porterCmd)
+	for _, alias = range buildAliasCommands(porterCmd) {
+		cmd.AddCommand(alias)
+	}
+
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	return cmd
 }
 
-func InitAndExecute() error {
+func initAndExecute() error {
 
 	var (
 		q *qlikSenseCmd

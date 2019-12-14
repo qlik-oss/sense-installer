@@ -12,6 +12,7 @@ replace (
 )
 
 require (
+	get.porter.sh/porter v0.22.0-beta.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1

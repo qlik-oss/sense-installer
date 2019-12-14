@@ -2,6 +2,6 @@ package main
 
 
 func main() {
-	InitAndExecute()
+	initAndExecute()
 }
 
