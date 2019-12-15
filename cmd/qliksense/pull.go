@@ -12,7 +12,7 @@ func pullQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 	cmd = &cobra.Command{
 		Use:     "pull",
 		Short:   "Pull docke images for offline install",
-		Example: `  portr pull`,
+		Example: `  qliksense pull`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.PullImages()
 		},

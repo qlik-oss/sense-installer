@@ -1,29 +1,58 @@
 package qliksense
 
 import (
-	"bytes"
+	"io"
 	"fmt"
+	"bufio"
 	"os"
 	"os/exec"
-	"strings"
 )
-
+// ProcessLine ...
+type ProcessLine func(string) *string
 // CallPorter ...
-func (p *Qliksense) CallPorter(args []string) error {
+func (p *Qliksense) CallPorter(args []string, processor ProcessLine) (string,error) {
 	var (
+		outText string
 		cmd     *exec.Cmd
 		err     error
-		outText string
-		stdout  bytes.Buffer
+		output io.ReadCloser
+		scanner                             *bufio.Scanner
+		done chan struct{}
 	)
-	cmd = exec.Command(p.porterExe, strings.Join(args, " "))
-	cmd.Stdout = &stdout
-	cmd.Stderr = os.Stderr
-	if err = cmd.Run(); err != nil {
-		return err
+	cmd = exec.Command(p.porterExe,args[:]...)
+	if output,err = cmd.StdoutPipe(); err !=nil {
+		return "",err
 	}
-	outText = stdout.String()
-	outText = strings.ReplaceAll(outText, "porter", "qliksense porter")
-	fmt.Print(outText)
-	return nil
+	cmd.Stderr = os.Stderr
+	
+	done = make(chan struct{})
+	scanner = bufio.NewScanner(output)
+	go func() {
+		for scanner.Scan() {
+			var text string
+			var newText *string
+			text = scanner.Text()
+			if processor != nil {
+				newText = processor(text)
+				if newText != nil {
+				  outText = outText + fmt.Sprintln(*newText)
+				}
+			} else {
+			  outText = outText + fmt.Sprintln(text)
+			}
+		}
+		done <- struct{}{}
+	}()
+	if err = cmd.Start(); err != nil {
+		return "",err
+	}
+	<-done
+	if err = cmd.Wait(); err != nil {
+		return "",err
+	}
+	if err = scanner.Err(); err != nil {
+		return "",err
+	}
+
+	return outText,nil
 }

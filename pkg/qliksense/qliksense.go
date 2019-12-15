@@ -1,7 +1,5 @@
 package qliksense
 
-import ()
-
 // Qliksense is the logic behind the qliksense client
 type Qliksense struct {
 	porterExe string

@@ -137,7 +137,6 @@ func installPorter() (string, error) {
 
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	var (
-		q                     *qliksense.Qliksense
 		cmd, porterCmd, alias *cobra.Command
 	)
 
@@ -156,7 +155,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// For qliksense overrides/commands
 
-	cmd.AddCommand(pullQliksenseImages(q))
+	cmd.AddCommand(pullQliksenseImages(p))
 	porterCmd = porter(p)
 	cmd.AddCommand(porterCmd)
 	for _, alias = range buildAliasCommands(porterCmd) {

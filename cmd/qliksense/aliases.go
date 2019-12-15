@@ -9,6 +9,7 @@ func buildAliasCommands(porterCmd *cobra.Command) []*cobra.Command {
 	return []*cobra.Command{
 		buildBuildAlias(porterCmd),
 		buildInstallAlias(porterCmd),
+		buildAboutAlias(porterCmd),
 	}
 
 }
@@ -53,7 +54,27 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return porterCmd.RunE(porterCmd, append([]string{"build"}, args...))
+			// Push images here.
+			// TODO: Need to get the private reg from params
+			return porterCmd.RunE(porterCmd, append([]string{"install"}, args...))
+		},
+		Annotations: map[string]string{
+			"group": "alias",
+		},
+	}
+	return c
+}
+
+func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
+	var (
+		c *cobra.Command
+	)
+	c = &cobra.Command{
+		Use:   "about",
+		Short: "About Qlik Sense",
+		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return porterCmd.RunE(porterCmd, append([]string{"invoke","--action","about"}, args...))
 		},
 		Annotations: map[string]string{
 			"group": "alias",
