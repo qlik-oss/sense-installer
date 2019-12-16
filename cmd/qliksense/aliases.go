@@ -74,7 +74,9 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 			// Push images here.
 			// TODO: Need to get the private reg from params
 			if registry = opts.findKey("dockerRegistry"); registry != nil{
-				q.TagAndPushImages(*registry)
+				if len(*registry) > 0 {
+					q.TagAndPushImages(*registry)
+				}
 			}
 			return porterCmd.RunE(porterCmd, append([]string{"install"}, args...))
 		},
