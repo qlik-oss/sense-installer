@@ -34,20 +34,20 @@ endif
 build: build-client build-runtime
 
 build-runtime:
-    mkdir -p $(BINDIR)
-    GOARCH=$(RUNTIME_ARCH) GOOS=$(RUNTIME_PLATFORM) $(XBUILD) -o $(BINDIR)/$(MIXIN)-runtime$(FILE_EXT) ./cmd/$(MIXIN)
+	mkdir -p $(BINDIR)
+	GOARCH=$(RUNTIME_ARCH) GOOS=$(RUNTIME_PLATFORM) $(XBUILD) -o $(BINDIR)/$(MIXIN)-runtime$(FILE_EXT) ./cmd/$(MIXIN)
 
 build-client:
-    mkdir -p $(BINDIR)
-    go build -ldflags '$(LDFLAGS)' -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	mkdir -p $(BINDIR)
+	go build -ldflags '$(LDFLAGS)' -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 
 xbuild-all:
-    $(foreach OS, $(SUPPORTED_PLATFORMS), \
-        $(foreach ARCH, $(SUPPORTED_ARCHES), \
-                $(MAKE) $(MAKE_OPTS) CLIENT_PLATFORM=$(OS) CLIENT_ARCH=$(ARCH) MIXIN=$(MIXIN) xbuild -f mixin.mk; \
-        ))
+	$(foreach OS, $(SUPPORTED_PLATFORMS), \
+    	$(foreach ARCH, $(SUPPORTED_ARCHES), \
+            	$(MAKE) $(MAKE_OPTS) CLIENT_PLATFORM=$(OS) CLIENT_ARCH=$(ARCH) MIXIN=$(MIXIN) xbuild -f mixin.mk; \
+    	))
 
 xbuild: $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
-    mkdir -p $(dir $@)
-    GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
+	mkdir -p $(dir $@)
+	GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
