@@ -29,7 +29,7 @@ require (
 	github.com/containerd/containerd v1.3.2 // indirect
 	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
 	github.com/docker/cli v0.0.0-20191212191748-ebca1413117a
-	github.com/docker/distribution v2.7.1+incompatible // indirect
+	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v0.0.0-00010101000000-000000000000
 	github.com/docker/docker-credential-helpers v0.6.3 // indirect
 	github.com/docker/go v1.5.1-1 // indirect

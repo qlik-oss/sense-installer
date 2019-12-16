@@ -158,7 +158,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(pullQliksenseImages(p))
 	porterCmd = porter(p)
 	cmd.AddCommand(porterCmd)
-	for _, alias = range buildAliasCommands(porterCmd) {
+	for _, alias = range buildAliasCommands(porterCmd,p) {
 		cmd.AddCommand(alias)
 	}
 
