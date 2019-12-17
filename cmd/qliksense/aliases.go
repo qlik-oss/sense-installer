@@ -23,9 +23,10 @@ func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
 		c *cobra.Command
 	)
 	c = &cobra.Command{
-		Use:   "build",
-		Short: "Build a bundle",
-		Long:  "Builds the bundle in the current directory by generating a Dockerfile and a CNAB bundle.json, and then building the invocation image.",
+		Use:                "build",
+		Short:              "Build a bundle",
+		Long:               "Builds the bundle in the current directory by generating a Dockerfile and a CNAB bundle.json, and then building the invocation image.",
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return porterCmd.RunE(porterCmd, append([]string{"build"}, args...))
 		},
@@ -70,6 +71,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install --driver debug
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
 `,
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
 			// TODO: Need to get the private reg from params
@@ -97,9 +99,10 @@ func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 		c *cobra.Command
 	)
 	c = &cobra.Command{
-		Use:   "about",
-		Short: "About Qlik Sense",
-		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
+		Use:                "about",
+		Short:              "About Qlik Sense",
+		Long:               "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
+		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "about"}, args...))
 		},
