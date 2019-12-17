@@ -1,11 +1,11 @@
 package main
 
 import (
-	"os"
-	"github.com/spf13/cobra"
-	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-	"strings"
 	"bufio"
+	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+	"github.com/spf13/cobra"
+	"os"
+	"strings"
 )
 
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
@@ -35,23 +35,23 @@ func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
 	}
 	return c
 }
+
 type paramOptions struct {
-	Params []string
-	ParamFiles []string
-	parsedParams map[string]string
-	parsedParamFiles []map[string]string
+	Params             []string
+	ParamFiles         []string
+	parsedParams       map[string]string
+	parsedParamFiles   []map[string]string
 	combinedParameters map[string]string
 }
+
 func buildInstallAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
 	var (
-		c *cobra.Command
-		opts *paramOptions
+		c        *cobra.Command
+		opts     *paramOptions
 		registry *string
 	)
 
-	opts = &paramOptions{
-
-	}
+	opts = &paramOptions{}
 
 	c = &cobra.Command{
 		Use:   "install [INSTANCE]",
@@ -73,7 +73,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
 			// TODO: Need to get the private reg from params
-			if registry = opts.findKey("dockerRegistry"); registry != nil{
+			if registry = opts.findKey("dockerRegistry"); registry != nil {
 				if len(*registry) > 0 {
 					q.TagAndPushImages(*registry)
 				}
@@ -101,7 +101,7 @@ func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 		Short: "About Qlik Sense",
 		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return porterCmd.RunE(porterCmd, append([]string{"invoke","--action","about"}, args...))
+			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "about"}, args...))
 		},
 		Annotations: map[string]string{
 			"group": "alias",
@@ -133,7 +133,7 @@ func (o *paramOptions) findParams(param string) *string {
 // parseParamFiles parses the variable assignments in ParamFiles.
 func (o *paramOptions) findParamFiles(param string) *string {
 	var (
-		path string
+		path   string
 		retStr *string
 	)
 
@@ -146,11 +146,11 @@ func (o *paramOptions) findParamFiles(param string) *string {
 
 func (o *paramOptions) findParamFile(param string, path string) *string {
 	var (
-		f *os.File
-		err error
+		f       *os.File
+		err     error
 		scanner *bufio.Scanner
-		lines []string
-		retStr *string
+		lines   []string
+		retStr  *string
 	)
 	if f, err = os.Open(path); err == nil {
 		defer f.Close()
@@ -160,12 +160,12 @@ func (o *paramOptions) findParamFile(param string, path string) *string {
 			lines = append(lines, scanner.Text())
 		}
 
-		retStr = o.findVariableKey(param,lines)
+		retStr = o.findVariableKey(param, lines)
 	}
 	return retStr
 }
 
-func (o *paramOptions) findVariableKey(param string, params []string) (*string) {
+func (o *paramOptions) findVariableKey(param string, params []string) *string {
 	var (
 		variable, value string
 	)
