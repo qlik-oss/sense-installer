@@ -8,7 +8,6 @@ import (
 
 	"github.com/docker/cli/cli/command"
 	cliflags "github.com/docker/cli/cli/flags"
-	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -179,8 +178,7 @@ func (p *Qliksense) TagAndPush(image string, registryName string) error {
 		segments         []string
 		imageList        []types.ImageSummary
 		imageListOptions types.ImageListOptions
-		filter           opts.FilterOpt
-		filters          filters.Args
+		filterArgs       filters.Args
 		ref              reference.Named
 		repoInfo         *registry.RepositoryInfo
 		authConfig       types.AuthConfig
@@ -200,7 +198,7 @@ func (p *Qliksense) TagAndPush(image string, registryName string) error {
 	if segments[0] == "docker.io" {
 		image = strings.Join(segments[1:], "/")
 	}
-	newName = registry + "/" + segments[len(segments)-1]
+	newName = registryName + "/" + segments[len(segments)-1]
 
 	filterArgs = filters.NewArgs()
 	filterArgs.Add("reference", image)
@@ -231,7 +229,6 @@ func (p *Qliksense) TagAndPush(image string, registryName string) error {
 	}
 	pushOptions = types.ImagePushOptions{
 		All:          true,
-		RegistryAuth: "temp",
 		RegistryAuth: encodedAuth,
 	}
 
