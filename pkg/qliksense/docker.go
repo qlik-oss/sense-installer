@@ -1,27 +1,32 @@
 package qliksense
 
 import (
-	"io"
-	"os"
-	"io/ioutil"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+
 	"github.com/docker/cli/cli/command"
-	"github.com/docker/cli/opts"
 	cliflags "github.com/docker/cli/cli/flags"
+	"github.com/docker/cli/opts"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"
-	
-	yaml "gopkg.in/yaml.v2"
+	"github.com/docker/docker/registry"
+
 	"strings"
+
 	"golang.org/x/net/context"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // Images ...
 type Images struct {
 	Images []string `yaml:"images"`
 }
+
 // PullImages ...
 func (p *Qliksense) PullImages() error {
 	var (
@@ -51,8 +56,7 @@ func (p *Qliksense) PullImages() error {
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
 	}
-
-	for _,image = range images.Images{
+	for _, image = range images.Images {
 		if err = p.PullImage(image); err != nil {
 			fmt.Print(err)
 		}
@@ -65,43 +69,45 @@ func (p *Qliksense) PullImages() error {
 // PullImage ...
 func (p *Qliksense) PullImage(imageName string) error {
 	var (
-		cli *command.DockerCli
+		cli          *command.DockerCli
 		dockerOutput io.Writer
-		response io.ReadCloser
-		pullOptions types.ImagePullOptions
-		ctx     context.Context
-		// ref     reference.Named
-		// repoInfo *registry.RepositoryInfo
-		// authConfig types.AuthConfig
-		// encodedAuth string
-		termFd uintptr
-		err error
-	) 
+		response     io.ReadCloser
+		pullOptions  types.ImagePullOptions
+		ctx          context.Context
+		ref          reference.Named
+		repoInfo     *registry.RepositoryInfo
+		authConfig   types.AuthConfig
+		encodedAuth  string
+		termFd       uintptr
+		err          error
+	)
 	// TODO: Create a real cli config context
 	ctx = context.Background()
 	if cli, err = command.NewDockerCli(); err != nil {
 		return err
 	}
 
-	// if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
-	// 	return err
-	// }
-	// if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-	// 	return err
-	// }
-	// authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
-	// if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-	// 	return err
-	// }
-	pullOptions = types.ImagePullOptions{
-	//	RegistryAuth: encodedAuth,
-	}
-
 	if err = cli.Initialize(cliflags.NewClientOptions()); err != nil {
 		return err
 	}
 
-	if response, err = cli.Client().ImagePull(ctx,imageName, pullOptions); err != nil {
+	if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
+		return err
+	}
+	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
+		return err
+	}
+
+	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
+	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
+		return err
+	}
+
+	pullOptions = types.ImagePullOptions{
+		RegistryAuth: encodedAuth,
+	}
+
+	if response, err = cli.Client().ImagePull(ctx, imageName, pullOptions); err != nil {
 		return err
 	}
 	defer response.Close()
@@ -151,7 +157,7 @@ func (p *Qliksense) TagAndPushImages(registry string) error {
 		return err
 	}
 
-	for _,image = range images.Images{
+	for _, image = range images.Images {
 		if err = p.TagAndPush(image, registry); err != nil {
 			fmt.Print(err)
 		}
@@ -162,24 +168,25 @@ func (p *Qliksense) TagAndPushImages(registry string) error {
 }
 
 // PullImage ...
-func (p *Qliksense) TagAndPush(image string, registry string) error {
+func (p *Qliksense) TagAndPush(image string, registryName string) error {
 	var (
-		cli *command.DockerCli
-		dockerOutput io.Writer
-		response io.ReadCloser
-		pushOptions types.ImagePushOptions
-		ctx     context.Context
-		newName string
-		segments []string
-		imageList []types.ImageSummary
+		cli              *command.DockerCli
+		dockerOutput     io.Writer
+		response         io.ReadCloser
+		pushOptions      types.ImagePushOptions
+		ctx              context.Context
+		newName          string
+		segments         []string
+		imageList        []types.ImageSummary
 		imageListOptions types.ImageListOptions
-		filter opts.FilterOpt
-		filters filters.Args
-		// repoInfo *registry.RepositoryInfo
-		// authConfig types.AuthConfig
-		// encodedAuth string
-		termFd uintptr
-		err error
+		filter           opts.FilterOpt
+		filters          filters.Args
+		ref              reference.Named
+		repoInfo         *registry.RepositoryInfo
+		authConfig       types.AuthConfig
+		encodedAuth      string
+		termFd           uintptr
+		err              error
 	)
 	// TODO: Create a real cli config context
 	ctx = context.Background()
@@ -190,18 +197,18 @@ func (p *Qliksense) TagAndPush(image string, registry string) error {
 		return err
 	}
 	segments = strings.Split(image, "/")
-	newName = registry + "/" + segments[len(segments)-1]
+	newName = registryName + "/" + segments[len(segments)-1]
 
 	filters = filter.Value()
-	filters.Add("reference",image)
-	imageListOptions = types.ImageListOptions {
+	filters.Add("reference", image)
+	imageListOptions = types.ImageListOptions{
 		Filters: filters,
 	}
-	if imageList,err = cli.Client().ImageList(ctx, imageListOptions); err != nil {
+	if imageList, err = cli.Client().ImageList(ctx, imageListOptions); err != nil {
 		return err
 	}
-	if imageList == nil || len(imageList) <=0 {
-		fmt.Printf("Use `qliksense pull`, to pull %v for an air gap push",newName)
+	if imageList == nil || len(imageList) <= 0 {
+		fmt.Printf("Use `qliksense pull`, to pull %v for an air gap push", newName)
 		return nil
 	}
 
@@ -209,21 +216,21 @@ func (p *Qliksense) TagAndPush(image string, registry string) error {
 		return err
 	}
 
-	// if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
-	// 	return err
-	// }
-	// if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-	// 	return err
-	// }
-	// authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
-	// if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-	// 	return err
-	// }
+	if ref, err = reference.ParseNormalizedNamed(image); err != nil {
+		return err
+	}
+	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
+		return err
+	}
+	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
+	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
+		return err
+	}
 	pushOptions = types.ImagePushOptions{
-	//	RegistryAuth: encodedAuth,
+		RegistryAuth: encodedAuth,
 	}
 
-	if response, err = cli.Client().ImagePush(ctx,newName, pushOptions); err != nil {
+	if response, err = cli.Client().ImagePush(ctx, newName, pushOptions); err != nil {
 		return err
 	}
 	defer response.Close()
