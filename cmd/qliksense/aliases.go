@@ -2,10 +2,11 @@ package main
 
 import (
 	"bufio"
-	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-	"github.com/spf13/cobra"
 	"os"
 	"strings"
+
+	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+	"github.com/spf13/cobra"
 )
 
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
@@ -38,11 +39,18 @@ func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
 }
 
 type paramOptions struct {
-	Params             []string
-	ParamFiles         []string
-	parsedParams       map[string]string
-	parsedParamFiles   []map[string]string
-	combinedParameters map[string]string
+	Params           []string
+	ParamFiles       []string
+	File             string
+	Name             string
+	InsecureRegistry bool
+	CNABFile         string
+	// CredentialIdentifiers is a list of credential names or paths to make available to the bundle.
+	CredentialIdentifiers []string
+	Driver                string
+	Force                 bool
+	Insecure              bool
+	Tag                   string
 }
 
 func buildInstallAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
@@ -71,7 +79,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install --driver debug
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
 `,
-		DisableFlagParsing: true,
+		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
 			// TODO: Need to get the private reg from params
@@ -87,10 +95,26 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		},
 	}
 	f := c.Flags()
+	f.BoolVar(&opts.Insecure, "insecure", true,
+		"Allow working with untrusted bundles")
+	f.StringVarP(&opts.File, "file", "f", "",
+		"Path to the porter manifest file. Defaults to the bundle in the current directory.")
+	f.StringVar(&opts.CNABFile, "cnab-file", "",
+		"Path to the CNAB bundle.json file.")
 	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
 		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
 	f.StringSliceVar(&opts.Params, "param", nil,
 		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
+	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
+		"Credential to use when installing the bundle. May be either a named set of credentials or a filepath, and specified multiple times.")
+	f.StringVarP(&opts.Driver, "driver", "d", "docker",
+		"Specify a driver to use. Allowed values: docker, debug")
+	f.StringVarP(&opts.Tag, "tag", "t", "",
+		"Use a bundle in an OCI registry specified by the given tag")
+	f.BoolVar(&opts.InsecureRegistry, "insecure-registry", false,
+		"Don't require TLS for the registry")
+	f.BoolVar(&opts.Force, "force", false,
+		"Force a fresh pull of the bundle and all dependencies")
 	return c
 }
 
