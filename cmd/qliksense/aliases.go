@@ -122,6 +122,9 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 }
 func (o *aboutOptions) getTagDefaults(args []string) []string {
 	var err error
+	if len(o.Tag) > 1 {
+		args = append(args, []string{"--tag", o.Tag}...)
+	}
 	if len(o.Tag) <= 0 && len(o.File) <= 0 && len(o.CNABFile) <= 0 {
 		if _, err = os.Stat("porter.yaml"); err != nil {
 			args = append(args, []string{"--tag", "qlik/qliksense-cnab-bundle:" + o.Version}...)
