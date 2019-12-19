@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,10 +43,10 @@ func initAndExecute() error {
 
 func installPorter() (string, error) {
 	var (
-		porterPermaLink = pkg.Version
-		//porterPermaLink = "latest"
-		homeDir, mixin, mixinOpts, qlikSenseHome, porterExe string
-		mixinsVar                                           = map[string]string{
+		//porterPermaLink = pkg.Version
+		porterPermaLink                                          = "v0.3.0"
+		homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
+		mixinsVar                                                = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
@@ -105,7 +104,10 @@ func installPorter() (string, error) {
 				return "", err
 			}
 		} else {
-			if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/"+"porter-"+runtime.GOOS+"-"+runtime.GOARCH, porterExe); err != nil {
+			if runtime.GOOS == "windows" {
+				ext = ".exe"
+			}
+			if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/"+"porter-"+runtime.GOOS+"-"+runtime.GOARCH+ext, porterExe); err != nil {
 				return "", err
 			}
 		}
@@ -130,7 +132,7 @@ func installPorter() (string, error) {
 		}
 	}
 	for mixin, mixinOpts = range downloadMixins {
-		cmd = exec.Command(porterExe, "mixin", "install", mixin, mixinOpts)
+		cmd = exec.Command(porterExe, append([]string{"mixin", "install", mixin}, strings.Split(mixinOpts, " ")...)...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err = cmd.Run(); err != nil {
