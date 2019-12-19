@@ -187,7 +187,7 @@ func downloadFile(url string, filepath string) error {
 		resp *http.Response
 	)
 	// Create the file
-	if out, err = os.Create(filepath); err != nil {
+	if out, err = os.OpenFile(filepath, os.O_CREATE, 0755); err != nil {
 		return err
 	}
 	defer out.Close()
