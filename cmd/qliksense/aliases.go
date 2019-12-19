@@ -39,18 +39,17 @@ func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
 }
 
 type paramOptions struct {
+	aboutOptions
 	Params           []string
 	ParamFiles       []string
-	File             string
 	Name             string
 	InsecureRegistry bool
-	CNABFile         string
+
 	// CredentialIdentifiers is a list of credential names or paths to make available to the bundle.
 	CredentialIdentifiers []string
 	Driver                string
 	Force                 bool
 	Insecure              bool
-	Tag                   string
 }
 
 func buildInstallAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
@@ -72,6 +71,7 @@ The first argument is the bundle instance name to create for the installation. T
 Porter uses the Docker driver as the default runtime for executing a bundle's invocation image, but an alternate driver may be supplied via '--driver/-d'.
 For example, the 'debug' driver may be specified, which simply logs the info given to it and then exits.`,
 		Example: `  qliksense install
+  qliksense install --version v1.0.0
   qliksense install --insecure
   qliksense install qliksense --file qliksense/bundle.json
   qliksense install --param-file base-values.txt --param-file dev-values.txt --param test-mode=true --param header-color=blue
@@ -83,6 +83,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
 			// TODO: Need to get the private reg from params
+			args = opts.getTagDefaults(args)
 			if registry = opts.findKey("dockerRegistry"); registry != nil {
 				if len(*registry) > 0 {
 					q.TagAndPushImages(*registry)
@@ -95,6 +96,8 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		},
 	}
 	f := c.Flags()
+	f.StringVarP(&opts.Version, "version", "v", "latest",
+		"Version of Qlik Sense to install")
 	f.BoolVar(&opts.Insecure, "insecure", true,
 		"Allow working with untrusted bundles")
 	f.StringVarP(&opts.File, "file", "f", "",
@@ -117,23 +120,53 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		"Force a fresh pull of the bundle and all dependencies")
 	return c
 }
+func (o *aboutOptions) getTagDefaults(args []string) []string {
+	var err error
+	if len(o.Tag) <= 0 && len(o.File) <= 0 && len(o.CNABFile) <= 0 {
+		if _, err = os.Stat("porter.yaml"); err != nil {
+			args = append(args, []string{"--tag", "qlik/qliksense-cnab-bundle:" + o.Version}...)
+		}
+	}
+	return args
+}
+
+type aboutOptions struct {
+	Version  string
+	Tag      string
+	File     string
+	CNABFile string
+}
 
 func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 	var (
-		c *cobra.Command
+		c    *cobra.Command
+		opts *aboutOptions
 	)
+
+	opts = &aboutOptions{}
+
 	c = &cobra.Command{
 		Use:                "about",
 		Short:              "About Qlik Sense",
 		Long:               "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
 		DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			args = opts.getTagDefaults(args)
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "about"}, args...))
 		},
 		Annotations: map[string]string{
 			"group": "alias",
 		},
 	}
+	f := c.Flags()
+	f.StringVarP(&opts.Version, "version", "v", "latest",
+		"Version of Qlik Sense to install")
+	f.StringVarP(&opts.Tag, "tag", "t", "",
+		"Use a bundle in an OCI registry specified by the given tag")
+	f.StringVarP(&opts.File, "file", "f", "",
+		"Path to the porter manifest file. Defaults to the bundle in the current directory.")
+	f.StringVar(&opts.CNABFile, "cnab-file", "",
+		"Path to the CNAB bundle.json file.")
 	return c
 }
 
