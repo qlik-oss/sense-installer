@@ -83,7 +83,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
 			// TODO: Need to get the private reg from params
-			args = opts.getTagDefaults(args)
+			args = append(os.Args[1:], opts.getTagDefaults(args)...)
 			if registry = opts.findKey("dockerRegistry"); registry != nil {
 				if len(*registry) > 0 {
 					q.TagAndPushImages(*registry)
