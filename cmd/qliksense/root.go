@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -18,13 +19,12 @@ import (
 
 const (
 	//	porterURLBase   = "https://deislabs.blob.core.windows.net/porter"
-	porterURLBase   = "https://github.com/qlik-oss/sense-installer/releases"
-	porterHomeVar   = "PORTER_HOME"
-	porterDirVar    = ".porter"
-	mixinDirVar     = "mixins"
-	porterPermaLink = "latest/download"
-	//porterPermaLink = "latest"
-	porterRuntime = "porter-runtime"
+	porterURLBase    = "https://github.com/qlik-oss/sense-installer/releases/download"
+	porterHomeVar    = "PORTER_HOME"
+	qlikSenseHomeVar = "QLIKSENSE_HOME"
+	qlikSenseDirVar  = ".qliksense"
+	mixinDirVar      = "mixins"
+	porterRuntime    = "porter-runtime"
 )
 
 func initAndExecute() error {
@@ -44,8 +44,10 @@ func initAndExecute() error {
 
 func installPorter() (string, error) {
 	var (
-		homeDir, mixin, mixinOpts, porterHome, porterExe string
-		mixinsVar                                        = map[string]string{
+		porterPermaLink = pkg.Version
+		//porterPermaLink = "latest"
+		homeDir, mixin, mixinOpts, qlikSenseHome, porterExe string
+		mixinsVar                                           = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
@@ -66,17 +68,19 @@ func installPorter() (string, error) {
 	if runtime.GOOS == "windows" {
 		porterExe = porterExe + ".exe"
 	}
-	if porterHome = os.Getenv(porterHomeVar); porterHome == "" {
+	if qlikSenseHome = os.Getenv(qlikSenseHomeVar); qlikSenseHome == "" {
 		if homeDir, err = homedir.Dir(); err != nil {
 			return "", err
 		}
 		if homeDir, err = homedir.Expand(homeDir); err != nil {
 			return "", err
 		}
-		porterHome = filepath.Join(homeDir, porterDirVar)
+		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
 	}
-	porterExe = filepath.Join(porterHome, porterExe)
-	if _, err = os.Stat(porterHome); err != nil {
+	os.Setenv(porterHomeVar, qlikSenseHome)
+	//TODO: Check if porter version is one alreadu is one for this build
+	porterExe = filepath.Join(qlikSenseHome, porterExe)
+	if _, err = os.Stat(qlikSenseHome); err != nil {
 		if os.IsNotExist(err) {
 			downloadPorter = true
 		} else {
@@ -92,12 +96,12 @@ func installPorter() (string, error) {
 		}
 	}
 	if downloadPorter {
-		os.Mkdir(porterHome, os.ModePerm)
-		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", filepath.Join(porterHome, porterRuntime)); err != nil {
+		os.Mkdir(qlikSenseHome, os.ModePerm)
+		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", filepath.Join(qlikSenseHome, porterRuntime)); err != nil {
 			return "", err
 		}
 		if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
-			if _, err = copy(filepath.Join(porterHome, porterRuntime), porterExe); err != nil {
+			if _, err = copy(filepath.Join(qlikSenseHome, porterRuntime), porterExe); err != nil {
 				return "", err
 			}
 		} else {
@@ -107,7 +111,7 @@ func installPorter() (string, error) {
 		}
 	}
 
-	if _, err = os.Stat(filepath.Join(porterHome, mixinDirVar)); err != nil {
+	if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar)); err != nil {
 		if os.IsNotExist(err) {
 			downloadMixins = mixinsVar
 		} else {
@@ -116,7 +120,7 @@ func installPorter() (string, error) {
 	} else {
 		downloadMixins = make(map[string]string)
 		for mixin, mixinOpts = range mixinsVar {
-			if _, err = os.Stat(filepath.Join(porterHome, mixinDirVar, mixin)); err != nil {
+			if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar, mixin)); err != nil {
 				if os.IsNotExist(err) {
 					downloadMixins[mixin] = mixinOpts
 				} else {
