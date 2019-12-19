@@ -17,12 +17,14 @@ import (
 )
 
 const (
-	porterURLBase   = "https://deislabs.blob.core.windows.net/porter"
+	//	porterURLBase   = "https://deislabs.blob.core.windows.net/porter"
+	porterURLBase   = "https://github.com/qlik-oss/sense-installer/releases"
 	porterHomeVar   = "PORTER_HOME"
 	porterDirVar    = ".porter"
 	mixinDirVar     = "mixins"
-	porterPermaLink = "latest"
-	porterRuntime   = "porter-runtime"
+	porterPermaLink = "latest/download"
+	//porterPermaLink = "latest"
+	porterRuntime = "porter-runtime"
 )
 
 func initAndExecute() error {
