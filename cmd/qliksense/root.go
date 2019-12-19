@@ -45,7 +45,7 @@ func installPorter() (string, error) {
 	var (
 		//porterPermaLink = pkg.Version
 		porterPermaLink                                          = "v0.3.0"
-		homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
+		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
 		mixinsVar                                                = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
@@ -96,13 +96,16 @@ func installPorter() (string, error) {
 	}
 	if downloadPorter {
 		os.Mkdir(qlikSenseHome, os.ModePerm)
-		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", filepath.Join(qlikSenseHome, porterRuntime)); err != nil {
+		destination = filepath.Join(qlikSenseHome, porterRuntime)
+		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", destination ); err != nil {
 			return "", err
 		}
+		os.Chmod(destination, 0755)
 		if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
 			if _, err = copy(filepath.Join(qlikSenseHome, porterRuntime), porterExe); err != nil {
 				return "", err
 			}
+			os.Chmod(porterExe, 0755)
 		} else {
 			if runtime.GOOS == "windows" {
 				ext = ".exe"
@@ -110,6 +113,7 @@ func installPorter() (string, error) {
 			if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/"+"porter-"+runtime.GOOS+"-"+runtime.GOARCH+ext, porterExe); err != nil {
 				return "", err
 			}
+			os.Chmod(porterExe, 0755)
 		}
 	}
 
@@ -187,7 +191,7 @@ func downloadFile(url string, filepath string) error {
 		resp *http.Response
 	)
 	// Create the file
-	if out, err = os.OpenFile(filepath, os.O_CREATE, 0755); err != nil {
+	if out, err = os.Create(filepath); err != nil {
 		return err
 	}
 	defer out.Close()
