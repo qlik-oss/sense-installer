@@ -146,10 +146,9 @@ func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 	opts = &aboutOptions{}
 
 	c = &cobra.Command{
-		Use:                "about",
-		Short:              "About Qlik Sense",
-		Long:               "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
-		DisableFlagParsing: true,
+		Use:   "about",
+		Short: "About Qlik Sense",
+		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = opts.getTagDefaults(args)
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "about"}, args...))
