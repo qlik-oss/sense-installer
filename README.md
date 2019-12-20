@@ -9,6 +9,13 @@ Download the appropriate executable for your platform from the [releases page](h
 To make sure everything is order, you can fetch the Qlik Sense bundle version and corresponding image list from:
  - `qliksense about --tag qlik/qliksense-cnab-bundle:latest `
 
+## Running Preflight checks
+You can run preflight checks to ensure that the cluster is in a healthy state before installing Qliksense. 
+- `qliksense preflight -c <credential_name> `
+
+The above command runs the checks in the default namespace. If you want to specify the namespace to run preflight checks on:
+- `qliksense preflight --param namespace=<value> -c <credential_name> `
+
 ## Qliksense Packaging
 Packaging of Qlik Sense on Kubernetes is done through a [Porter](https://porter.sh/) definition in the [Qlik Sense on Kubernetes configuration repository](https://github.com/qlik-oss/qliksense-k8s/blob/master/porter.yaml), the resulting bundle published on DockerHub as a [Cloud Natvie Application Bundle](https://cnab.io/) called [qliksense-cnab-bundle](https://hub.docker.com/r/qlik/qliksense-cnab-bundle).
 ### Versioning

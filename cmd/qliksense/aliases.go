@@ -15,6 +15,7 @@ func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cob
 		buildBuildAlias(porterCmd),
 		buildInstallAlias(porterCmd, q),
 		buildAboutAlias(porterCmd),
+		buildPreflightAlias(porterCmd, q),
 	}
 
 }
@@ -169,6 +170,36 @@ func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 		"Path to the porter manifest file. Defaults to the bundle in the current directory.")
 	f.StringVar(&opts.CNABFile, "cnab-file", "",
 		"Path to the CNAB bundle.json file.")
+	return c
+}
+
+func buildPreflightAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
+	var (
+		c    *cobra.Command
+		opts *paramOptions
+	)
+
+	opts = &paramOptions{}
+
+	c = &cobra.Command{
+		Use:   "preflight",
+		Short: "Preflight Checks",
+		Long:  "Perform Preflight Checks",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			args = append(os.Args[1:], opts.getTagDefaults(args)...)
+			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "preflight"}, args...))
+		},
+		Annotations: map[string]string{
+			"group": "alias",
+		},
+	}
+	f := c.Flags()
+	f.StringSliceVar(&opts.Params, "param", nil,
+		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
+	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
+		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
+	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
+		"Credential to use when installing the bundle. May be either a named set of credentials or a filepath, and specified multiple times.")
 	return c
 }
 
