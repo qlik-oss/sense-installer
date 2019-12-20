@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,10 +44,10 @@ func initAndExecute() error {
 
 func installPorter() (string, error) {
 	var (
-		//porterPermaLink = pkg.Version
-		porterPermaLink                                          = "v0.3.0"
+		porterPermaLink = pkg.Version
+		//porterPermaLink                                          = "v0.3.0"
 		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
-		mixinsVar                                                = map[string]string{
+		mixinsVar                                                             = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
@@ -97,7 +98,7 @@ func installPorter() (string, error) {
 	if downloadPorter {
 		os.Mkdir(qlikSenseHome, os.ModePerm)
 		destination = filepath.Join(qlikSenseHome, porterRuntime)
-		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", destination ); err != nil {
+		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", destination); err != nil {
 			return "", err
 		}
 		os.Chmod(destination, 0755)

@@ -16,13 +16,28 @@ jobs:
     working_directory: /go/src/github.com/qlik-oss/sense-installer
     steps:
       - checkout
+      - run:
+          name: Set up workspace
+          command: |
+            mkdir -p /workspace
       - run: make xbuild-all
+      - run:
+          name: "Build latest master from porter repo"
+          command: |
+            export GO111MODULE=off
+            go get -u get.porter.sh/porter || true
+            cd /go/src/get.porter.sh/porter
+            # store porter master commit in workspace
+            git rev-parse HEAD > /workspace/porter-master-commit
+            make xbuild-all VERSION=latest
+            cp -r bin/latest/* /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
       - run:
           name: "Publish Release on GitHub"
           command: |
             go get github.com/tcnksm/ghr
             # VERSION=v$(./artifacts/qliksense-linux-amd64 version | sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p')
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
+            PORTER_REPO_COMMIT=$(cat /workspace/porter-master-commit)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -b "porter build based on commit: https://github.com/deislabs/porter/commit/${PORTER_REPO_COMMIT}" -delete ${CIRCLE_TAG}  /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
 workflows:
   version: 2
   commit:
