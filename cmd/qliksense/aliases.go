@@ -198,6 +198,10 @@ func buildPreflightAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobr
 		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
 	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
 		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
+	f.StringVarP(&opts.Tag, "tag", "t", "",
+		"Use a bundle in an OCI registry specified by the given tag")
+	f.StringVarP(&opts.Version, "version", "v", "latest",
+		"Version of Qlik Sense to install")
 	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
 		"Credential to use when installing the bundle. May be either a named set of credentials or a filepath, and specified multiple times.")
 	return c
