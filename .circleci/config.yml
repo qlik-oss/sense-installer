@@ -32,8 +32,8 @@ jobs:
           command: |
             go get github.com/tcnksm/ghr
             # VERSION=v$(./artifacts/qliksense-linux-amd64 version | sed -nre 's/^[^0-9]*(([0-9]+\.)*[0-9]+).*/\1/p')
-            PORTER_REPO_COMMIT=$(cat /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/porter-master-commit.txt)
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} -b "porter master commit hash: ${PORTER_REPO_COMMIT}" /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
+            # PORTER_REPO_COMMIT=$(cat /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/porter-master-commit.txt)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} -b "porter master commit hash:" /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
 workflows:
   version: 2
   commit:
