@@ -1,4 +1,4 @@
-PKG = qlik-oss/sense-installer
+PKG = github.com/qlik-oss/sense-installer
 
 # --no-print-directory avoids verbose logging when invoking targets that utilize sub-makes
 MAKE_OPTS ?= --no-print-directory
