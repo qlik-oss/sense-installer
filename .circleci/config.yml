@@ -20,6 +20,7 @@ jobs:
       - run:
           name: "Build latest master from porter repo"
           command: |
+            export GO111MODULE=off
             go get -u get.porter.sh/porter
             cd /go/src/get.porter.sh/porter
             # store porter master commit for later use
