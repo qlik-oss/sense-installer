@@ -8,10 +8,12 @@ import (
 
 	"github.com/docker/cli/cli/command"
 	cliflags "github.com/docker/cli/cli/flags"
+	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"
+	"github.com/docker/docker/registry"
 
 	"strings"
 
@@ -53,7 +55,6 @@ func (p *Qliksense) PullImages() error {
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
 	}
-
 	for _, image = range images.Images {
 		if err = p.PullImage(image); err != nil {
 			fmt.Print(err)
@@ -72,12 +73,12 @@ func (p *Qliksense) PullImage(imageName string) error {
 		response     io.ReadCloser
 		pullOptions  types.ImagePullOptions
 		ctx          context.Context
-		// ref     reference.Named
-		// repoInfo *registry.RepositoryInfo
-		// authConfig types.AuthConfig
-		// encodedAuth string
-		termFd uintptr
-		err    error
+		ref          reference.Named
+		repoInfo     *registry.RepositoryInfo
+		authConfig   types.AuthConfig
+		encodedAuth  string
+		termFd       uintptr
+		err          error
 	)
 	// TODO: Create a real cli config context
 	ctx = context.Background()
@@ -85,22 +86,24 @@ func (p *Qliksense) PullImage(imageName string) error {
 		return err
 	}
 
-	// if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
-	// 	return err
-	// }
-	// if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-	// 	return err
-	// }
-	// authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
-	// if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-	// 	return err
-	// }
-	pullOptions = types.ImagePullOptions{
-		//	RegistryAuth: encodedAuth,
-	}
-
 	if err = cli.Initialize(cliflags.NewClientOptions()); err != nil {
 		return err
+	}
+
+	if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
+		return err
+	}
+	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
+		return err
+	}
+
+	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
+	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
+		return err
+	}
+
+	pullOptions = types.ImagePullOptions{
+		RegistryAuth: encodedAuth,
 	}
 
 	if response, err = cli.Client().ImagePull(ctx, imageName, pullOptions); err != nil {
@@ -164,7 +167,7 @@ func (p *Qliksense) TagAndPushImages(registry string) error {
 }
 
 // PullImage ...
-func (p *Qliksense) TagAndPush(image string, registry string) error {
+func (p *Qliksense) TagAndPush(image string, registryName string) error {
 	var (
 		cli              *command.DockerCli
 		dockerOutput     io.Writer
@@ -176,11 +179,12 @@ func (p *Qliksense) TagAndPush(image string, registry string) error {
 		imageList        []types.ImageSummary
 		imageListOptions types.ImageListOptions
 		filterArgs       filters.Args
-		// repoInfo *registry.RepositoryInfo
-		// authConfig types.AuthConfig
-		// encodedAuth string
-		termFd uintptr
-		err    error
+		ref              reference.Named
+		repoInfo         *registry.RepositoryInfo
+		authConfig       types.AuthConfig
+		encodedAuth      string
+		termFd           uintptr
+		err              error
 	)
 	// TODO: Create a real cli config context
 	ctx = context.Background()
@@ -194,7 +198,7 @@ func (p *Qliksense) TagAndPush(image string, registry string) error {
 	if segments[0] == "docker.io" {
 		image = strings.Join(segments[1:], "/")
 	}
-	newName = registry + "/" + segments[len(segments)-1]
+	newName = registryName + "/" + segments[len(segments)-1]
 
 	filterArgs = filters.NewArgs()
 	filterArgs.Add("reference", image)
@@ -213,20 +217,19 @@ func (p *Qliksense) TagAndPush(image string, registry string) error {
 		return err
 	}
 
-	// if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
-	// 	return err
-	// }
-	// if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-	// 	return err
-	// }
-	// authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
-	// if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-	// 	return err
-	// }
+	if ref, err = reference.ParseNormalizedNamed(image); err != nil {
+		return err
+	}
+	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
+		return err
+	}
+	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
+	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
+		return err
+	}
 	pushOptions = types.ImagePushOptions{
 		All:          true,
-		RegistryAuth: "temp",
-		//	RegistryAuth: encodedAuth,
+		RegistryAuth: encodedAuth,
 	}
 
 	if response, err = cli.Client().ImagePush(ctx, newName, pushOptions); err != nil {
