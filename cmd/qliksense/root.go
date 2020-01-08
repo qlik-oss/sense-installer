@@ -49,7 +49,7 @@ func installPorter() (string, error) {
 		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
 		mixinsVar                                                             = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
-			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
+			"qliksense":  "-v v0.14.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
 			"kubernetes": "-v latest",
 			"helm":       "-v latest",
