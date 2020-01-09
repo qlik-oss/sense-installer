@@ -16,6 +16,7 @@ func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cob
 		buildInstallAlias(porterCmd, q),
 		buildAboutAlias(porterCmd),
 		buildPreflightAlias(porterCmd, q),
+		buildUninstallAlias(porterCmd, q),
 	}
 
 }
@@ -84,7 +85,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
 			// TODO: Need to get the private reg from params
-			args = append(os.Args[1:], opts.getTagDefaults(args)...)
+			args = append(os.Args[2:], opts.getTagValue(args)...)
 			if registry = opts.findKey("dockerRegistry"); registry != nil {
 				if len(*registry) > 0 {
 					q.TagAndPushImages(*registry)
@@ -121,17 +122,78 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		"Force a fresh pull of the bundle and all dependencies")
 	return c
 }
+
+func buildUninstallAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
+	var (
+		c    *cobra.Command
+		opts *paramOptions
+	)
+
+	opts = &paramOptions{}
+
+	c = &cobra.Command{
+		Use:   "uninstall [INSTANCE]",
+		Short: "Uninstall a bundle instance",
+		Long: `Uninstall a bundle instance
+The first argument is the bundle instance name to uninstall. This defaults to the name of the bundle.
+Porter uses the Docker driver as the default runtime for executing a bundle's invocation image, but an alternate driver may be supplied via '--driver/-d'.
+For example, the 'debug' driver may be specified, which simply logs the info given to it and then exits.`,
+		Example: `  qliksense uninstall
+		qliksense uninstall --insecure
+		qliksense uninstall MyAppInDev --file myapp/bundle.json
+		qliksense uninstall --param-file base-values.txt --param-file dev-values.txt --param test-mode=true --param header-color=blue
+		qliksense uninstall --cred azure --cred kubernetes
+		qliksense uninstall --driver debug
+		qliksense uninstall MyAppFromTag --tag deislabs/porter-kube-bundle:v1.0
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return porterCmd.RunE(porterCmd, append([]string{"uninstall"}, os.Args[2:]...))
+		},
+		Annotations: map[string]string{
+			"group": "alias",
+		},
+	}
+
+	f := c.Flags()
+	f.BoolVar(&opts.Insecure, "insecure", true,
+		"Allow working with untrusted bundles")
+	f.StringVarP(&opts.File, "file", "f", "",
+		"Path to the porter manifest file. Defaults to the bundle in the current directory. Optional unless a newer version of the bundle should be used to uninstall the bundle.")
+	f.StringVar(&opts.CNABFile, "cnab-file", "",
+		"Path to the CNAB bundle.json file.")
+	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
+		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
+	f.StringSliceVar(&opts.Params, "param", nil,
+		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
+	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
+		"Credential to use when uninstalling the bundle. May be either a named set of credentials or a filepath, and specified multiple times.")
+	f.StringVarP(&opts.Driver, "driver", "d", "docker",
+		"Specify a driver to use. Allowed values: docker, debug")
+	f.StringVarP(&opts.Tag, "tag", "t", "",
+		"Use a bundle in an OCI registry specified by the given tag")
+	f.BoolVar(&opts.InsecureRegistry, "insecure-registry", false,
+		"Don't require TLS for the registry")
+	f.BoolVar(&opts.Force, "force", false,
+		"Force a fresh pull of the bundle and all dependencies")
+
+	return c
+}
 func (o *aboutOptions) getTagDefaults(args []string) []string {
-	var err error
+	args = append(args, o.getTagValue(args)...)
+	return args
+}
+
+func (o *aboutOptions) getTagValue(args []string) []string {
+	tagArr := []string{}
 	if len(o.Tag) > 1 {
-		args = append(args, []string{"--tag", o.Tag}...)
+		tagArr = []string{"--tag", o.Tag}
 	}
 	if len(o.Tag) <= 0 && len(o.File) <= 0 && len(o.CNABFile) <= 0 {
-		if _, err = os.Stat("porter.yaml"); err != nil {
-			args = append(args, []string{"--tag", "qlik/qliksense-cnab-bundle:" + o.Version}...)
+		if _, err := os.Stat("porter.yaml"); err != nil {
+			tagArr = []string{"--tag", "qlik/qliksense-cnab-bundle:" + o.Version}
 		}
 	}
-	return args
+	return tagArr
 }
 
 type aboutOptions struct {
