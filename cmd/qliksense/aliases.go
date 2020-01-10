@@ -96,7 +96,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Checking for min versions here
 			// case 1: pre-existing requirements.yaml file
-			fmt.Println("\nAsh: Hello Installing things for real!\n")
+			fmt.Println("Ash: Hello Installing things for real!")
 			checkMinVersion(opts.RequirementsFile)
 			// Push images here.
 			// TODO: Need to get the private reg from params
@@ -215,28 +215,45 @@ func checkMinVersion(requirementsFile string) {
 	// os.Exit(1)
 
 	// check CLI version
-	_ = semver.Version{}
-	fmt.Printf("Current CLI version: %v\n", pkg.Version)
-	// TODO: STRIP 'v'
 	currentCLIVersion, _ := semver.NewVersion(pkg.Version)
+	fmt.Printf("\nAsh: Current CLI version: %v\n", currentCLIVersion)
 
-	fmt.Printf("CLI version from requirements.yaml: %v\n", dependencies["org.qlik.operator.cli.sense-installer.version.min"])
-	// CLIVersionFromRequirementsYaml, err2 := semver.NewVersion(dependencies["org.qlik.operator.cli.sense-installer.version.min"])
-	CLIVersionConstraintFromRequirementsYaml, _ := semver.NewConstraint("< org.qlik.operator.cli.sense-installer.version.min")
-	fmt.Println("Ash 1")
-	a := CLIVersionConstraintFromRequirementsYaml.Check(currentCLIVersion)
-	fmt.Println("Ash 2")
-	// for _, m := range msgs {
-	// 	fmt.Println("Ashhhhhh")
-	// 	fmt.Println(m)
-	// }
-	fmt.Printf("\n\nComparison result: %t\n\n", a)
+	cliVersionFromRequirements, ok := dependencies["org.qlik.operator.cli.sense-installer.version.min"]
+	if !ok {
+		fmt.Errorf("There was an error when trying to retrieve the key: %s", ok)
+	}
+	fmt.Printf("Ash: CLI version from requirements.yaml: %v\n", cliVersionFromRequirements)
+
+	// strip 'v' from the prefix of the version info
+	cliVersionFromRequirementsStripped := stripVFromVersionInfo(cliVersionFromRequirements)
+	fmt.Printf("Ash: After stripping 'v' from cliversion from requiremtns: %v\n", cliVersionFromRequirementsStripped)
+
+	cliVersionFromRequirementsYaml, err := semver.NewVersion(cliVersionFromRequirementsStripped)
+	fmt.Printf("Ash 1: %s", cliVersionFromRequirementsYaml)
+	if err != nil {
+		fmt.Printf("There has been an error! %s", err)
+	}
+
+	if currentCLIVersion.LessThan(cliVersionFromRequirementsYaml) {
+		fmt.Printf("\n\nCurrent CLI version:%s is less than minimum required version:%s, please download minimum version or greater. Exiting for now.\n", currentCLIVersion, cliVersionFromRequirementsStripped)
+		os.Exit(1)
+	} else {
+		fmt.Println("Current CLI version is greater than version from requirements")
+	}
 
 	// check porter version
 
 	// check mixin version
 
 	os.Exit(1)
+}
+
+func stripVFromVersionInfo(versionString string) string {
+	if versionString[0] == 'v' {
+		versionString = versionString[1:]
+		fmt.Printf("Trimmed String: %s\n", versionString)
+	}
+	return versionString
 }
 
 func (o *aboutOptions) getTagDefaults(args []string) []string {

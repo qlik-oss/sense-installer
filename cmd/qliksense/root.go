@@ -32,7 +32,10 @@ func initAndExecute() error {
 		porterExe string
 		err       error
 	)
-	if porterExe, err = installPorter(); err != nil {
+	fmt.Println("Hello from Ash!!!")
+	// check for the 3 modes of execution here
+
+	if porterExe, err = installPorterAndMore(); err != nil {
 		return err
 	}
 	if err := rootCmd(qliksense.New(porterExe)).Execute(); err != nil {
@@ -42,17 +45,16 @@ func initAndExecute() error {
 	return nil
 }
 
-func installPorter() (string, error) {
+func installPorterAndMore() (string, error) {
 	var (
-		porterPermaLink = pkg.Version
-		//porterPermaLink                                          = "v0.3.0"
+		porterPermaLink                                                       = pkg.Version // TO-DO: read porter version from requirement.yaml if available and replace value in porterPermaLink
 		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
 		mixinsVar                                                             = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
 			"kubernetes": "-v latest",
-			"helm":       "-v latest",
+			"helm":       "-v latest", // TO-DO: read mixin version from requirement.yaml and replace value in appropriate variable
 			"azure":      "-v latest",
 			"terraform":  "-v latest",
 			"az":         "-v latest",
@@ -64,6 +66,7 @@ func installPorter() (string, error) {
 		err            error
 		cmd            *exec.Cmd
 	)
+	fmt.Printf("Ash: Porter version: %v\n", pkg.Version)
 	porterExe = "porter"
 	if runtime.GOOS == "windows" {
 		porterExe = porterExe + ".exe"
@@ -78,7 +81,41 @@ func installPorter() (string, error) {
 		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
 	}
 	os.Setenv(porterHomeVar, qlikSenseHome)
-	//TODO: Check if porter version is one alreadu is one for this build
+	//TODO: Check if porter version is one already is one for this build
+
+	// fmt.Printf("PorterHomeVar: %v\n", porterHomeVar)
+	// fmt.Println("Check docker image metadata for version information")
+	// currDir, err := os.Getwd()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Printf("Ash: Current Working Dir: %v\n\n", currDir)
+
+	// // fmt.Printf("Result: %v\n", yamlConfig)
+
+	// file, err := os.Open("/Users/fki/Desktop/Workspace/qliksense-k8s/dependencies.yaml")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// var m = make(map[string]string)
+	// defer file.Close()
+	// scanner := bufio.NewScanner(file)
+	// fmt.Println("Ash: reading dep file:")
+	// for scanner.Scan() {
+	// 	// fmt.Println(scanner.Text())
+	// 	line := scanner.Text()
+	// 	fmt.Println(line)
+	// 	if equal := strings.Index(line, ":"); equal >= 0 {
+	// 		if key := strings.TrimSpace(line[:equal]); len(key) > 0 {
+	// 			value := ""
+	// 			if len(line) > equal {
+	// 				value = strings.TrimSpace(line[equal+1:])
+	// 			}
+	// 			m[key] = value
+	// 		}
+	// 	}
+	// }
+
 	porterExe = filepath.Join(qlikSenseHome, porterExe)
 	if _, err = os.Stat(qlikSenseHome); err != nil {
 		if os.IsNotExist(err) {
