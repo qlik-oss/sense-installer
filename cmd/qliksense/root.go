@@ -66,6 +66,7 @@ func installPorterAndMore() (string, error) {
 		err            error
 		cmd            *exec.Cmd
 	)
+
 	fmt.Printf("Ash: Porter version: %v\n", pkg.Version)
 	porterExe = "porter"
 	if runtime.GOOS == "windows" {
