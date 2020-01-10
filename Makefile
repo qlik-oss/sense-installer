@@ -3,11 +3,12 @@ PKG = github.com/qlik-oss/sense-installer
 # --no-print-directory avoids verbose logging when invoking targets that utilize sub-makes
 MAKE_OPTS ?= --no-print-directory
 
-LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION) -X $(PKG)/pkg.Commit=$(COMMIT)
-XBUILD = CGO_ENABLED=0 go build -a -tags netgo -ldflags '$(LDFLAGS)'
+LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION) -X $(PKG)/pkg.Commit=$(COMMIT) -X "$(PKG)/pkg.CommitDate=$(COMMIT_DATE)"
+XBUILD = CGO_ENABLED=0 go build -a -tags netgo -ldflags $(LDFLAGS)
 BINDIR = bin
 
 COMMIT ?= $(shell git rev-parse --short HEAD)
+COMMIT_DATE ?= $(shell git show --no-patch --no-notes --pretty='%cd' $(COMMIT) --date=iso)
 VERSION ?= $(shell git describe --tags 2> /dev/null || echo v0)
 PERMALINK ?= $(shell git describe --tags --exact-match &> /dev/null && echo latest || echo canary)
 
@@ -44,3 +45,4 @@ xbuild: $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EX
 $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 	mkdir -p $(dir $@)
 	GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
+
