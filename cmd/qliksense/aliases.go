@@ -2,12 +2,20 @@ package main
 
 import (
 	"bufio"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
+	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
+
+const requirementsFileFlag = "--requirements-file"
 
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
 
@@ -51,6 +59,9 @@ type paramOptions struct {
 	Driver                string
 	Force                 bool
 	Insecure              bool
+
+	// Requirements.yaml file to contain minimum versions of cli, porter and mixins.
+	RequirementsFile string
 }
 
 func buildInstallAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
@@ -79,9 +90,14 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install --cred kubernetes
   qliksense install --driver debug
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
+  qliksense install MyApp --requirements-file requirements.yaml
 `,
 		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Checking for min versions here
+			// case 1: pre-existing requirements.yaml file
+			fmt.Println("\nAsh: Hello Installing things for real!\n")
+			checkMinVersion(opts.RequirementsFile)
 			// Push images here.
 			// TODO: Need to get the private reg from params
 			args = append(os.Args[1:], opts.getTagDefaults(args)...)
@@ -107,6 +123,8 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		"Path to the CNAB bundle.json file.")
 	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
 		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
+	f.StringVar(&opts.RequirementsFile, "requirements-file", "requirements.yaml",
+		"Path to a requirements file.")
 	f.StringSliceVar(&opts.Params, "param", nil,
 		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
 	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
@@ -121,6 +139,106 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		"Force a fresh pull of the bundle and all dependencies")
 	return c
 }
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func stripFlagFromArgs(args []string, flagName string) []string {
+	requirementsFileIndex := -1
+	for i, element := range args {
+		if element == flagName {
+			fmt.Printf("Ash: %v found, index: %d\n", flagName, i)
+			requirementsFileIndex = i
+			break
+		}
+	}
+	// if flag not found, return original
+	if requirementsFileIndex == -1 {
+		return args
+	}
+
+	argLength := len(args)
+	var argsWithoutRequirementFile []string
+	if requirementsFileIndex+2 < argLength {
+		// removing the flagName and its value we added earlier
+		argsWithoutRequirementFile = append(args[:requirementsFileIndex], args[requirementsFileIndex+2:]...)
+	} else {
+		argsWithoutRequirementFile = args[:requirementsFileIndex]
+	}
+	fmt.Printf("Ash: argsWithoutRequirementFile: %v\n", argsWithoutRequirementFile)
+	return argsWithoutRequirementFile
+}
+
+func checkMinVersion(requirementsFile string) {
+	// Check for existance of --requirementsFile flag and its value
+	fmt.Printf("Ash: File: %v\n", requirementsFile)
+	fmt.Printf("Ash: Command: %v\n", os.Args)
+	var requirementsFileStatus bool
+	// port over requirements into a map for ease of use
+	dependencies := map[string]string{}
+
+	for _, element := range os.Args {
+		if element == requirementsFileFlag {
+			requirementsFileStatus = true
+			break
+		}
+	}
+	fmt.Printf("\nAsh: requirements-file flag present? %t\n", requirementsFileStatus)
+	if requirementsFileStatus {
+		// flag --requirementsFile is present, now check for existence of requirements.yaml file
+		if !fileExists(requirementsFile) {
+			// exit if requirements.yaml is not found
+			log.Fatalf("Ash: %s file doesn't exist, aborting operation.\n", requirementsFile)
+			// os.Exit(1)
+		} else {
+			fmt.Printf("\nAsh: %s exists\n", requirementsFile)
+			// read the requirements.yaml file and infer labels about the minimum cli, porter, and mixin versions
+			yamlFile, err := ioutil.ReadFile(requirementsFile)
+			if err != nil {
+				log.Fatalf("Ash: Error reading YAML file: %s\n", err)
+			}
+			err = yaml.Unmarshal(yamlFile, &dependencies)
+			if err != nil {
+				log.Fatalf("Ash: Error parsing YAML file: %s\n", err)
+			}
+			fmt.Printf("Ash: read file: %+v\n", dependencies)
+
+			os.Args = stripFlagFromArgs(os.Args, requirementsFileFlag)
+		}
+	}
+	fmt.Printf("Ash: Args with tag: %v\n", os.Args)
+	// os.Exit(1)
+
+	// check CLI version
+	_ = semver.Version{}
+	fmt.Printf("Current CLI version: %v\n", pkg.Version)
+	// TODO: STRIP 'v'
+	currentCLIVersion, _ := semver.NewVersion(pkg.Version)
+
+	fmt.Printf("CLI version from requirements.yaml: %v\n", dependencies["org.qlik.operator.cli.sense-installer.version.min"])
+	// CLIVersionFromRequirementsYaml, err2 := semver.NewVersion(dependencies["org.qlik.operator.cli.sense-installer.version.min"])
+	CLIVersionConstraintFromRequirementsYaml, _ := semver.NewConstraint("< org.qlik.operator.cli.sense-installer.version.min")
+	fmt.Println("Ash 1")
+	a := CLIVersionConstraintFromRequirementsYaml.Check(currentCLIVersion)
+	fmt.Println("Ash 2")
+	// for _, m := range msgs {
+	// 	fmt.Println("Ashhhhhh")
+	// 	fmt.Println(m)
+	// }
+	fmt.Printf("\n\nComparison result: %t\n\n", a)
+
+	// check porter version
+
+	// check mixin version
+
+	os.Exit(1)
+}
+
 func (o *aboutOptions) getTagDefaults(args []string) []string {
 	var err error
 	if len(o.Tag) > 1 {

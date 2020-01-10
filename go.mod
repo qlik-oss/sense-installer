@@ -17,6 +17,7 @@ replace (
 require (
 	get.porter.sh/porter v0.22.0-beta.1
 	github.com/Masterminds/semver v1.5.0 // indirect
+	github.com/Masterminds/semver/v3 v3.0.3
 	github.com/Microsoft/hcsshim v0.8.7 // indirect
 	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/PuerkitoBio/goquery v1.5.0 // indirect
