@@ -33,6 +33,7 @@ endif
 build:
 	mkdir -p $(BINDIR)
 	go build -ldflags '$(LDFLAGS)' -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	mv bin/qliksense bin/qliksense_ash
 
 xbuild-all:
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
