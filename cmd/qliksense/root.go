@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	// "version_checks"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
@@ -32,20 +33,18 @@ func initAndExecute() error {
 		porterExe string
 		err       error
 	)
-	fmt.Println("Hello from Ash!!!")
-	// check for the 3 modes of execution here
-
-	if porterExe, err = installPorterAndMore(); err != nil {
-		return err
-	}
-	if err := rootCmd(qliksense.New(porterExe)).Execute(); err != nil {
+	// if porterExe, err = installPorter(); err != nil {
+	// 	return err
+	// }
+	porterExe = "porter"
+	if err = rootCmd(qliksense.New(porterExe)).Execute(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installPorterAndMore() (string, error) {
+func installPorter() (string, error) {
 	var (
 		porterPermaLink                                                       = pkg.Version // TO-DO: read porter version from requirement.yaml if available and replace value in porterPermaLink
 		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
@@ -54,7 +53,7 @@ func installPorterAndMore() (string, error) {
 			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
 			"kubernetes": "-v latest",
-			"helm":       "-v latest", // TO-DO: read mixin version from requirement.yaml and replace value in appropriate variable
+			"helm":       "-v latest", // TO-DO: read mixin version from requirement.yaml and replace value in appropriate variable; qliksense mixin var for now
 			"azure":      "-v latest",
 			"terraform":  "-v latest",
 			"az":         "-v latest",
@@ -66,8 +65,6 @@ func installPorterAndMore() (string, error) {
 		err            error
 		cmd            *exec.Cmd
 	)
-
-	fmt.Printf("Ash: Porter version: %v\n", pkg.Version)
 	porterExe = "porter"
 	if runtime.GOOS == "windows" {
 		porterExe = porterExe + ".exe"
@@ -82,57 +79,28 @@ func installPorterAndMore() (string, error) {
 		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
 	}
 	os.Setenv(porterHomeVar, qlikSenseHome)
-	//TODO: Check if porter version is one already is one for this build
-
-	// fmt.Printf("PorterHomeVar: %v\n", porterHomeVar)
-	// fmt.Println("Check docker image metadata for version information")
-	// currDir, err := os.Getwd()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Printf("Ash: Current Working Dir: %v\n\n", currDir)
-
-	// // fmt.Printf("Result: %v\n", yamlConfig)
-
-	// file, err := os.Open("/Users/fki/Desktop/Workspace/qliksense-k8s/dependencies.yaml")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// var m = make(map[string]string)
-	// defer file.Close()
-	// scanner := bufio.NewScanner(file)
-	// fmt.Println("Ash: reading dep file:")
-	// for scanner.Scan() {
-	// 	// fmt.Println(scanner.Text())
-	// 	line := scanner.Text()
-	// 	fmt.Println(line)
-	// 	if equal := strings.Index(line, ":"); equal >= 0 {
-	// 		if key := strings.TrimSpace(line[:equal]); len(key) > 0 {
-	// 			value := ""
-	// 			if len(line) > equal {
-	// 				value = strings.TrimSpace(line[equal+1:])
-	// 			}
-	// 			m[key] = value
-	// 		}
-	// 	}
-	// }
 
 	porterExe = filepath.Join(qlikSenseHome, porterExe)
+	// // get Porter version from dependency.yaml
+	// var porterVersion= getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
 	if _, err = os.Stat(qlikSenseHome); err != nil {
-		if os.IsNotExist(err) {
+		if os.IsNotExist(err) /* ||  porterVersion > porterPermaLink */ {
+			// porterPermaLink = porterVersion
 			downloadPorter = true
 		} else {
 			return "", err
 		}
 	} else {
 		if _, err = os.Stat(porterExe); err != nil {
-			if os.IsNotExist(err) {
+			if os.IsNotExist(err) /* || getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min") > porterPermaLink */ {
+				// porterPermaLink = getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
 				downloadPorter = true
 			} else {
 				return "", err
 			}
 		}
 	}
+
 	if downloadPorter {
 		os.Mkdir(qlikSenseHome, os.ModePerm)
 		destination = filepath.Join(qlikSenseHome, porterRuntime)

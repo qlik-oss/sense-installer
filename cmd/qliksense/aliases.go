@@ -10,21 +10,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const requirementsFileFlag = "--requirements-file"
-
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
 
 	return []*cobra.Command{
-		buildBuildAlias(porterCmd),
-		buildInstallAlias(porterCmd, q),
-		buildAboutAlias(porterCmd),
-		buildPreflightAlias(porterCmd, q),
-		buildUninstallAlias(porterCmd, q),
+		buildBuildAlias(porterCmd, q),     // Include preRun my part for this
+		buildInstallAlias(porterCmd, q),   // Include preRun my part for this - TAG check
+		buildAboutAlias(porterCmd, q),     // Include preRun my part for this - TAG check
+		buildPreflightAlias(porterCmd, q), // Include preRun my part for this
+		buildUninstallAlias(porterCmd, q), // do not include preRun my part for this
 	}
 
 }
 
-func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
+func buildBuildAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
 	var (
 		c *cobra.Command
 	)
@@ -33,6 +31,12 @@ func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
 		Short:              "Build a bundle",
 		Long:               "Builds the bundle in the current directory by generating a Dockerfile and a CNAB bundle.json, and then building the invocation image.",
 		DisableFlagParsing: true,
+
+		// TAG check is needed for 'about' and 'install'
+		PreRun: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
+			checkMinVersion("", q)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return porterCmd.RunE(porterCmd, append([]string{"build"}, args...))
 		},
@@ -55,9 +59,6 @@ type paramOptions struct {
 	Driver                string
 	Force                 bool
 	Insecure              bool
-
-	// Requirements.yaml file to contain minimum versions of cli, porter and mixins.
-	RequirementsFile string
 }
 
 func buildInstallAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
@@ -86,14 +87,14 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install --cred kubernetes
   qliksense install --driver debug
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
-  qliksense install MyApp --requirements-file requirements.yaml
 `,
+		// TAG check is needed for 'about' and 'install'
+		PreRun: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
+			checkMinVersion("", q)
+		},
 		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Checking for min versions here
-			// case 1: pre-existing requirements.yaml file
-			fmt.Println("Ash: Hello Installing things for real!")
-			checkMinVersion(opts.RequirementsFile)
 			// Push images here.
 			// TODO: Need to get the private reg from params
 			args = append(os.Args[2:], opts.getTagValue(args)...)
@@ -119,8 +120,6 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		"Path to the CNAB bundle.json file.")
 	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
 		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
-	f.StringVar(&opts.RequirementsFile, "requirements-file", "requirements.yaml",
-		"Path to a requirements file.")
 	f.StringSliceVar(&opts.Params, "param", nil,
 		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
 	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
@@ -216,7 +215,7 @@ type aboutOptions struct {
 	CNABFile string
 }
 
-func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
+func buildAboutAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
 	var (
 		c    *cobra.Command
 		opts *aboutOptions
@@ -228,6 +227,11 @@ func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 		Use:   "about",
 		Short: "About Qlik Sense",
 		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
+		// TAG check is needed for 'about' and 'install'
+		PreRun: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
+			checkMinVersion("", q)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = opts.getTagDefaults(args)
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "about"}, args...))
@@ -260,6 +264,11 @@ func buildPreflightAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobr
 		Use:   "preflight",
 		Short: "Preflight Checks",
 		Long:  "Perform Preflight Checks",
+		// TAG check is needed for 'about' and 'install'
+		PreRun: func(cmd *cobra.Command, args []string) {
+			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
+			checkMinVersion("", q)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = append(os.Args[1:], opts.getTagDefaults(args)...)
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "preflight"}, args...))
