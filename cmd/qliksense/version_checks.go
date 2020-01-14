@@ -14,10 +14,12 @@ import (
 )
 
 var (
-	dependenciesFile     = "dependencies.yaml"
-	porterPermaLink      = pkg.Version
-	currentPorterVersion string
-	mixinsVar            = map[string]string{
+	dependenciesFile             = "dependencies.yaml"
+	porterPermaLink              = pkg.Version
+	updateMixin, updateComponent bool
+	currentPorterVersion         string
+	currentMixinsVar             map[string]string
+	mixinsVar                    = map[string]string{
 		"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 		"qliksense":  "-v v0.14.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 		"exec":       "-v latest",
@@ -33,7 +35,7 @@ var (
 )
 
 func checkMinVersion(tag string, q *qliksense.Qliksense) {
-	fmt.Println("Ash: Hello from checkMinVersion..")
+	fmt.Println("Hello from checkMinVersion..")
 
 	// check if tag is empty or not
 	if len(strings.TrimSpace(tag)) == 0 {
@@ -42,13 +44,13 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 			// read the dependencies.yaml and store into a map
 			yamlFile, err := ioutil.ReadFile(dependenciesFile)
 			if err != nil {
-				log.Fatalf("Ash: Error reading YAML file: %s\n", err)
+				log.Fatalf("Error reading YAML file: %s\n", err)
 			}
 			err = yaml.Unmarshal(yamlFile, &dependencies)
 			if err != nil {
-				log.Fatalf("Ash: Error parsing YAML file: %s\n", err)
+				log.Fatalf("Error parsing YAML file: %s\n", err)
 			}
-			// fmt.Printf("Ash: read file: %+v\n", dependencies)
+			// fmt.Printf("read file: %+v\n", dependencies)
 
 			// Infer info about the minimum cli version
 			var cliVersionFromDependencies, porterVersionFromDependencies, tmp string
@@ -56,7 +58,7 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 			if len(tmp) != 0 {
 				cliVersionFromDependencies = tmp
 			}
-			fmt.Printf("\nAsh: CLI version from dependencies.yaml: %v\n", cliVersionFromDependencies)
+			fmt.Printf("\nCLI version from dependencies.yaml: %v\n", cliVersionFromDependencies)
 
 			// Infer info about the min porter version
 			tmp = getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
@@ -66,19 +68,35 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 				// }
 				porterVersionFromDependencies = tmp
 			}
-			fmt.Printf("Ash: Porter version from dependencies.yaml: %v\n", porterPermaLink)
+			fmt.Printf("Porter version from dependencies.yaml: %v\n", porterPermaLink)
 
 			// Infer info about the minimum mixin version
-			fmt.Println("\nAsh: MixinsVar BEFORE modification:")
+			fmt.Println("\nMixinsVar BEFORE modification:")
 			for key, value := range mixinsVar {
 				fmt.Printf("%s: %s\n", key, value)
 			}
+			// backing up mixinsVar before modifying it
+			currentMixinsVar = mixinsVar
 
 			for k, _ := range mixinsVar {
 				if k == "qliksense" {
+					// check mixin version
+					fmt.Printf("\n--------Qliksense Mixin version Check--------\n")
 					tmp = getVersionFromDependencyYaml("org.qlik.operator.mixin.qliksense.version.min")
-					if tmp != "" {
+					currentMixinVersion, err := determineVersion(currentMixinsVar["qliksense"])
+					if err != nil {
+						log.Fatal(err)
+					}
+					updateMixin = versionCheck("Qliksense", currentMixinVersion, tmp)
+					// if tmp != "" and mixin requires Download and install
+					if tmp != "" && updateMixin {
+						fmt.Println("Downloading a newer version of mixin and retrying the operation.")
 						mixinsVar[k] = tmp
+						// download and install the new mixin
+						if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
+							// return err
+							log.Fatalf("Error reading YAML file: %s\n", err)
+						}
 					}
 				}
 				if k == "kustomize" {
@@ -100,29 +118,35 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 					}
 				}
 			}
-			fmt.Println("\nAsh: MixinsVar AFTER modification:")
+			fmt.Println("\nMixinsVar AFTER modification:")
 			for key, value := range mixinsVar {
 				fmt.Printf("%s: %s\n", key, value)
 			}
 
-			// Checking version info below.
+			// Checking version info below
 
 			fmt.Printf("\n--------CLI version Check--------\n")
-			// First, strip 'v' from the prefix of the version info
-			// cliVersionFromDependenciesStripped := stripVFromVersionInfo(cliVersionFromDependencies)
-			// fmt.Printf("Ash: After stripping 'v' from cliversion from requiremtns: %v\n", cliVersionFromDependenciesStripped)
-			versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
+			updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
+			if updateComponent {
+				fmt.Println("Please download a newer version of CLI and retry the operation, exiting now.")
+				log.Fatalf("Error reading YAML file: %s\n", err)
+			}
 
 			// check porter version
 			fmt.Printf("\n--------Porter version Check--------\n")
-			currentPorterVersion = determineCurrentPorterVersion(q)
+			currentPorterVersion, err = determineCurrentPorterVersion(q)
+			if err != nil {
+				log.Fatal(err)
+			}
 			fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
+			updateComponent = versionCheck("porter", currentPorterVersion, porterVersionFromDependencies)
+			if updateComponent {
+				fmt.Println("Downloading a newer version of Porter and retrying the operation.")
+				// TO-DO: download and install newer version of porter and retry the original command that was issued.
+				installPorter()
+			}
 
-			versionCheck("porter", currentPorterVersion, porterVersionFromDependencies)
-
-			// check mixin version
-			fmt.Printf("\n--------Mixins version Check--------\n")
-
+			// FOR MY DEVELOPMENT ONLY, DO NOT COMMIT INTO MASTER
 			os.Exit(1)
 
 		} else {
@@ -135,10 +159,29 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 
 	}
 
-	// installPorter(porterPermaLink, mixinsVar)
 }
 
-func determineCurrentPorterVersion(q *qliksense.Qliksense) string {
+func determineVersion(versionString string) (string, error) {
+	fmt.Printf("Current version string: %v\n", versionString)
+
+	versionSlice := strings.Fields(versionString)
+	fmt.Printf("String slice: %v, length of slice: %d\n", versionSlice, len(versionSlice))
+
+	var currentMixinVersionNumber *semver.Version
+	var err error
+	for _, value := range versionSlice {
+		currentMixinVersionNumber, err = semver.NewVersion(value)
+		if err == nil {
+			break
+		}
+	}
+	if currentMixinVersionNumber != nil {
+		return currentMixinVersionNumber.String(), nil
+	}
+	return "", fmt.Errorf("unable to extract version information")
+}
+
+func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 	// determine current porter version
 	fmt.Println("Determining current Porter Version")
 	currentPorterVersion, err := q.CallPorter([]string{"version"}, func(x string) (out *string) {
@@ -148,90 +191,60 @@ func determineCurrentPorterVersion(q *qliksense.Qliksense) string {
 		return
 	})
 	if err != nil {
-		log.Fatalf("ERROR occurred during porter call: %v", err)
+		log.Printf("ERROR: occurred during porter call: %v", err)
+		return "", err
 	}
 	fmt.Printf("Output from porter version: %v\n", currentPorterVersion)
 
-	porterVersionSlice := strings.Fields(currentPorterVersion)
-	// fmt.Printf("Ash: String slice: %v, length of slice: %d\n", porterVersionSlice, len(porterVersionSlice))
-
-	var currentPorterVersionNumber, tmpVer *semver.Version
-	for _, value := range porterVersionSlice {
-		tmpVer, err = semver.NewVersion(value)
-		if err != nil {
-			fmt.Errorf("Error parsing version: %s", err)
-		} else {
-			currentPorterVersionNumber = tmpVer
-			fmt.Printf("Ash: HERE IS THE RIGHT PORTER VERSION: %s\n\n", currentPorterVersionNumber)
-		}
-	}
-	return currentPorterVersionNumber.String()
+	return determineVersion(currentPorterVersion)
 }
 
 func getVersionFromDependencyYaml(key string) string {
 	if v, found := dependencies[key]; found {
-		// fmt.Printf("Ash: Key: %s, Found value: %s", key, v)
+		// fmt.Printf("Key: %s, Found value: %s", key, v)
 		return v
 	}
 	return ""
 }
 
-func versionCheck(component string, currentVersion string, versionFromSourceOfTruth string) {
-
-	// Commented code start
-	// cliVersionFromDependenciesYaml, err := semver.NewVersion(cliVersionFromDependenciesStripped)
-	// fmt.Printf("Ash 1: %s", cliVersionFromDependenciesYaml)
-	// if err != nil {
-	// 	fmt.Printf("There has been an error! %s", err)
-	// }
-
-	// // current CLI version
-	// currentCLIVersion, _ := semver.NewVersion(pkg.Version)
-	// fmt.Printf("\nAsh: Current CLI version: %v\n", currentCLIVersion)
-
-	// check CLI version
-	// if currentCLIVersion.LessThan(cliVersionFromDependenciesYaml) {
-	// 	fmt.Printf("\n\nCurrent CLI version:%s is less than minimum required version:%s, please download minimum version or greater. Exiting for now.\n", currentCLIVersion, cliVersionFromDependenciesStripped)
-	// 	os.Exit(1)
-	// } else {
-	// 	fmt.Println("Current CLI version is greater than version from dependencies, nothing to do.")
-	// }
-
-	// Comented code end
+func versionCheck(component string, currentVersion string, versionFromSourceOfTruth string) bool {
+	var updateRequired bool
 
 	fmt.Printf("%s version Check\n", component)
 	fmt.Printf("current component version: %s\n", currentVersion)
 	fmt.Printf("component version from source of truth: %s\n", versionFromSourceOfTruth)
 
-	// First, strip 'v' from the prefix of the version info
-	// componentVersionFromDependenciesStripped := stripVFromVersionInfo(versionFromSourceOfTruth)
-	// fmt.Printf("Ash: After stripping 'v' from component version from requirements: %v\n", componentVersionFromDependenciesStripped)
-
-	// componentVersionFromDependenciesYaml, err := semver.NewVersion(componentVersionFromDependenciesStripped)
 	componentVersionFromDependenciesYaml, err := semver.NewVersion(versionFromSourceOfTruth)
 
-	fmt.Printf("Ash from source of truth: %s", componentVersionFromDependenciesYaml)
+	fmt.Printf("Ash: from source of truth: %s", componentVersionFromDependenciesYaml)
 	if err != nil {
 		fmt.Printf("There has been an error! %s", err)
 	}
 
 	// current Component version
 	currentComponentVersion, _ := semver.NewVersion(currentVersion)
-	fmt.Printf("\nAsh: Current Component version: %v\n", currentComponentVersion)
+	fmt.Printf("\nCurrent Component version: %v\n", currentComponentVersion)
 
 	// check Component version
 	if currentComponentVersion.LessThan(componentVersionFromDependenciesYaml) {
 		fmt.Printf("\n\nCurrent Component version:%s is less than minimum required version:%s\n", currentComponentVersion, componentVersionFromDependenciesYaml)
 		if component == "porter" {
 			fmt.Println("TO-DO: Download and install newer version of Porter")
+			updateRequired = true
 		} else if component == "CLI" {
 			fmt.Println("Please download and install newer CLI component. Exiting now.")
-			os.Exit(1)
+			updateRequired = true
+			// os.Exit(1)
+		} else if component == "qliksense mixin" {
+			fmt.Println("Downloading and installing newer qliksense mixin.")
+			updateRequired = true
 		}
 
 	} else {
+		updateRequired = false
 		fmt.Println("Current Component version is greater than version from dependencies, nothing to do.")
 	}
+	return updateRequired
 }
 
 func fileExists(filename string) bool {
@@ -240,12 +253,4 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
-}
-
-func stripVFromVersionInfo(versionString string) string {
-	if versionString[0] == 'v' {
-		versionString = versionString[1:]
-		fmt.Printf("Trimmed String: %s\n", versionString)
-	}
-	return versionString
 }

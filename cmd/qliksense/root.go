@@ -33,10 +33,16 @@ func initAndExecute() error {
 		porterExe string
 		err       error
 	)
-	// if porterExe, err = installPorter(); err != nil {
-	// 	return err
-	// }
-	porterExe = "porter"
+	if porterExe, err = installPorter(); err != nil {
+		return err
+	}
+
+	// install mixins
+	if _, err = installMixins(); err != nil {
+		return err
+	}
+
+	// porterExe = "porter"
 	if err = rootCmd(qliksense.New(porterExe)).Execute(); err != nil {
 		return err
 	}
@@ -46,24 +52,27 @@ func initAndExecute() error {
 
 func installPorter() (string, error) {
 	var (
-		porterPermaLink                                                       = pkg.Version // TO-DO: read porter version from requirement.yaml if available and replace value in porterPermaLink
-		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
-		mixinsVar                                                             = map[string]string{
-			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
-			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
-			"exec":       "-v latest",
-			"kubernetes": "-v latest",
-			"helm":       "-v latest", // TO-DO: read mixin version from requirement.yaml and replace value in appropriate variable; qliksense mixin var for now
-			"azure":      "-v latest",
-			"terraform":  "-v latest",
-			"az":         "-v latest",
-			"aws":        "-v latest",
-			"gcloud":     "-v latest",
-		}
-		downloadMixins map[string]string
+		porterPermaLink = pkg.Version
+		destination, homeDir,
+		// mixin,
+		// mixinOpts,
+		qlikSenseHome, porterExe, ext string
+		// mixinsVar                                                             = map[string]string{
+		// 	"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
+		// 	"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
+		// 	"exec":       "-v latest",
+		// 	"kubernetes": "-v latest",
+		// 	"helm":       "-v latest",
+		// 	"azure":      "-v latest",
+		// 	"terraform":  "-v latest",
+		// 	"az":         "-v latest",
+		// 	"aws":        "-v latest",
+		// 	"gcloud":     "-v latest",
+		// }
+		// downloadMixins map[string]string
 		downloadPorter bool
 		err            error
-		cmd            *exec.Cmd
+		// cmd            *exec.Cmd
 	)
 	porterExe = "porter"
 	if runtime.GOOS == "windows" {
@@ -124,6 +133,66 @@ func installPorter() (string, error) {
 		}
 	}
 
+	// if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar)); err != nil {
+	// 	if os.IsNotExist(err) {
+	// 		downloadMixins = mixinsVar
+	// 	} else {
+	// 		return "", err
+	// 	}
+	// } else {
+	// 	downloadMixins = make(map[string]string)
+	// 	for mixin, mixinOpts = range mixinsVar {
+	// 		if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar, mixin)); err != nil {
+	// 			if os.IsNotExist(err) {
+	// 				downloadMixins[mixin] = mixinOpts
+	// 			} else {
+	// 				return "", err
+	// 			}
+	// 		}
+	// 	}
+	// }
+	// for mixin, mixinOpts = range downloadMixins {
+	// 	cmd = exec.Command(porterExe, append([]string{"mixin", "install", mixin}, strings.Split(mixinOpts, " ")...)...)
+	// 	cmd.Stdout = os.Stdout
+	// 	cmd.Stderr = os.Stderr
+	// 	if err = cmd.Run(); err != nil {
+	// 		return "", err
+	// 	}
+	// }
+
+	return porterExe, nil
+
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of qliksense cli",
+	Long:  `All software has versions. This is Hugo's`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
+	},
+}
+
+func installMixins() (string, error) {
+	var (
+		mixin, mixinOpts, qlikSenseHome, porterExe string
+		mixinsVar                                  = map[string]string{
+			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
+			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
+			"exec":       "-v latest",
+			"kubernetes": "-v latest",
+			"helm":       "-v latest",
+			"azure":      "-v latest",
+			"terraform":  "-v latest",
+			"az":         "-v latest",
+			"aws":        "-v latest",
+			"gcloud":     "-v latest",
+		}
+		downloadMixins map[string]string
+		err            error
+		// cmd            *exec.Cmd
+	)
+
 	if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar)); err != nil {
 		if os.IsNotExist(err) {
 			downloadMixins = mixinsVar
@@ -143,24 +212,23 @@ func installPorter() (string, error) {
 		}
 	}
 	for mixin, mixinOpts = range downloadMixins {
-		cmd = exec.Command(porterExe, append([]string{"mixin", "install", mixin}, strings.Split(mixinOpts, " ")...)...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err = cmd.Run(); err != nil {
+		if _, err = installMixin(porterExe, mixin, mixinOpts); err != nil {
 			return "", err
 		}
 	}
-	return porterExe, nil
-
+	return "", err
 }
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version number of qliksense cli",
-	Long:  `All software has versions. This is Hugo's`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
-	},
+func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
+	var cmd *exec.Cmd
+
+	cmd = exec.Command(porterExe, append([]string{"mixin", "install", mixin}, strings.Split(mixinOpts, " ")...)...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	return "", nil
 }
 
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {

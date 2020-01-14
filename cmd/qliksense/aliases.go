@@ -91,7 +91,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 		// TAG check is needed for 'about' and 'install'
 		PreRun: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
-			checkMinVersion("", q)
+			checkMinVersion(opts.Tag, q)
 		},
 		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -230,7 +230,7 @@ func buildAboutAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Co
 		// TAG check is needed for 'about' and 'install'
 		PreRun: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
-			checkMinVersion("", q)
+			checkMinVersion(opts.Tag, q)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = opts.getTagDefaults(args)
