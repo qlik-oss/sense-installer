@@ -154,6 +154,15 @@ func installPorter() (string, error) {
 
 }
 
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of qliksense cli",
+	Long:  `All software has versions. This is Hugo's`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
+	},
+}
+
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd, porterCmd, alias *cobra.Command
@@ -180,7 +189,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	for _, alias = range buildAliasCommands(porterCmd, p) {
 		cmd.AddCommand(alias)
 	}
-
+	// add version command
+	cmd.AddCommand(versionCmd)
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	return cmd
