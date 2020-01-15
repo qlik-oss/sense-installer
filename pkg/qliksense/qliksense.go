@@ -2,12 +2,14 @@ package qliksense
 
 // Qliksense is the logic behind the qliksense client
 type Qliksense struct {
-	PorterExe string
+	PorterExe     string
+	QliksenseHome string
 }
 
 // New qliksense client, initialized with useful defaults.
-func New(porterExe string) *Qliksense {
+func New(porterExe, qliksenseHome string) *Qliksense {
 	return &Qliksense{
-		porterExe,
+		PorterExe:     porterExe,
+		QliksenseHome: qliksenseHome,
 	}
 }

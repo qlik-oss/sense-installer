@@ -11,7 +11,7 @@ import (
 )
 
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
-
+	// fmt.Println("Ash: buildAliasCommands() ")
 	return []*cobra.Command{
 		buildBuildAlias(porterCmd, q),     // Include preRun my part for this
 		buildInstallAlias(porterCmd, q),   // Include preRun my part for this - TAG check
@@ -26,6 +26,7 @@ func buildBuildAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Co
 	var (
 		c *cobra.Command
 	)
+	// fmt.Println("Ash: buildBuildAlias() ")
 	c = &cobra.Command{
 		Use:                "build",
 		Short:              "Build a bundle",

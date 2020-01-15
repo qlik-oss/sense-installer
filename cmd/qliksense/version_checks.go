@@ -18,7 +18,7 @@ var (
 	porterPermaLink              = pkg.Version
 	updateMixin, updateComponent bool
 	currentPorterVersion         string
-	currentMixinsVar             map[string]string
+	currentMixinsVar             = map[string]string{}
 	mixinsVar                    = map[string]string{
 		"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 		"qliksense":  "-v v0.14.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
@@ -60,15 +60,45 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 			}
 			fmt.Printf("\nCLI version from dependencies.yaml: %v\n", cliVersionFromDependencies)
 
+			// Checking version info below
+
+			fmt.Printf("\n--------CLI version Check--------\n")
+			updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
+			if updateComponent {
+				fmt.Println("Please download a newer version of CLI and retry the operation, exiting now.")
+				log.Fatalf("Error reading YAML file: %s\n", err)
+			}
+
 			// Infer info about the min porter version
 			tmp = getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
 			if len(tmp) != 0 {
-				// if tmp > currentPorterVersion {
-				// 	currentPorterVersion = tmp // TO-DO: We need to download and install newer porter version now.
-				// }
 				porterVersionFromDependencies = tmp
 			}
-			fmt.Printf("Porter version from dependencies.yaml: %v\n", porterPermaLink)
+			fmt.Printf("Porter version from dependencies.yaml: %v\n", porterVersionFromDependencies)
+
+			// check porter version
+			fmt.Printf("\n--------Porter version Check--------\n")
+			currentPorterVersion, err = determineCurrentPorterVersion(q)
+			if err != nil {
+				log.Println("warning:", err)
+			}
+			fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
+			updateComponent = true //
+			if currentPorterVersion != "" {
+				updateComponent = versionCheck("porter", currentPorterVersion, porterVersionFromDependencies)
+			}
+			if updateComponent {
+				fmt.Println("Downloading a newer version of Porter and retrying the operation.")
+				// TO-DO: download and install newer version of porter and retry the original command that was issued.
+				q.PorterExe, err = installPorter(q.QliksenseHome)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				if _, err = installMixins(q.PorterExe, q.QliksenseHome); err != nil {
+					log.Fatal(err)
+				}
+			}
 
 			// Infer info about the minimum mixin version
 			fmt.Println("\nMixinsVar BEFORE modification:")
@@ -76,7 +106,10 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 				fmt.Printf("%s: %s\n", key, value)
 			}
 			// backing up mixinsVar before modifying it
-			currentMixinsVar = mixinsVar
+
+			for km, vm := range mixinsVar {
+				currentMixinsVar[km] = vm
+			}
 
 			for k, _ := range mixinsVar {
 				if k == "qliksense" {
@@ -123,29 +156,6 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 				fmt.Printf("%s: %s\n", key, value)
 			}
 
-			// Checking version info below
-
-			fmt.Printf("\n--------CLI version Check--------\n")
-			updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
-			if updateComponent {
-				fmt.Println("Please download a newer version of CLI and retry the operation, exiting now.")
-				log.Fatalf("Error reading YAML file: %s\n", err)
-			}
-
-			// check porter version
-			fmt.Printf("\n--------Porter version Check--------\n")
-			currentPorterVersion, err = determineCurrentPorterVersion(q)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
-			updateComponent = versionCheck("porter", currentPorterVersion, porterVersionFromDependencies)
-			if updateComponent {
-				fmt.Println("Downloading a newer version of Porter and retrying the operation.")
-				// TO-DO: download and install newer version of porter and retry the original command that was issued.
-				installPorter()
-			}
-
 			// FOR MY DEVELOPMENT ONLY, DO NOT COMMIT INTO MASTER
 			os.Exit(1)
 
@@ -162,40 +172,40 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 }
 
 func determineVersion(versionString string) (string, error) {
-	fmt.Printf("Current version string: %v\n", versionString)
+	fmt.Printf("Ash: Current version string: %v\n", versionString)
 
 	versionSlice := strings.Fields(versionString)
-	fmt.Printf("String slice: %v, length of slice: %d\n", versionSlice, len(versionSlice))
+	fmt.Printf("Ash: String slice: %v, length of slice: %d\n", versionSlice, len(versionSlice))
 
-	var currentMixinVersionNumber *semver.Version
+	var currentComponentVersionNumber *semver.Version
 	var err error
 	for _, value := range versionSlice {
-		currentMixinVersionNumber, err = semver.NewVersion(value)
+		currentComponentVersionNumber, err = semver.NewVersion(value)
 		if err == nil {
 			break
 		}
 	}
-	if currentMixinVersionNumber != nil {
-		return currentMixinVersionNumber.String(), nil
+	fmt.Printf("Ash: Version string at this point : %v\n", currentComponentVersionNumber)
+	if currentComponentVersionNumber != nil {
+		return currentComponentVersionNumber.String(), nil
 	}
 	return "", fmt.Errorf("unable to extract version information")
 }
 
 func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 	// determine current porter version
-	fmt.Println("Determining current Porter Version")
+	fmt.Println("Ash: Determining current Porter Version")
 	currentPorterVersion, err := q.CallPorter([]string{"version"}, func(x string) (out *string) {
 		out = new(string)
 		*out = strings.ReplaceAll(x, "porter", "qliksense porter")
-		// fmt.Println(*out)
+		fmt.Println(*out)
 		return
 	})
 	if err != nil {
-		log.Printf("ERROR: occurred during porter call: %v", err)
+		log.Printf("ERROR occurred during porter call: %v", err)
 		return "", err
 	}
-	fmt.Printf("Output from porter version: %v\n", currentPorterVersion)
-
+	fmt.Printf("Ash: Output from porter version: %v\n", currentPorterVersion)
 	return determineVersion(currentPorterVersion)
 }
 
