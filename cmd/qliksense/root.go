@@ -96,19 +96,15 @@ func installPorter(qlikSenseHome string) (string, error) {
 		porterDownloadUrl string
 		err               error
 	)
-	// // get Porter version from dependency.yaml
-	// var porterVersion= getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
 	if _, err = os.Stat(qlikSenseHome); err != nil {
-		if os.IsNotExist(err) /* ||  porterVersion > porterPermaLink */ {
-			// porterPermaLink = porterVersion
+		if os.IsNotExist(err) {
 			downloadPorter = true
 		} else {
 			return "", err
 		}
 	} else {
 		if _, err = os.Stat(porterExe); err != nil {
-			if os.IsNotExist(err) /* || getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min") > porterPermaLink */ {
-				// porterPermaLink = getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
+			if os.IsNotExist(err) {
 				downloadPorter = true
 			} else {
 				return "", err
@@ -264,8 +260,15 @@ func installMixins(porterExe, qlikSenseHome string) (string, error) {
 func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
 	var cmd *exec.Cmd
 
-	// fmt.Printf("\nAsh: inside installMixin(), %s, %s, %s\n\n", porterExe, mixin, mixinOpts)
-	cmd = exec.Command(porterExe, append([]string{"mixin", "install", mixin}, strings.Split(mixinOpts, " ")...)...)
+	fmt.Printf("\nAsh: inside installMixin(), %s, %s, %s\n\n", porterExe, mixin, mixinOpts)
+
+	args := []string{"mixin", "install", mixin}
+	if mixinOpts != "" {
+		args = append(args, "-v")
+		args = append(args, strings.Fields(mixinOpts)...)
+	}
+
+	cmd = exec.Command(porterExe, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

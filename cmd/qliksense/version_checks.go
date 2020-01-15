@@ -15,11 +15,13 @@ import (
 
 var (
 	dependenciesFile             = "dependencies.yaml"
-	porterPermaLink              = pkg.Version
 	updateMixin, updateComponent bool
 	currentPorterVersion         string
-	currentMixinsVar             = map[string]string{}
-	mixinsVar                    = map[string]string{
+	mixinURLs                    = map[string]string{
+		"qliksense": "--url https://github.com/qlik-oss/porter-qliksense/releases/download",
+		"kustomize": "--url https://github.com/donmstewart/porter-kustomize/releases/",
+	}
+	mixinsVar = map[string]string{
 		"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 		"qliksense":  "-v v0.14.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 		"exec":       "-v latest",
@@ -100,60 +102,49 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 				}
 			}
 
-			// Infer info about the minimum mixin version
-			fmt.Println("\nMixinsVar BEFORE modification:")
-			for key, value := range mixinsVar {
-				fmt.Printf("%s: %s\n", key, value)
-			}
-			// backing up mixinsVar before modifying it
+			// // Infer info about the minimum mixin version
+			// fmt.Println("\nMixinsVar BEFORE modification:")
+			// for key, value := range mixinsVar {
+			// 	fmt.Printf("%s: %s\n", key, value)
+			// }
 
-			for km, vm := range mixinsVar {
-				currentMixinsVar[km] = vm
+			currentMixinVersions, err := retrieveCurrentInstalledMixinVersions(q)
+			if err != nil {
+				log.Fatal(err)
 			}
-
-			for k, _ := range mixinsVar {
-				if k == "qliksense" {
+			for k := range mixinsVar {
+				tmp = getVersionFromDependencyYaml(fmt.Sprintf("org.qlik.operator.mixin.%s.version.min", k))
+				if tmp == "" {
+					continue
+				}
+				shouldUpdateMixin := false
+				mixinVersion, ok := currentMixinVersions[k]
+				if !ok {
+					shouldUpdateMixin = true
+				} else {
+					// if k == "qliksense" {
 					// check mixin version
-					fmt.Printf("\n--------Qliksense Mixin version Check--------\n")
-					tmp = getVersionFromDependencyYaml("org.qlik.operator.mixin.qliksense.version.min")
-					currentMixinVersion, err := determineVersion(currentMixinsVar["qliksense"])
-					if err != nil {
-						log.Fatal(err)
+					fmt.Printf("\n--------%s Mixin version Check--------\n", k)
+
+					// currentMixinVersion, err := determineVersion(currentMixinVersions[k])
+					// if err != nil {
+					// 	log.Fatal(err)
+					// }
+					shouldUpdateMixin = versionCheck(fmt.Sprintf("Mixin %s", k), mixinVersion, tmp)
+				}
+				// if tmp != "" and mixin requires Download and install
+				if shouldUpdateMixin {
+					fmt.Println("Downloading a newer version of mixin and retrying the operation.")
+					// download and install the new mixin
+					mURL, ok := mixinURLs[k]
+					if ok {
+						tmp = fmt.Sprintf("%s %s", tmp, mURL)
 					}
-					updateMixin = versionCheck("Qliksense", currentMixinVersion, tmp)
-					// if tmp != "" and mixin requires Download and install
-					if tmp != "" && updateMixin {
-						fmt.Println("Downloading a newer version of mixin and retrying the operation.")
-						mixinsVar[k] = tmp
-						// download and install the new mixin
-						if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
-							// return err
-							log.Fatalf("Error reading YAML file: %s\n", err)
-						}
+					if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
+						// return err
+						log.Fatalf("Error reading YAML file: %s\n", err)
 					}
 				}
-				if k == "kustomize" {
-					tmp = getVersionFromDependencyYaml("org.qlik.operator.mixin.kustomize.version.min")
-					if tmp != "" {
-						mixinsVar[k] = tmp
-					}
-				}
-				if k == "exec" {
-					tmp = getVersionFromDependencyYaml("org.qlik.operator.mixin.exec.version.min")
-					if tmp != "" {
-						mixinsVar[k] = tmp
-					}
-				}
-				if k == "kubernetes" {
-					tmp = getVersionFromDependencyYaml("org.qlik.operator.mixin.kubernetes.version.min")
-					if tmp != "" {
-						mixinsVar[k] = tmp
-					}
-				}
-			}
-			fmt.Println("\nMixinsVar AFTER modification:")
-			for key, value := range mixinsVar {
-				fmt.Printf("%s: %s\n", key, value)
 			}
 
 			// FOR MY DEVELOPMENT ONLY, DO NOT COMMIT INTO MASTER
@@ -169,6 +160,37 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 
 	}
 
+}
+
+func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]string, error) {
+	result := map[string]string{}
+	currentInstalledMixinVersions, err := q.CallPorter([]string{"mixins", "list"}, func(x string) (out *string) {
+		out = new(string)
+		*out = strings.ReplaceAll(x, "porter", "qliksense porter")
+		fmt.Println(*out)
+		return
+	})
+	if err != nil {
+		log.Printf("ERROR occurred during porter call: %v", err)
+		return nil, err
+	}
+	currentInstalledMixinVersionsArr := strings.Split(currentInstalledMixinVersions, "\n")
+	for _, mix := range currentInstalledMixinVersionsArr {
+		mixRow := strings.Fields(mix)
+		mixRowLen := len(mixRow)
+		if mixRowLen > 0 && mixRow[0] == "Name" {
+			continue
+		}
+		// have to handle the case of mixins like `kustomize` where version could be empty & the author too
+		if mixRowLen >= 2 {
+			_, err := semver.NewVersion(mixRow[1])
+			if err == nil {
+				result[mixRow[0]] = mixRow[1]
+			}
+		}
+	}
+	fmt.Printf("Ash: Output from porter mixins version: \n%v\n", result)
+	return result, nil
 }
 
 func determineVersion(versionString string) (string, error) {
@@ -218,43 +240,31 @@ func getVersionFromDependencyYaml(key string) string {
 }
 
 func versionCheck(component string, currentVersion string, versionFromSourceOfTruth string) bool {
-	var updateRequired bool
-
 	fmt.Printf("%s version Check\n", component)
 	fmt.Printf("current component version: %s\n", currentVersion)
 	fmt.Printf("component version from source of truth: %s\n", versionFromSourceOfTruth)
 
 	componentVersionFromDependenciesYaml, err := semver.NewVersion(versionFromSourceOfTruth)
-
-	fmt.Printf("Ash: from source of truth: %s", componentVersionFromDependenciesYaml)
 	if err != nil {
 		fmt.Printf("There has been an error! %s", err)
+		return true
 	}
-
+	fmt.Printf("Ash: from source of truth: %s", componentVersionFromDependenciesYaml)
 	// current Component version
-	currentComponentVersion, _ := semver.NewVersion(currentVersion)
+	currentComponentVersion, err := semver.NewVersion(currentVersion)
+	if err != nil {
+		fmt.Printf("There has been an error! %s", err)
+		return true
+	}
 	fmt.Printf("\nCurrent Component version: %v\n", currentComponentVersion)
 
 	// check Component version
 	if currentComponentVersion.LessThan(componentVersionFromDependenciesYaml) {
-		fmt.Printf("\n\nCurrent Component version:%s is less than minimum required version:%s\n", currentComponentVersion, componentVersionFromDependenciesYaml)
-		if component == "porter" {
-			fmt.Println("TO-DO: Download and install newer version of Porter")
-			updateRequired = true
-		} else if component == "CLI" {
-			fmt.Println("Please download and install newer CLI component. Exiting now.")
-			updateRequired = true
-			// os.Exit(1)
-		} else if component == "qliksense mixin" {
-			fmt.Println("Downloading and installing newer qliksense mixin.")
-			updateRequired = true
-		}
-
-	} else {
-		updateRequired = false
-		fmt.Println("Current Component version is greater than version from dependencies, nothing to do.")
+		fmt.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
+		return true
 	}
-	return updateRequired
+	fmt.Println("Current Component version is greater than version from dependencies, nothing to do.")
+	return false
 }
 
 func fileExists(filename string) bool {
