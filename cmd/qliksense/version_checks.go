@@ -145,15 +145,9 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 				}
 			}
 		}
-		fmt.Println("Exit: CheckMinVersion()")
-		// FOR MY DEVELOPMENT ONLY, DO NOT COMMIT INTO MASTER
-		os.Exit(1)
-
 	} else {
-		fmt.Println("Exit: CheckMinVersion()")
-		log.Fatalf("Dependencies file does not exist, hence exiting")
+		log.Fatalf("Not able to infer dependencies, hence exiting")
 	}
-
 	fmt.Println("Exit: CheckMinVersion()")
 	os.Exit(1)
 }
