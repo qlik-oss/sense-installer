@@ -21,12 +21,10 @@ import (
 )
 
 const (
-	porterURLBase = "https://cdn.deislabs.io/porter/"
-	winOS         = "porter-windows-amd64.exe"
-	linuxOS       = "porter-linux-amd64"
-	macOS         = "porter-darwin-amd64"
-	// porterURLBase    = "https://github.com/qlik-oss/sense-installer/releases/download"
-	porterInfolUrl   = "https://cdn.deislabs.io/porter/latest/install-linux.sh"
+	porterURLBase    = "https://cdn.deislabs.io/porter/"
+	winOS            = "porter-windows-amd64.exe"
+	linuxOS          = "porter-linux-amd64"
+	macOS            = "porter-darwin-amd64"
 	porterHomeVar    = "PORTER_HOME"
 	qlikSenseHomeVar = "QLIKSENSE_HOME"
 	qlikSenseDirVar  = ".qliksense"
@@ -34,10 +32,7 @@ const (
 	porterRuntime    = "porter-runtime"
 )
 
-// var qlikSenseHome string
-
 func initAndExecute() error {
-	fmt.Println("Ash: initAndExecute() ")
 	var (
 		porterExe, qlikSenseHome string
 		err                      error
@@ -55,7 +50,6 @@ func initAndExecute() error {
 	// if _, err = installMixins(porterExe); err != nil {
 	// 	return err
 	// }
-	// fmt.Println("Ash: installed porter and mixins ")
 	if err = rootCmd(qliksense.New(porterExe, qlikSenseHome)).Execute(); err != nil {
 		return err
 	}
@@ -68,7 +62,6 @@ func setUpPaths() (string, string, error) {
 		porterExe, homeDir, qlikSenseHome string
 		err                               error
 	)
-	// fmt.Println("Ash: installPorter() ")
 	porterExe = "porter"
 	if runtime.GOOS == "windows" {
 		porterExe = porterExe + ".exe"
@@ -93,7 +86,7 @@ func installPorter(qlikSenseHome string) (string, error) {
 		destination,
 		porterExe string
 		downloadPorter    bool
-		porterDownloadUrl string
+		porterDownloadURL string
 		err               error
 	)
 	if _, err = os.Stat(qlikSenseHome); err != nil {
@@ -116,12 +109,12 @@ func installPorter(qlikSenseHome string) (string, error) {
 		os.Mkdir(qlikSenseHome, os.ModePerm)
 		destination = filepath.Join(qlikSenseHome, porterRuntime)
 		// construct url to download porter from
-		porterDownloadUrl = constructPorterUrl(runtime.GOOS)
+		porterDownloadURL = constructPorterURL(runtime.GOOS)
 
 		// if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
 		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 
-			if err = downloadFile(porterDownloadUrl, destination); err != nil {
+			if err = downloadFile(porterDownloadURL, destination); err != nil {
 				return "", err
 			}
 			os.Chmod(destination, 0755)
@@ -131,13 +124,13 @@ func installPorter(qlikSenseHome string) (string, error) {
 			os.Chmod(porterExe, 0755)
 		} else if runtime.GOOS == "windows" {
 
-			if err = downloadFile(porterDownloadUrl, porterExe); err != nil {
+			if err = downloadFile(porterDownloadURL, porterExe); err != nil {
 				return "", err
 			}
 			os.Chmod(porterExe, 0755)
 		}
 	}
-	fmt.Printf("Porter Exe here: %s\n", porterExe)
+	// fmt.Printf("Porter Exe: %s\n", porterExe)
 	return porterExe, nil
 }
 
@@ -150,7 +143,7 @@ var versionCmd = &cobra.Command{
 	},
 }
 
-func constructPorterUrl(runtimeOS string) string {
+func constructPorterURL(runtimeOS string) string {
 	// FYI: Porter does not support other architectures other than amd64
 	const (
 		porterURLBase = "https://cdn.deislabs.io/porter/"
@@ -167,7 +160,7 @@ func constructPorterUrl(runtimeOS string) string {
 	} else if runtimeOS == "darwin" {
 		url = porterURLBase + version + "/" + macOS
 	}
-	fmt.Printf("Ash: Porter download URL here: %s\n", url)
+	// fmt.Printf("Porter download URL: %s\n", url)
 	return url
 }
 
@@ -180,33 +173,32 @@ func retrievePorterVersion() string {
 
 	resp, err := http.Get(porterRepoURL)
 	if err != nil {
-		fmt.Printf("Ash: Error occurred while retrieving porter version info: %v\n", err)
+		fmt.Printf("Error occurred while retrieving porter version info: %v\n", err)
 		return ""
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Ash: response status was not OK while retrieving porter version info\n")
+		fmt.Printf("response status was not OK while retrieving porter version info\n")
 		return ""
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Ash: Error occurred while reading porter version info: %v\n", err)
+		fmt.Printf("Error occurred while reading porter version info: %v\n", err)
 		return ""
 	}
 	result := &apiInfo{}
 	err = json.Unmarshal(body, result)
 	if err != nil {
-		fmt.Printf("Ash: Error occurred while unmarshalling porter version info: %v\n", err)
+		fmt.Printf("Error occurred while unmarshalling porter version info: %v\n", err)
 		return ""
 	}
-	fmt.Printf("Ash: Porter Version in retrievePorterVersion(): %s\n", result.Name)
+	fmt.Printf("Porter Version: %s\n", result.Name)
 	return result.Name
 }
 
 func installMixins(porterExe, qlikSenseHome string) (string, error) {
-	// fmt.Println("Ash: installMixins() ")
 	var (
 		mixin, mixinOpts string
 		mixinsVar        = map[string]string{
@@ -224,16 +216,13 @@ func installMixins(porterExe, qlikSenseHome string) (string, error) {
 		downloadMixins map[string]string
 		err            error
 	)
-	// fmt.Println("Ash: installMixins() 1")
 	if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar)); err != nil {
-		// fmt.Println("Ash: installMixins() 2")
 		if os.IsNotExist(err) {
 			downloadMixins = mixinsVar
 		} else {
 			return "", err
 		}
 	} else {
-		// fmt.Println("Ash: installMixins() 3")
 		downloadMixins = make(map[string]string)
 		for mixin, mixinOpts = range mixinsVar {
 			if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar, mixin)); err != nil {
@@ -245,22 +234,18 @@ func installMixins(porterExe, qlikSenseHome string) (string, error) {
 			}
 		}
 	}
-	// fmt.Println("Ash: installMixins() 4")
 	for mixin, mixinOpts = range downloadMixins {
-		// fmt.Printf("Ash: installMixins() 5, porterExe here: %s\n", porterExe)
 		if _, err = installMixin(porterExe, mixin, mixinOpts); err != nil {
-			// fmt.Println("Ash: Errored out here!!!!!")
 			return "", err
 		}
 	}
-	// fmt.Println("Ash: installMixins() 6")
 	return "", err
 }
 
 func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
 	var cmd *exec.Cmd
 
-	fmt.Printf("\nAsh: inside installMixin(), %s, %s, %s\n\n", porterExe, mixin, mixinOpts)
+	fmt.Printf("\nEntry: installMixin(), %s, %s, %s\n\n", porterExe, mixin, mixinOpts)
 
 	args := []string{"mixin", "install", mixin}
 	if mixinOpts != "" {
@@ -274,6 +259,7 @@ func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
+	fmt.Println("Exit: installMixin()")
 	return "", nil
 }
 

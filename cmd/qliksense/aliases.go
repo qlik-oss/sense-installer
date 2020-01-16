@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 	"strings"
 
@@ -11,13 +10,12 @@ import (
 )
 
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
-	// fmt.Println("Ash: buildAliasCommands() ")
 	return []*cobra.Command{
-		buildBuildAlias(porterCmd, q),     // Include preRun my part for this
-		buildInstallAlias(porterCmd, q),   // Include preRun my part for this - TAG check
-		buildAboutAlias(porterCmd, q),     // Include preRun my part for this - TAG check
-		buildPreflightAlias(porterCmd, q), // Include preRun my part for this
-		buildUninstallAlias(porterCmd, q), // do not include preRun my part for this
+		buildBuildAlias(porterCmd, q),
+		buildInstallAlias(porterCmd, q),
+		buildAboutAlias(porterCmd, q),
+		buildPreflightAlias(porterCmd, q),
+		buildUninstallAlias(porterCmd, q),
 	}
 
 }
@@ -26,16 +24,12 @@ func buildBuildAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Co
 	var (
 		c *cobra.Command
 	)
-	// fmt.Println("Ash: buildBuildAlias() ")
 	c = &cobra.Command{
 		Use:                "build",
 		Short:              "Build a bundle",
 		Long:               "Builds the bundle in the current directory by generating a Dockerfile and a CNAB bundle.json, and then building the invocation image.",
 		DisableFlagParsing: true,
-
-		// TAG check is needed for 'about' and 'install'
 		PreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
 			checkMinVersion("", q)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -89,9 +83,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install --driver debug
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
 `,
-		// TAG check is needed for 'about' and 'install'
 		PreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
 			checkMinVersion(opts.Tag, q)
 		},
 		//DisableFlagParsing: true,
@@ -228,9 +220,7 @@ func buildAboutAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Co
 		Use:   "about",
 		Short: "About Qlik Sense",
 		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
-		// TAG check is needed for 'about' and 'install'
 		PreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
 			checkMinVersion(opts.Tag, q)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -265,9 +255,7 @@ func buildPreflightAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobr
 		Use:   "preflight",
 		Short: "Preflight Checks",
 		Long:  "Perform Preflight Checks",
-		// TAG check is needed for 'about' and 'install'
 		PreRun: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("Ash: Inside rootCmd PreRun with args: %v\n", args)
 			checkMinVersion("", q)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
