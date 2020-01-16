@@ -10,9 +10,11 @@ import (
 )
 
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
+
 	return []*cobra.Command{
 		buildBuildAlias(porterCmd, q),
 		buildInstallAlias(porterCmd, q),
+		buildUpgradeAlias(porterCmd, q),
 		buildAboutAlias(porterCmd, q),
 		buildPreflightAlias(porterCmd, q),
 		buildUninstallAlias(porterCmd, q),
@@ -29,9 +31,6 @@ func buildBuildAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Co
 		Short:              "Build a bundle",
 		Long:               "Builds the bundle in the current directory by generating a Dockerfile and a CNAB bundle.json, and then building the invocation image.",
 		DisableFlagParsing: true,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			checkMinVersion("", q)
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return porterCmd.RunE(porterCmd, append([]string{"build"}, args...))
 		},
@@ -105,6 +104,78 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 	f := c.Flags()
 	f.StringVarP(&opts.Version, "version", "v", "latest",
 		"Version of Qlik Sense to install")
+	f.BoolVar(&opts.Insecure, "insecure", true,
+		"Allow working with untrusted bundles")
+	f.StringVarP(&opts.File, "file", "f", "",
+		"Path to the porter manifest file. Defaults to the bundle in the current directory.")
+	f.StringVar(&opts.CNABFile, "cnab-file", "",
+		"Path to the CNAB bundle.json file.")
+	f.StringSliceVar(&opts.ParamFiles, "param-file", nil,
+		"Path to a parameters definition file for the bundle, each line in the form of NAME=VALUE. May be specified multiple times.")
+	f.StringSliceVar(&opts.Params, "param", nil,
+		"Define an individual parameter in the form NAME=VALUE. Overrides parameters set with the same name using --param-file. May be specified multiple times.")
+	f.StringSliceVarP(&opts.CredentialIdentifiers, "cred", "c", nil,
+		"Credential to use when installing the bundle. May be either a named set of credentials or a filepath, and specified multiple times.")
+	f.StringVarP(&opts.Driver, "driver", "d", "docker",
+		"Specify a driver to use. Allowed values: docker, debug")
+	f.StringVarP(&opts.Tag, "tag", "t", "",
+		"Use a bundle in an OCI registry specified by the given tag")
+	f.BoolVar(&opts.InsecureRegistry, "insecure-registry", false,
+		"Don't require TLS for the registry")
+	f.BoolVar(&opts.Force, "force", false,
+		"Force a fresh pull of the bundle and all dependencies")
+	return c
+}
+
+func buildUpgradeAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
+	var (
+		c        *cobra.Command
+		opts     *paramOptions
+		registry *string
+	)
+
+	opts = &paramOptions{}
+
+	c = &cobra.Command{
+		Use:   "upgrade [INSTANCE]",
+		Short: "Upgrade qliksense",
+		Long: `Upgrade to a new instance of a bundle.
+
+The first argument is the bundle instance name to upgrade for the installation. This defaults to the name of the bundle. 
+
+Porter uses the Docker driver as the default runtime for executing a bundle's invocation image, but an alternate driver may be supplied via '--driver/-d'.
+For example, the 'debug' driver may be specified, which simply logs the info given to it and then exits.`,
+		Example: `  qliksense upgrade
+  qliksense upgrade --version v1.0.0
+  qliksense upgrade --insecure
+  qliksense upgrade qliksense --file qliksense/bundle.json
+  qliksense upgrade --param-file base-values.txt --param-file dev-values.txt --param test-mode=true --param header-color=blue
+  qliksense upgrade --cred kubernetes
+  qliksense upgrade --driver debug
+  qliksense upgrade MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
+`,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			checkMinVersion(opts.Tag, q)
+		},
+		//DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// Push images here.
+			// TODO: Need to get the private reg from params
+			args = append(os.Args[2:], opts.getTagValue(args)...)
+			if registry = opts.findKey("dockerRegistry"); registry != nil {
+				if len(*registry) > 0 {
+					q.TagAndPushImages(*registry)
+				}
+			}
+			return porterCmd.RunE(porterCmd, append([]string{"upgrade"}, args...))
+		},
+		Annotations: map[string]string{
+			"group": "alias",
+		},
+	}
+	f := c.Flags()
+	f.StringVarP(&opts.Version, "version", "v", "latest",
+		"Version of Qlik Sense to upgrade to")
 	f.BoolVar(&opts.Insecure, "insecure", true,
 		"Allow working with untrusted bundles")
 	f.StringVarP(&opts.File, "file", "f", "",
@@ -256,7 +327,7 @@ func buildPreflightAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobr
 		Short: "Preflight Checks",
 		Long:  "Perform Preflight Checks",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			checkMinVersion("", q)
+			checkMinVersion(opts.Tag, q)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = append(os.Args[1:], opts.getTagDefaults(args)...)

@@ -4,7 +4,7 @@ PKG = github.com/qlik-oss/sense-installer
 MAKE_OPTS ?= --no-print-directory
 
 LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION) -X $(PKG)/pkg.Commit=$(COMMIT) -X "$(PKG)/pkg.CommitDate=$(COMMIT_DATE)"
-XBUILD = CGO_ENABLED=0 go build -a -tags netgo -ldflags $(LDFLAGS)
+XBUILD = CGO_ENABLED=0 go build -a -tags netgo -ldflags '$(LDFLAGS)'
 BINDIR = bin
 
 COMMIT ?= $(shell git rev-parse --short HEAD)
