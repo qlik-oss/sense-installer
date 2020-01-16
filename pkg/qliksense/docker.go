@@ -56,7 +56,7 @@ func (p *Qliksense) PullImages() error {
 		return err
 	}
 	for _, image = range images.Images {
-		if err = p.PullImage(image); err != nil {
+		if _, err = p.PullImage(image); err != nil {
 			fmt.Print(err)
 		}
 		println("---")
@@ -66,7 +66,7 @@ func (p *Qliksense) PullImages() error {
 }
 
 // PullImage ...
-func (p *Qliksense) PullImage(imageName string) error {
+func (p *Qliksense) PullImage(imageName string) (map[string]string, error) {
 	var (
 		cli          *command.DockerCli
 		dockerOutput io.Writer
@@ -83,23 +83,23 @@ func (p *Qliksense) PullImage(imageName string) error {
 	// TODO: Create a real cli config context
 	ctx = context.Background()
 	if cli, err = command.NewDockerCli(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err = cli.Initialize(cliflags.NewClientOptions()); err != nil {
-		return err
+		return nil, err
 	}
 
 	if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
-		return err
+		return nil, err
 	}
 	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-		return err
+		return nil, err
 	}
 
 	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
 	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-		return err
+		return nil, err
 	}
 
 	pullOptions = types.ImagePullOptions{
@@ -107,7 +107,7 @@ func (p *Qliksense) PullImage(imageName string) error {
 	}
 
 	if response, err = cli.Client().ImagePull(ctx, imageName, pullOptions); err != nil {
-		return err
+		return nil, err
 	}
 	defer response.Close()
 
@@ -121,9 +121,13 @@ func (p *Qliksense) PullImage(imageName string) error {
 	// when Term is true.
 	isTerm := false
 	if err = jsonmessage.DisplayJSONMessagesStream(response, dockerOutput, termFd, isTerm, nil); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	inspectData, _, err := cli.Client().ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
+		return nil, err
+	}
+	return inspectData.ContainerConfig.Labels, nil
 }
 
 // PullImage ...

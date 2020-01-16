@@ -33,14 +33,22 @@ var (
 		"aws":        "-v latest",
 		"gcloud":     "-v latest",
 	}
-	dependencies = map[string]string{}
 )
 
 func checkMinVersion(tag string, q *qliksense.Qliksense) {
 	fmt.Println("Entry: CheckMinVersion()")
-
+	dependencies := map[string]string{}
 	// check if tag is empty or not
-	if len(strings.TrimSpace(tag)) == 0 {
+	var err error
+	if len(strings.TrimSpace(tag)) != 0 {
+		// --tag exists
+		fmt.Printf("Here is the tag: %s", tag)
+		dependencies, err = q.PullImage(tag)
+		if err != nil {
+			log.Fatalf("unable to pull the requested image: %v", err)
+		}
+
+	} else {
 		// Tag is empty, hence doing DIR way. Looking for dependenciesFile.yaml, exit if this file is not present
 		if fileExists(dependenciesFile) {
 			// read the dependencies.yaml and store into a map
@@ -54,102 +62,100 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 				fmt.Println("Exit: CheckMinVersion()")
 				log.Fatalf("Error parsing YAML file: %s\n", err)
 			}
+		}
+	}
+	if len(dependencies) > 0 {
+		// Infer info about the minimum cli version
+		var cliVersionFromDependencies, porterVersionFromDependencies, tmp string
+		tmp, _ = dependencies["org.qlik.operator.cli.sense-installer.version.min"]
+		if len(tmp) != 0 {
+			cliVersionFromDependencies = tmp
+		}
+		fmt.Printf("\nCLI version from dependencies.yaml: %v\n", cliVersionFromDependencies)
 
-			// Infer info about the minimum cli version
-			var cliVersionFromDependencies, porterVersionFromDependencies, tmp string
-			tmp = getVersionFromDependencyYaml("org.qlik.operator.cli.sense-installer.version.min")
-			if len(tmp) != 0 {
-				cliVersionFromDependencies = tmp
-			}
-			fmt.Printf("\nCLI version from dependencies.yaml: %v\n", cliVersionFromDependencies)
+		// Checking version info below
 
-			// Checking version info below
-
-			updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
-			if updateComponent {
-				fmt.Println("Please download a newer version of CLI and retry the operation, exiting now.")
-				fmt.Println("Exit: CheckMinVersion()")
-				log.Fatalf("Error reading YAML file: %s\n", err)
-			}
-
-			// Infer info about the min porter version
-			tmp = getVersionFromDependencyYaml("org.qlik.operator.cli.porter.version.min")
-			if len(tmp) != 0 {
-				porterVersionFromDependencies = tmp
-			}
-			fmt.Printf("Porter version from dependencies.yaml: %v\n", porterVersionFromDependencies)
-
-			// check porter version
-			currentPorterVersion, err = determineCurrentPorterVersion(q)
-			if err != nil {
-				log.Println("warning:", err)
-			}
-			fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
-			updateComponent = true //
-			if currentPorterVersion != "" {
-				updateComponent = versionCheck("Porter", currentPorterVersion, porterVersionFromDependencies)
-			}
-			if updateComponent {
-				fmt.Println("Downloading a newer version of Porter")
-				// Download and install newer version of porter and mixins
-				q.PorterExe, err = installPorter(q.QliksenseHome)
-				if err != nil {
-					fmt.Println("Exit: CheckMinVersion()")
-					log.Fatal(err)
-				}
-
-				if _, err = installMixins(q.PorterExe, q.QliksenseHome); err != nil {
-					fmt.Println("Exit: CheckMinVersion()")
-					log.Fatal(err)
-				}
-			}
-
-			currentMixinVersions, err := retrieveCurrentInstalledMixinVersions(q)
-			if err != nil {
-				log.Fatal(err)
-			}
-			for k := range mixinsVar {
-				tmp = getVersionFromDependencyYaml(fmt.Sprintf("org.qlik.operator.mixin.%s.version.min", k))
-				if tmp == "" {
-					continue
-				}
-				shouldUpdateMixin := false
-				mixinVersion, ok := currentMixinVersions[k]
-				if !ok {
-					shouldUpdateMixin = true
-				} else {
-					shouldUpdateMixin = versionCheck(fmt.Sprintf("Mixin %s", k), mixinVersion, tmp)
-				}
-				// if tmp is not empty and mixin requires download and install
-				if shouldUpdateMixin {
-					fmt.Println("Downloading a newer version of mixin")
-					// download and install the new mixin
-					mURL, ok := mixinURLs[k]
-					if ok {
-						tmp = fmt.Sprintf("%s %s", tmp, mURL)
-					}
-					if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
-						// return err
-						fmt.Println("Exit: CheckMinVersion()")
-						log.Fatalf("Error reading YAML file: %s\n", err)
-					}
-				}
-			}
+		updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
+		if updateComponent {
+			fmt.Println("Please download a newer version of CLI and retry the operation, exiting now.")
 			fmt.Println("Exit: CheckMinVersion()")
-			// FOR MY DEVELOPMENT ONLY, DO NOT COMMIT INTO MASTER
-			os.Exit(1)
-
-		} else {
-			fmt.Println("Exit: CheckMinVersion()")
-			log.Fatalf("Dependencies file does not exist, hence exiting")
+			log.Fatalf("Error reading YAML file: %s\n", err)
 		}
 
-	} else {
-		// --tag exists
-		fmt.Printf("Here is the tag: %s", tag)
+		// Infer info about the min porter version
+		tmp, _ = dependencies["org.qlik.operator.cli.porter.version.min"]
+		if len(tmp) != 0 {
+			porterVersionFromDependencies = tmp
+		}
+		fmt.Printf("Porter version from dependencies.yaml: %v\n", porterVersionFromDependencies)
+
+		// check porter version
+		currentPorterVersion, err = determineCurrentPorterVersion(q)
+		if err != nil {
+			log.Println("warning:", err)
+		}
+		fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
+		updateComponent = true //
+		if currentPorterVersion != "" {
+			updateComponent = versionCheck("Porter", currentPorterVersion, porterVersionFromDependencies)
+		}
+		if updateComponent {
+			fmt.Println("Downloading a newer version of Porter")
+			// Download and install newer version of porter and mixins
+			q.PorterExe, err = installPorter(q.QliksenseHome)
+			if err != nil {
+				fmt.Println("Exit: CheckMinVersion()")
+				log.Fatal(err)
+			}
+
+			if _, err = installMixins(q.PorterExe, q.QliksenseHome); err != nil {
+				fmt.Println("Exit: CheckMinVersion()")
+				log.Fatal(err)
+			}
+		}
+
+		currentMixinVersions, err := retrieveCurrentInstalledMixinVersions(q)
+		if err != nil {
+			log.Fatal(err)
+		}
+		for k := range mixinsVar {
+			tmp, _ = dependencies[fmt.Sprintf("org.qlik.operator.mixin.%s.version.min", k)]
+			if tmp == "" {
+				continue
+			}
+			shouldUpdateMixin := false
+			mixinVersion, ok := currentMixinVersions[k]
+			if !ok {
+				shouldUpdateMixin = true
+			} else {
+				shouldUpdateMixin = versionCheck(fmt.Sprintf("Mixin %s", k), mixinVersion, tmp)
+			}
+			// if tmp is not empty and mixin requires download and install
+			if shouldUpdateMixin {
+				fmt.Println("Downloading a newer version of mixin")
+				// download and install the new mixin
+				mURL, ok := mixinURLs[k]
+				if ok {
+					tmp = fmt.Sprintf("%s %s", tmp, mURL)
+				}
+				if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
+					// return err
+					fmt.Println("Exit: CheckMinVersion()")
+					log.Fatalf("Error reading YAML file: %s\n", err)
+				}
+			}
+		}
 		fmt.Println("Exit: CheckMinVersion()")
+		// FOR MY DEVELOPMENT ONLY, DO NOT COMMIT INTO MASTER
 		os.Exit(1)
+
+	} else {
+		fmt.Println("Exit: CheckMinVersion()")
+		log.Fatalf("Dependencies file does not exist, hence exiting")
 	}
+
+	fmt.Println("Exit: CheckMinVersion()")
+	os.Exit(1)
 }
 
 func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]string, error) {
@@ -221,13 +227,6 @@ func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 	return determineVersion(currentPorterVersion)
 }
 
-func getVersionFromDependencyYaml(key string) string {
-	if v, found := dependencies[key]; found {
-		return v
-	}
-	return ""
-}
-
 func versionCheck(component string, currentVersion string, versionFromSourceOfTruth string) bool {
 	fmt.Printf("----------%s Version check----------\n", component)
 	// fmt.Printf("Current component version: %s\n", currentVersion)
@@ -253,7 +252,7 @@ func versionCheck(component string, currentVersion string, versionFromSourceOfTr
 		return true
 	}
 	fmt.Printf("Current %s version is greater than version from dependencies, nothing to do.\n", component)
-	fmt.Println("---------------------------------------------------------------------------")
+	fmt.Printf("---------------------------------------------------------------------------\n\n")
 	return false
 }
 
