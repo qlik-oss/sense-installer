@@ -71,7 +71,7 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 		if len(tmp) != 0 {
 			cliVersionFromDependencies = tmp
 		}
-		fmt.Printf("\nCLI version from dependencies.yaml: %v\n", cliVersionFromDependencies)
+		fmt.Printf("\nCLI version from dependencies map: %v\n", cliVersionFromDependencies)
 
 		// Checking version info below
 
@@ -87,7 +87,7 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 		if len(tmp) != 0 {
 			porterVersionFromDependencies = tmp
 		}
-		fmt.Printf("Porter version from dependencies.yaml: %v\n", porterVersionFromDependencies)
+		fmt.Printf("Porter version from dependencies map: %v\n", porterVersionFromDependencies)
 
 		// check porter version
 		currentPorterVersion, err = determineCurrentPorterVersion(q)
