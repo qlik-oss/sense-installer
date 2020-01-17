@@ -55,7 +55,6 @@ func (p *Qliksense) PullImages(args []string) error {
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
 	}
-	println("retriving images ...")
 	for _, image = range images.Images {
 		if err = p.PullImage(image); err != nil {
 			fmt.Print(err)
