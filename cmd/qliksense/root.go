@@ -42,14 +42,7 @@ func initAndExecute() error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// // install porter
-	// if porterExe, err = installPorter(); err != nil {
-	// 	return err
-	// }
-	// // install mixins
-	// if _, err = installMixins(porterExe); err != nil {
-	// 	return err
-	// }
+
 	if err = rootCmd(qliksense.New(porterExe, qlikSenseHome)).Execute(); err != nil {
 		return err
 	}
