@@ -21,7 +21,6 @@ func (p *Qliksense) CallPorter(args []string, processor ProcessLine) (string, er
 		scanner *bufio.Scanner
 		done    chan struct{}
 	)
-	// fmt.Printf("Porter Exe: %s\n", p.PorterExe)
 	cmd = exec.Command(p.PorterExe, args[:]...)
 	if output, err = cmd.StdoutPipe(); err != nil {
 		return "", err

@@ -78,7 +78,6 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 		log.Fatalf("Not able to infer dependencies, hence exiting")
 	}
 	fmt.Println("Exit: CheckMinVersion()")
-	// os.Exit(1)
 }
 
 func checkMixinVersion(dependencies map[string]string, q *qliksense.Qliksense) {
@@ -109,7 +108,6 @@ func checkMixinVersion(dependencies map[string]string, q *qliksense.Qliksense) {
 				tmp = fmt.Sprintf("%s %s", tmp, mURL)
 			}
 			if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
-				// return err
 				fmt.Println("Exit: CheckMinVersion()")
 				log.Fatalf("Error reading YAML file: %s\n", err)
 			}
@@ -134,7 +132,7 @@ func checkPorterVersion(dependencies map[string]string, q *qliksense.Qliksense) 
 		log.Println("warning:", err)
 	}
 	fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
-	updateComponent = true //
+	updateComponent = true
 	if currentPorterVersion != "" {
 		updateComponent = versionCheck("Porter", currentPorterVersion, porterVersionFromDependencies)
 	}
@@ -167,7 +165,7 @@ func checkCLIVersion(dependencies map[string]string) {
 	// Checking version below
 	updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
 	if updateComponent {
-		log.Fatalf("Please download a newer version of CLI and retry the operation, exiting now.")
+		// log.Fatalf("Please download a newer version of CLI and retry the operation, exiting now.")
 	}
 }
 
