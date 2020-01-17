@@ -27,7 +27,7 @@ type Images struct {
 }
 
 // PullImages ...
-func (p *Qliksense) PullImages() error {
+func (p *Qliksense) PullImages(args []string) error {
 	var (
 		image       string
 		err         error
@@ -35,8 +35,8 @@ func (p *Qliksense) PullImages() error {
 		valid       bool
 		images      Images
 	)
-
-	if yamlVersion, err = p.CallPorter([]string{"invoke", "--action", "about"},
+	println("getting images list...")
+	if yamlVersion, err = p.CallPorter(append([]string{"invoke", "--action", "about"}, args...),
 		func(x string) (out *string) {
 			if strings.HasPrefix(x, "qlikSenseVersion") {
 				valid = true
@@ -55,6 +55,7 @@ func (p *Qliksense) PullImages() error {
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
 	}
+	println("retriving images ...")
 	for _, image = range images.Images {
 		if err = p.PullImage(image); err != nil {
 			fmt.Print(err)
