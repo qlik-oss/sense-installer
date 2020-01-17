@@ -46,8 +46,8 @@ func installPorter() (string, error) {
 	var (
 		porterPermaLink = pkg.Version
 		//porterPermaLink                                          = "v0.3.0"
-		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
-		mixinsVar                                                             = map[string]string{
+		destination, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
+		mixinsVar                                                    = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
 			"qliksense":  "-v v0.14.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
@@ -68,14 +68,8 @@ func installPorter() (string, error) {
 	if runtime.GOOS == "windows" {
 		porterExe = porterExe + ".exe"
 	}
-	if qlikSenseHome = os.Getenv(qlikSenseHomeVar); qlikSenseHome == "" {
-		if homeDir, err = homedir.Dir(); err != nil {
-			return "", err
-		}
-		if homeDir, err = homedir.Expand(homeDir); err != nil {
-			return "", err
-		}
-		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
+	if qlikSenseHome, err = getQliksenseHomeDir(); err != nil {
+		return "", err
 	}
 	os.Setenv(porterHomeVar, qlikSenseHome)
 	//TODO: Check if porter version is one alreadu is one for this build
@@ -157,6 +151,30 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+var cacheClearCmd = &cobra.Command{
+	Use:   "clear",
+	Short: "Clear the qliksense loacal cache",
+	Long:  `Remove the everything from ~/.qliksense/cache directory`,
+	Run: func(cmd *cobra.Command, args []string) {
+		qsHome, err := getQliksenseHomeDir()
+		if err != nil {
+			fmt.Println("Cannot find qliksense home diretory")
+			return
+		}
+		cacheDir := filepath.Join(qsHome, "cache")
+		if _, err = os.Stat(cacheDir); err != nil {
+			// cache directory not exist
+			fmt.Println("Cache Cleaned")
+			return
+		}
+		if err = os.RemoveAll(cacheDir); err != nil {
+			fmt.Println("cannot remove cache", err)
+			return
+		}
+		fmt.Println("Cache Cleaned")
+	},
+}
+
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd, porterCmd, alias *cobra.Command
@@ -185,6 +203,11 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	}
 	// add version command
 	cmd.AddCommand(versionCmd)
+	// add cache command
+	var cahcheCommand = &cobra.Command{Use: "cache"}
+	cmd.AddCommand(cahcheCommand)
+	cahcheCommand.AddCommand(cacheClearCmd)
+
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	return cmd
@@ -247,4 +270,20 @@ func copy(src, dst string) (int64, error) {
 	defer destination.Close()
 	nBytes, err = io.Copy(destination, source)
 	return nBytes, err
+}
+
+func getQliksenseHomeDir() (string, error) {
+	var qlikSenseHome string
+	if qlikSenseHome = os.Getenv(qlikSenseHomeVar); qlikSenseHome == "" {
+		var homeDir string
+		var err error
+		if homeDir, err = homedir.Dir(); err != nil {
+			return "", err
+		}
+		if homeDir, err = homedir.Expand(homeDir); err != nil {
+			return "", err
+		}
+		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
+	}
+	return qlikSenseHome, nil
 }

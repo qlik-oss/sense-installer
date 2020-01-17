@@ -20,3 +20,20 @@ The above command runs the checks in the default namespace. If you want to speci
 Packaging of Qlik Sense on Kubernetes is done through a [Porter](https://porter.sh/) definition in the [Qlik Sense on Kubernetes configuration repository](https://github.com/qlik-oss/qliksense-k8s/blob/master/porter.yaml), the resulting bundle published on DockerHub as a [Cloud Natvie Application Bundle](https://cnab.io/) called [qliksense-cnab-bundle](https://hub.docker.com/r/qlik/qliksense-cnab-bundle).
 ### Versioning
 A version of [qliksense-cnab-bundle](https://hub.docker.com/r/qlik/qliksense-cnab-bundle) is published corresponding to an edge release. To get the latest edge release simply specify `qliksense-cnab-bundle:latest`
+
+## Known Issues
+
+if you see the error message like this
+
+```console
+invoking custom action about on Qliksense...
+Unable to find image 'qlik/qliksense-cnab-bundle@sha256:b41a3be13914daee9fb5b9b2d39e68aa99526600d9a99448b346992d6de48171' locally
+Error: 1 error occurred:
+	* failed to invoke the bundle: Error response from daemon: manifest for qlik/qliksense-cnab-bundle@sha256:b41a3be13914daee9fb5b9b2d39e68aa99526600d9a99448b346992d6de48171 not found: manifest unknown: manifest unknown
+```
+
+please issue this command
+
+```console
+qliksense cache clear
+```
