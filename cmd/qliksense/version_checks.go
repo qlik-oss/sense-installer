@@ -157,7 +157,6 @@ func checkPorterVersion(dependencies map[string]string, q *qliksense.Qliksense) 
 func checkCLIVersion(dependencies map[string]string) {
 	// Infer info about the minimum cli version
 	var cliVersionFromDependencies, tmp string
-	var err error
 	fmt.Printf("\n------------ CLI version check -----------\n")
 	tmp, _ = dependencies["org.qlik.operator.cli.sense-installer.version.min"]
 	if len(tmp) != 0 {
@@ -168,9 +167,7 @@ func checkCLIVersion(dependencies map[string]string) {
 	// Checking version below
 	updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
 	if updateComponent {
-		fmt.Println("Please download a newer version of CLI and retry the operation, exiting now.")
-		fmt.Println("Exit: CheckMinVersion()")
-		log.Fatalf("Error reading YAML file: %s\n", err)
+		log.Fatalf("Please download a newer version of CLI and retry the operation, exiting now.")
 	}
 }
 
@@ -201,15 +198,12 @@ func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]s
 			}
 		}
 	}
-	fmt.Printf("Output from porter mixins version: \n%v\n", result)
 	return result, nil
 }
 
 func determineVersion(versionString string) (string, error) {
-	// fmt.Printf("Current version string: %v\n", versionString)
 
 	versionSlice := strings.Fields(versionString)
-	// fmt.Printf("String slice: %v, length of slice: %d\n", versionSlice, len(versionSlice))
 
 	var currentComponentVersionNumber *semver.Version
 	var err error
@@ -228,7 +222,6 @@ func determineVersion(versionString string) (string, error) {
 
 func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 	// determine current porter version
-	fmt.Printf("Determining current Porter Version\n")
 	currentPorterVersion, err := q.CallPorter([]string{"version"}, func(x string) (out *string) {
 		out = new(string)
 		*out = strings.ReplaceAll(x, "porter", "qliksense porter")
@@ -239,14 +232,10 @@ func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 		log.Printf("ERROR occurred during porter call: %v", err)
 		return "", err
 	}
-	fmt.Printf("Output from porter version: %v", currentPorterVersion)
 	return determineVersion(currentPorterVersion)
 }
 
 func versionCheck(component string, currentVersion string, versionFromSourceOfTruth string) bool {
-	// fmt.Printf("----------%s Version check----------\n", component)
-	// fmt.Printf("Current component version: %s\n", currentVersion)
-	// fmt.Printf("Component version from source of truth: %s\n", versionFromSourceOfTruth)
 
 	componentVersionFromDependenciesYaml, err := semver.NewVersion(versionFromSourceOfTruth)
 	if err != nil {
@@ -268,7 +257,6 @@ func versionCheck(component string, currentVersion string, versionFromSourceOfTr
 		return true
 	}
 	fmt.Printf("Current %s version is greater than version from dependencies, nothing to do.\n\n", component)
-
 	return false
 }
 
