@@ -42,7 +42,8 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 	var err error
 	if len(strings.TrimSpace(tag)) > 0 {
 		// --tag exists
-		fmt.Printf("Here is the tag: %s, %s\n", tag, strings.Replace(tag, "bundle", "invocation", 1))
+		fmt.Printf("Input tag: %s, %s\n", tag, strings.Replace(tag, "bundle", "invocation", 1))
+		// Pull the image and store labels in a map
 		dependencies, err = q.PullImage(strings.Replace(tag, "bundle", "invocation", 1))
 		fmt.Printf("\nDependencies map from the inspected image: %v\n", dependencies)
 		if err != nil {

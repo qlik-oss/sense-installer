@@ -105,8 +105,7 @@ func installPorter(qlikSenseHome string) (string, error) {
 		porterDownloadURL = constructPorterURL(runtime.GOOS)
 
 		// if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
-		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-
+		if (runtime.GOOS == "linux" && runtime.GOARCH == "amd64") || runtime.GOOS == "darwin" {
 			if err = downloadFile(porterDownloadURL, destination); err != nil {
 				return "", err
 			}
@@ -116,14 +115,12 @@ func installPorter(qlikSenseHome string) (string, error) {
 			}
 			os.Chmod(porterExe, 0755)
 		} else if runtime.GOOS == "windows" {
-
 			if err = downloadFile(porterDownloadURL, porterExe); err != nil {
 				return "", err
 			}
 			os.Chmod(porterExe, 0755)
 		}
 	}
-	// fmt.Printf("Porter Exe: %s\n", porterExe)
 	return porterExe, nil
 }
 
@@ -153,7 +150,6 @@ func constructPorterURL(runtimeOS string) string {
 	} else if runtimeOS == "darwin" {
 		url = porterURLBase + version + "/" + macOS
 	}
-	// fmt.Printf("Porter download URL: %s\n", url)
 	return url
 }
 
@@ -238,8 +234,6 @@ func installMixins(porterExe, qlikSenseHome string) (string, error) {
 func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
 	var cmd *exec.Cmd
 
-	fmt.Printf("\nEntry: installMixin(), %s, %s, %s\n\n", porterExe, mixin, mixinOpts)
-
 	args := []string{"mixin", "install", mixin}
 	if mixinOpts != "" {
 		args = append(args, "-v")
@@ -252,7 +246,6 @@ func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
 	if err := cmd.Run(); err != nil {
 		return "", err
 	}
-	fmt.Println("Exit: installMixin()")
 	return "", nil
 }
 
