@@ -204,7 +204,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add version command
 	cmd.AddCommand(versionCmd)
 	// add cache command
-	var cahcheCommand = &cobra.Command{Use: "cache"}
+	var cahcheCommand = &cobra.Command{Use: "cache", Short: "Perform operations on cache"}
 	cmd.AddCommand(cahcheCommand)
 	cahcheCommand.AddCommand(cacheClearCmd)
 
