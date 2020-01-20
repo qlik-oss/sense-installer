@@ -21,7 +21,6 @@ import (
 )
 
 const (
-	// porterURLBase    = "https://cdn.deislabs.io/porter/"
 	winOS            = "porter-windows-amd64.exe"
 	linuxOS          = "porter-linux-amd64"
 	macOS            = "porter-darwin-amd64"
