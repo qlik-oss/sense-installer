@@ -36,7 +36,7 @@ var (
 )
 
 func checkMinVersion(tag string, q *qliksense.Qliksense) {
-	fmt.Println("Entry: CheckMinVersion()", "tag:", tag)
+	fmt.Println("Entry: CheckMinVersion()")
 	dependencies := map[string]string{}
 	// check if tag is empty or not
 	var err error
