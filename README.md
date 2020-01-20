@@ -7,7 +7,7 @@
     - [Requirements](#requirements)
     - [Download](#download)
     - [Generate Credentials from published bundle](#generate-credentials-from-published-bundle)
-    - [QLiksense version and image list](#qliksense-version-and-image-list)
+    - [Qlik Sense version and image list](#qliksense-version-and-image-list)
     - [Optional: Pulling images in manifest locally, "air gap"](#optional-pulling-images-in-manifest-locally-%22air-gap%22)
     - [Running Preflight checks](#running-preflight-checks)
     - [Installation](#installation)
@@ -64,7 +64,7 @@ For each version of a qliksense sense edge build there should be a corresponding
 - Select `file path` and specify full path to a kube config file ex. _Bash_:
   - `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config `
 
-### QLiksense version and image list
+### Qlik Sense version and image list
 
 It is possible verify the version of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository bundled into the `qlik/qliksense-cnab-bundle` image and retreive the list of images included in that release. (This operation can take a minute or so)<https://github.com/qlik-oss/kustomize/issues/13> as the entire manifests needs to be rendered:
 - `qliksense about --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
