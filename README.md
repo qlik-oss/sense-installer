@@ -140,6 +140,12 @@ Packaging of Qlik Sense on Kubernetes is done through a [Porter](https://porter.
 
 To start, clone [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) and modify the repo as desired, once finished make sure to be in the `qliksense-k8s` directory from which the porter bundle can be built:
 
-- `porter build`
+```shell
+git clone git@github.com:qlik-oss/qliksense-k8s.git
+
+cd qliksense-k8s
+
+qliksense build
+```
 
 Once built, all of the `porter` command that were used with `--tag` can be now be used without this flag provided that porter is executed with the `qliksense-k8s` directory. `porter` will automatically use the qliksense-k8s (and the porter.yaml) in the current directory.
