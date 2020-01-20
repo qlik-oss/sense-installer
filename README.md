@@ -17,17 +17,17 @@
   
 ## About
 
-The Qlik Sense installer CLI (sense-installer) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure
-described in (https://github.com/qlik-oss/qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s]. 
+The Qlik Sense installer CLI (sense-installer) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure described in (https://github.com/qlik-oss/qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s]. 
 
 This is a technology preview that uses (porter)[https://porter.sh] to execute "actions" (operations) and bundle versions of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository.
+
 These bundles are posted to (docker hub)[https://hub.docker.com/] at the following location: (https://hub.docker.com/r/qlik/qliksense-cnab-bundle)[https://hub.docker.com/r/qlik/qliksense-cnab-bundle/tags].
+
 For each version of a qliksense sense edge build there should be a corresponding release current posted on docker hub. ex. `qlik/qliksense-cnab-bundle:v1.21.23-edge` for `v1.21.23` edge release of qliksense. The latest version posted will also be labelled as `latest`
 
 ### Future Direction
 
-- Porter is currently used as a core technology for the CLI. In the future Porter will be moved "up the stack" to allow the CLI to perform the current and expanded operations independently and
-encapsulate core functionality currently provided by Porter and other dependent tooling.
+- Porter is currently used as a core technology for the CLI. In the future Porter will be moved "up the stack" to allow the CLI to perform the current and expanded operations independently and encapsulate core functionality currently provided by Porter and other dependent tooling.
 - More operations:
   - Expanded preflight checks
   - backup/restore operations
@@ -58,19 +58,20 @@ encapsulate core functionality currently provided by Porter and other dependent 
 
 ### Generate Credentials from published bundle
 
-- Ensure connectivity to the target cluster create a kubeconfig credential for a target bundle run ex. `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge` , replace `<credential_name>` with a name of your choosing.
-  - Select `file path` and specify full path to a kube config file ex. _Bash_: `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config `
+- Ensure connectivity to the target cluster create a kubeconfig credential for a target bundle run ex. 
+  - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge` 
+  , replace `<credential_name>` with a name of your choosing.
+- Select `file path` and specify full path to a kube config file ex. _Bash_:
+  - `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config `
 
 ### QLiksense version and image list
 
-It is possible verify the version of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository bundled into the `qlik/qliksense-cnab-bundle` image and retreive the list of images
-included in that release. This operation take a minute or so (ISSUE #) as the entire manifests needs to be rendered:
+It is possible verify the version of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository bundled into the `qlik/qliksense-cnab-bundle` image and retreive the list of images included in that release. This operation take a minute or so (ISSUE #) as the entire manifests needs to be rendered:
 - `qliksense about --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
 
 ### Optional: Pulling images in manifest locally, "air gap"
 
-If the `dockerRegistry` parameter is specified as the private docker registry to be used by the kubernetes cluster hosting qliksense, it is possible to pull images to the local docker engine for
-an eventual push during a `qliksense install` or `qliksense upgrade`
+If the `dockerRegistry` parameter is specified as the private docker registry to be used by the kubernetes cluster hosting qliksense, it is possible to pull images to the local docker engine for an eventual push during a `qliksense install` or `qliksense upgrade`
 
 ### Running Preflight checks
 You can run preflight checks to ensure that the cluster is in a healthy state before installing Qliksense. 
@@ -116,8 +117,7 @@ If files need to be added to the (qliksense-k8s repository)[https://github.com/q
 
 Packaging of Qlik Sense on Kubernetes is done through a [Porter](https://porter.sh/) definition in the [Qlik Sense on Kubernetes configuration repository](https://github.com/qlik-oss/qliksense-k8s/blob/master/porter.yaml), the resulting bundle published on DockerHub as a [Cloud Natvie Application Bundle](https://cnab.io/) called [qliksense-cnab-bundle](https://hub.docker.com/r/qlik/qliksense-cnab-bundle)
 
-To start, clone (https://github.com/qlik-oss/qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] and modify the repo as desired, once finished make sure to be in the `qliksense-k8s` directory
-from where the porter bundle can be built:
+To start, clone (https://github.com/qlik-oss/qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] and modify the repo as desired, once finished make sure to be in the `qliksense-k8s` directory from which the porter bundle can be built:
 - `porter build`
 
 Once built, all of the `porter` command that were used with `--tag` can be now be used without this flag provided that porter is executed with the `qliksense-k8s` directory. `porter` will automatically use the qliksense-k8s (and the porter.yaml) in the current directory.
