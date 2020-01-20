@@ -14,6 +14,7 @@
       - [Supported Parameters during install](#supported-parameters-during-install)
       - [How To Add Identity Provider Config](#how-to-add-identity-provider-config)
   - [Packaging a Custom bundle](#packaging-a-custom-bundle)
+  
 ## About
 
 The Qlik Sense installer CLI (sense-installer) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure
@@ -21,9 +22,10 @@ described in (https://github.com/qlik-oss/qliksense-k8s)[https://github.com/qlik
 
 This is a technology preview that uses (porter)[https://porter.sh] to execute "actions" (operations) and bundle versions of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository.
 These bundles are posted to (docker hub)[https://hub.docker.com/] at the following location: (https://hub.docker.com/r/qlik/qliksense-cnab-bundle)[https://hub.docker.com/r/qlik/qliksense-cnab-bundle/tags].
-For each version of a qliksense sense edge, build there should be a corresponding release current posted on docker hub. ex. `qlik/qliksense-cnab-bundle:v1.21.23-edge` for `v1.21.23` edge release of qliksense. The latest version posted will also be labelled as `latest`
+For each version of a qliksense sense edge build there should be a corresponding release current posted on docker hub. ex. `qlik/qliksense-cnab-bundle:v1.21.23-edge` for `v1.21.23` edge release of qliksense. The latest version posted will also be labelled as `latest`
 
 ### Future Direction
+
 - Porter is currently used as a core technology for the CLI. In the future Porter will be moved "up the stack" to allow the CLI to perform the current and expanded operations independently and
 encapsulate core functionality currently provided by Porter and other dependent tooling.
 - More operations:
@@ -52,7 +54,7 @@ encapsulate core functionality currently provided by Porter and other dependent 
     PS> $Env:PATH="$Env:USERPROFILE\.qliksense;$Env:PATH"
     ```
 - To allow the CLI to download and initialize dependencies (including porter and it's associated mixins), simply execute `qliksense` with no arguments
-  - `#bash qliksense`
+  - `qliksense`
 
 ### Generate Credentials from published bundle
 
