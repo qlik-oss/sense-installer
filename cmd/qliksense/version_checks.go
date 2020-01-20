@@ -165,7 +165,7 @@ func checkCLIVersion(dependencies map[string]string) {
 	// Checking version below
 	updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
 	if updateComponent {
-		// log.Fatalf("Please download a newer version of CLI and retry the operation, exiting now.")
+		log.Fatalf("Please download a newer version of CLI and retry the operation, exiting now.")
 	}
 }
 
