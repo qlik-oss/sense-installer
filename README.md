@@ -66,7 +66,7 @@ For each version of a qliksense sense edge build there should be a corresponding
 
 ### QLiksense version and image list
 
-It is possible verify the version of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository bundled into the `qlik/qliksense-cnab-bundle` image and retreive the list of images included in that release. This operation take a minute or so (ISSUE #) as the entire manifests needs to be rendered:
+It is possible verify the version of the (qliksense-k8s)[https://github.com/qlik-oss/qliksense-k8s] repository bundled into the `qlik/qliksense-cnab-bundle` image and retreive the list of images included in that release. (This operation can take a minute or so)<https://github.com/qlik-oss/kustomize/issues/13> as the entire manifests needs to be rendered:
 - `qliksense about --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
 
 ### Optional: Pulling images in manifest locally, "air gap"
