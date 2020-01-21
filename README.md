@@ -69,11 +69,11 @@ For each version of a qliksense sense edge build there should be a corresponding
     - Select `file path` and specify full path to a kube config file ex. _Bash_:
   `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
 
-  - or generating file manually like this
+  - or generating file manually like this, replace `<credential_name>` with a name of your choosing.
     - _Bash_
     ```shell
     cat <<EOF > $HOME/.qliksense/credentials/kube-cred.yaml
-    name: kube-cred
+    name: <credential_name>
     credentials:
     - name: kubeconfig
       source:
@@ -83,7 +83,7 @@ For each version of a qliksense sense edge build there should be a corresponding
     - _PowerShell_
     ```shell
     PS> Add-Content -Value @"
-    name: kube-cred
+    name: <credential_name>
     credentials:
     - name: kubeconfig
       source:
