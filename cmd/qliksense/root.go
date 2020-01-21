@@ -75,49 +75,49 @@ func setUpPaths() (string, string, error) {
 
 func installPorter(qlikSenseHome, porterExe string) (string, error) {
 	var (
-		destination       string
-		downloadPorter    bool
+		destination string
+		// downloadPorter    = true
 		porterDownloadURL string
 		err               error
 	)
-	if _, err = os.Stat(qlikSenseHome); err != nil {
-		if os.IsNotExist(err) {
-			downloadPorter = true
-		} else {
+	// if _, err = os.Stat(qlikSenseHome); err != nil {
+	// 	if os.IsNotExist(err) {
+	// 		downloadPorter = true
+	// 	} else {
+	// 		return "", err
+	// 	}
+	// } else {
+	// 	if _, err = os.Stat(porterExe); err != nil {
+	// 		if os.IsNotExist(err) {
+	// 			downloadPorter = true
+	// 		} else {
+	// 			return "", err
+	// 		}
+	// 	}
+	// }
+
+	// if downloadPorter {
+	os.Mkdir(qlikSenseHome, os.ModePerm)
+	destination = filepath.Join(qlikSenseHome, porterRuntime)
+	// construct url to download porter from
+	porterDownloadURL = constructPorterURL(runtime.GOOS)
+
+	if (runtime.GOOS == "linux" && runtime.GOARCH == "amd64") || runtime.GOOS == "darwin" {
+		if err = downloadFile(porterDownloadURL, destination); err != nil {
 			return "", err
 		}
-	} else {
-		if _, err = os.Stat(porterExe); err != nil {
-			if os.IsNotExist(err) {
-				downloadPorter = true
-			} else {
-				return "", err
-			}
+		os.Chmod(destination, 0755)
+		if _, err = copy(destination, porterExe); err != nil {
+			return "", err
 		}
-	}
-
-	if downloadPorter {
-		os.Mkdir(qlikSenseHome, os.ModePerm)
-		destination = filepath.Join(qlikSenseHome, porterRuntime)
-		// construct url to download porter from
-		porterDownloadURL = constructPorterURL(runtime.GOOS)
-
-		if (runtime.GOOS == "linux" && runtime.GOARCH == "amd64") || runtime.GOOS == "darwin" {
-			if err = downloadFile(porterDownloadURL, destination); err != nil {
-				return "", err
-			}
-			os.Chmod(destination, 0755)
-			if _, err = copy(destination, porterExe); err != nil {
-				return "", err
-			}
-			os.Chmod(porterExe, 0755)
-		} else if runtime.GOOS == "windows" {
-			if err = downloadFile(porterDownloadURL, porterExe); err != nil {
-				return "", err
-			}
-			os.Chmod(porterExe, 0755)
+		os.Chmod(porterExe, 0755)
+	} else if runtime.GOOS == "windows" {
+		if err = downloadFile(porterDownloadURL, porterExe); err != nil {
+			return "", err
 		}
+		os.Chmod(porterExe, 0755)
 	}
+	// }
 	return porterExe, nil
 }
 
