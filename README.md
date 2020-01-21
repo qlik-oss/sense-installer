@@ -67,23 +67,23 @@ For each version of a qliksense sense edge build there should be a corresponding
       ```shell
       bash# CREDENTIAL_NAME=<credential_name>
       bash# cat <<EOF > $HOME/.qliksense/credentials/$CREDENTIAL_NAME.yaml
-      > name: $CREDENTIAL_NAME
-      > credentials:
-      > - name: kubeconfig
-      > source:
-      >   path: $HOME/.kube/config
-      > EOF
+      name: $CREDENTIAL_NAME
+      credentials:
+      - name: kubeconfig
+        source:
+          path: $HOME/.kube/config
+      EOF
       ```
     - _PowerShell_
       ```shell
       PS> $CREDENTIAL_NAME="<credential_name>"
       PS> Add-Content -Value @"
-      >> name: $CREDENTIAL_NAME
-      >> credentials:
-      >> - name: kubeconfig
-      >> source:
-      >>   path: $Env:USERPROFILE\.kube\config
-      >> "@ -Path $Env:USERPROFILE\.qliksense\credentials\$CREDENTIAL_NAME".yaml"
+      name: $CREDENTIAL_NAME
+      credentials:
+      - name: kubeconfig
+        source:
+          path: $Env:USERPROFILE\.kube\config
+      "@ -Path $Env:USERPROFILE\.qliksense\credentials\$CREDENTIAL_NAME".yaml"
       ```
   - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Porter CLI](#porter-cli) above)*
     - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`, replace `<credential_name>` with a name of your choosing.
