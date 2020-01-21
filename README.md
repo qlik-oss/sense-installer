@@ -48,45 +48,41 @@ For each version of a qliksense sense edge build there should be a corresponding
 #### Porter CLI
 - *Optional*: If wanting to use porter CLI directly, two environment variables will need to be set so as not to conflict with an existing porter installation:
   - _Bash_
-
     ```shell
     bash# export PORTER_HOME="$HOME\.qliksense"
     bash# export PATH="$HOME\.qliksense;$PATH"
     ```
 
   - _PowerShell_
-
     ```shell
     PS> $Env:PORTER_HOME="$Env:USERPROFILE\.qliksense"
     PS> $Env:PATH="$Env:USERPROFILE\.qliksense;$Env:PATH"
     ```
-
-
 
 ### Generate Credentials from published bundle
 
 - Ensure connectivity to the target cluster create a kubeconfig credential for a target bundle. 
   - generating a file as follows, replace `<credential_name>` with a name of your choosing.
     - _Bash_
-    ```shell
-    cat <<EOF > $HOME/.qliksense/credentials/kube-cred.yaml
-    name: <credential_name>
-    credentials:
-    - name: kubeconfig
-      source:
-        path: $HOME/.kube/config
-    EOF
-    ```
+      ```shell
+      cat <<EOF > $HOME/.qliksense/credentials/kube-cred.yaml
+      name: <credential_name>
+      credentials:
+      - name: kubeconfig
+        source:
+          path: $HOME/.kube/config
+      EOF
+      ```
     - _PowerShell_
-    ```shell
-    PS> Add-Content -Value @"
-    name: <credential_name>
-    credentials:
-    - name: kubeconfig
-      source:
-        path: $Env:USERPROFILE\.kube\config
-    "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
-    ```
+      ```shell
+      PS> Add-Content -Value @"
+      name: <credential_name>
+      credentials:
+      - name: kubeconfig
+        source:
+          path: $Env:USERPROFILE\.kube\config
+      "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
+      ```
   - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Porter CLI](#porter-cli) above)*
     - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`, replace `<credential_name>` with a name of your choosing.
     - Select `file path` and specify full path to a kube config file ex. _Bash_: `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
@@ -100,6 +96,8 @@ It is possible verify the version of the [qliksense-k8s](https://github.com/qlik
 ### Optional: Pulling images in manifest locally, "air gap"
 
 If the `dockerRegistry` parameter is specified as the private docker registry to be used by the kubernetes cluster hosting qliksense, it is possible to pull images to the local docker engine for an eventual push during a `qliksense install` or `qliksense upgrade`
+
+- `qliksense pull --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
 
 ### Running Preflight checks
 
