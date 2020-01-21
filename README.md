@@ -6,6 +6,7 @@
   - [Getting Started](#getting-started)
     - [Requirements](#requirements)
     - [Download](#download)
+      - [Porter CLI](#porter-cli)
     - [Generate Credentials from published bundle](#generate-credentials-from-published-bundle)
     - [Qlik Sense version and image list](#qliksense-version-and-image-list)
     - [Optional: Pulling images in manifest locally, "air gap"](#optional-pulling-images-in-manifest-locally-%22air-gap%22)
