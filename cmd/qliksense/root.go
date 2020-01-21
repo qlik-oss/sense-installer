@@ -73,10 +73,9 @@ func setUpPaths() (string, string, error) {
 	return porterExe, qlikSenseHome, nil
 }
 
-func installPorter(qlikSenseHome string) (string, error) {
+func installPorter(qlikSenseHome, porterExe string) (string, error) {
 	var (
-		destination,
-		porterExe string
+		destination       string
 		downloadPorter    bool
 		porterDownloadURL string
 		err               error
@@ -103,13 +102,12 @@ func installPorter(qlikSenseHome string) (string, error) {
 		// construct url to download porter from
 		porterDownloadURL = constructPorterURL(runtime.GOOS)
 
-		// if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
 		if (runtime.GOOS == "linux" && runtime.GOARCH == "amd64") || runtime.GOOS == "darwin" {
 			if err = downloadFile(porterDownloadURL, destination); err != nil {
 				return "", err
 			}
 			os.Chmod(destination, 0755)
-			if _, err = copy(filepath.Join(qlikSenseHome, porterRuntime), porterExe); err != nil {
+			if _, err = copy(destination, porterExe); err != nil {
 				return "", err
 			}
 			os.Chmod(porterExe, 0755)
@@ -235,10 +233,8 @@ func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
 
 	args := []string{"mixin", "install", mixin}
 	if mixinOpts != "" {
-		args = append(args, "-v")
 		args = append(args, strings.Fields(mixinOpts)...)
 	}
-
 	cmd = exec.Command(porterExe, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
