@@ -42,7 +42,7 @@ For each version of a qliksense sense edge build there should be a corresponding
 ### Download
 
 - Download the appropriate executable for your platform from the [releases page](https://github.com/qlik-oss/sense-installer/releases).
-- Two environment variables will need to be set so as not to conflict with an existing porter installation:
+- *Optional*: If wanting to use porter CLI directly, two environment variables will need to be set so as not to conflict with an existing porter installation:
   - _Bash_
 
     ```shell
@@ -62,14 +62,8 @@ For each version of a qliksense sense edge build there should be a corresponding
 
 ### Generate Credentials from published bundle
 
-- Ensure connectivity to the target cluster create a kubeconfig credential for a target bundle. We can creat crdentials either using [porter](https://porter.sh) or generating file manually.
-  - using porter
-    - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`
-  , replace `<credential_name>` with a name of your choosing.
-    - Select `file path` and specify full path to a kube config file ex. _Bash_:
-  `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
-
-  - or generating file manually like this, replace `<credential_name>` with a name of your choosing.
+- Ensure connectivity to the target cluster create a kubeconfig credential for a target bundle. 
+  - generating a file as follows, replace `<credential_name>` with a name of your choosing.
     - _Bash_
     ```shell
     cat <<EOF > $HOME/.qliksense/credentials/kube-cred.yaml
@@ -90,6 +84,9 @@ For each version of a qliksense sense edge build there should be a corresponding
         path: $Env:USERPROFILE\.kube\config
     "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
     ```
+  - credentials can also be created using the [porter](https://porter.sh) CLI (the correct environmental variable need to have been set up as shown in (Generate Credentials from published bundle)[#generate_credentials_from_published_bundle] above)
+    - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`, replace `<credential_name>` with a name of your choosing.
+    - Select `file path` and specify full path to a kube config file ex. _Bash_: `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
 
 ### Qlik Sense version and image list
 
@@ -139,7 +136,7 @@ idpConfigs=[{"discoveryUrl":"http://keycloak-insecure:8089/keycloak/realms/maste
 Then pass that file during install command like this
 
 ```shell
-porter install --param acceptEULA=yes -c  <credential_name> --param-file idpconfigs.txt --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
+qliksense install --param acceptEULA=yes -c  <credential_name> --param-file idpconfigs.txt --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
 ```
 
 ## Packaging a Custom bundle
