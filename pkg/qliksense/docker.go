@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/term"
 	"github.com/docker/docker/registry"
+	"github.com/sirupsen/logrus"
 
 	"strings"
 
@@ -57,7 +57,7 @@ func (p *Qliksense) PullImages(args []string) error {
 	}
 	for _, image = range images.Images {
 		if _, err = p.PullImage(image); err != nil {
-			fmt.Print(err)
+			logrus.Print(err)
 		}
 		println("---")
 	}
@@ -162,7 +162,7 @@ func (p *Qliksense) TagAndPushImages(registry string) error {
 
 	for _, image = range images.Images {
 		if err = p.TagAndPush(image, registry); err != nil {
-			fmt.Print(err)
+			logrus.Print(err)
 		}
 		println("---")
 	}
@@ -213,7 +213,7 @@ func (p *Qliksense) TagAndPush(image string, registryName string) error {
 		return err
 	}
 	if imageList == nil || len(imageList) <= 0 {
-		fmt.Printf("Use `qliksense pull`, to pull %v for an air gap push", newName)
+		logrus.Printf("Use `qliksense pull`, to pull %v for an air gap push", newName)
 		return nil
 	}
 

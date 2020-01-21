@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-	"github.com/spf13/cobra"
 	"strings"
+
+	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 func porter(q *qliksense.Qliksense) *cobra.Command {
@@ -20,7 +21,7 @@ func porter(q *qliksense.Qliksense) *cobra.Command {
 				func(x string) (out *string) {
 					out = new(string)
 					*out = strings.ReplaceAll(x, "porter", "qliksense porter")
-					fmt.Println(*out)
+					logrus.Println(*out)
 					return
 				}); err != nil {
 				return err

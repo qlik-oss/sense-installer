@@ -16,6 +16,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -126,7 +127,7 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of qliksense cli",
 	Long:  `All software has versions. This is Hugo's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
+		logrus.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
 	},
 }
 
@@ -159,28 +160,28 @@ func retrievePorterVersion() string {
 
 	resp, err := http.Get(porterRepoURL)
 	if err != nil {
-		fmt.Printf("Error occurred while retrieving porter version info: %v\n", err)
+		logrus.Printf("Error occurred while retrieving porter version info: %v\n", err)
 		return ""
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("response status was not OK while retrieving porter version info\n")
+		logrus.Printf("response status was not OK while retrieving porter version info\n")
 		return ""
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Error occurred while reading porter version info: %v\n", err)
+		logrus.Printf("Error occurred while reading porter version info: %v\n", err)
 		return ""
 	}
 	result := &apiInfo{}
 	err = json.Unmarshal(body, result)
 	if err != nil {
-		fmt.Printf("Error occurred while unmarshalling porter version info: %v\n", err)
+		logrus.Printf("Error occurred while unmarshalling porter version info: %v\n", err)
 		return ""
 	}
-	fmt.Printf("Porter Version: %s\n", result.Name)
+	logrus.Printf("Porter Version: %s\n", result.Name)
 	return result.Name
 }
 
@@ -288,7 +289,7 @@ func downloadFile(url string, filepath string) error {
 		err  error
 		resp *http.Response
 	)
-	fmt.Printf("Porter download link: %s\n", url)
+	logrus.Printf("Porter download link: %s\n", url)
 	// Create the file
 	if out, err = os.Create(filepath); err != nil {
 		return err

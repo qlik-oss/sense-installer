@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -37,16 +38,16 @@ var (
 )
 
 func checkMinVersion(tag string, q *qliksense.Qliksense) {
-	fmt.Println("Entry: CheckMinVersion()")
+	logrus.Println("Entry: CheckMinVersion()")
 	dependencies := map[string]string{}
 	// check if tag is empty or not
 	var err error
 	if len(strings.TrimSpace(tag)) > 0 {
 		// --tag exists
-		fmt.Printf("Input tag: %s, %s\n", tag, strings.Replace(tag, "bundle", "invocation", 1))
+		logrus.Printf("Input tag: %s, %s\n", tag, strings.Replace(tag, "bundle", "invocation", 1))
 		// Pull the image and store labels in a map
 		dependencies, err = q.PullImage(strings.Replace(tag, "bundle", "invocation", 1))
-		fmt.Printf("\nDependencies map from the inspected image: %v\n", dependencies)
+		logrus.Printf("\nDependencies map from the inspected image: %v\n", dependencies)
 		if err != nil {
 			log.Fatalf("unable to pull the requested image: %v", err)
 		}
@@ -57,15 +58,15 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 			// read the dependencies.yaml and store into a map
 			yamlFile, err := ioutil.ReadFile(dependenciesFile)
 			if err != nil {
-				fmt.Println("Exit: CheckMinVersion()")
+				logrus.Println("Exit: CheckMinVersion()")
 				log.Fatalf("Error reading from source: %s\n", err)
 			}
 			err = yaml.Unmarshal(yamlFile, &dependencies)
 			if err != nil {
-				fmt.Println("Exit: CheckMinVersion()")
+				logrus.Println("Exit: CheckMinVersion()")
 				log.Fatalf("Error when parsing from source: %s\n", err)
 			}
-			fmt.Printf("Dependencies map from the given yaml: %v\n", dependencies)
+			logrus.Printf("Dependencies map from the given yaml: %v\n", dependencies)
 		}
 	}
 	if len(dependencies) > 0 {
@@ -83,12 +84,12 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 	} else {
 		log.Fatalf("Not able to infer dependencies, hence exiting")
 	}
-	fmt.Println("Exit: CheckMinVersion() - all good")
+	logrus.Println("Exit: CheckMinVersion() - all good")
 }
 
 func checkMixinVersion(dependencies map[string]string, q *qliksense.Qliksense) {
 	var tmp string
-	fmt.Println("------------ Mixins version check -----------")
+	logrus.Println("------------ Mixins version check -----------")
 	currentMixinVersions, err := retrieveCurrentInstalledMixinVersions(q)
 	if err != nil {
 		log.Fatal(err)
@@ -107,14 +108,14 @@ func checkMixinVersion(dependencies map[string]string, q *qliksense.Qliksense) {
 		}
 		// if tmp is not empty and mixin requires download and install
 		if shouldUpdateMixin {
-			fmt.Println("Downloading a newer version of mixin:", k)
+			logrus.Println("Downloading a newer version of mixin:", k)
 			// download and install the new mixin
 			mURL, ok := mixinURLs[k]
 			if ok {
 				tmp = fmt.Sprintf("%s %s", tmp, mURL)
 			}
 			if _, err = installMixin(q.PorterExe, k, tmp); err != nil {
-				fmt.Println("Exit: CheckMinVersion()")
+				logrus.Println("Exit: CheckMinVersion()")
 				log.Fatalf("Error installing mixin %s: %s\n", k, err)
 			}
 		}
@@ -125,34 +126,34 @@ func checkPorterVersion(dependencies map[string]string, q *qliksense.Qliksense) 
 	// Infer info about the min porter version
 	var porterVersionFromDependencies, tmp string
 	var err error
-	fmt.Println("------------ Porter version check -----------")
+	logrus.Println("------------ Porter version check -----------")
 	tmp, _ = dependencies["org.qlik.operator.cli.porter.version.min"]
 	if len(tmp) != 0 {
 		porterVersionFromDependencies = tmp
 	}
-	fmt.Printf("Porter version from dependencies map: %v\n", porterVersionFromDependencies)
+	logrus.Printf("Porter version from dependencies map: %v\n", porterVersionFromDependencies)
 
 	// check porter version
 	currentPorterVersion, err = determineCurrentPorterVersion(q)
 	if err != nil {
 		log.Println("warning:", err)
 	}
-	fmt.Printf("Current Porter version: %v\n", currentPorterVersion)
+	logrus.Printf("Current Porter version: %v\n", currentPorterVersion)
 	updateComponent = true
 	if currentPorterVersion != "" {
 		updateComponent = versionCheck("Porter", currentPorterVersion, porterVersionFromDependencies)
 	}
 	if updateComponent {
-		fmt.Println("Downloading a newer version of Porter")
+		logrus.Println("Downloading a newer version of Porter")
 		// Download and install newer version of porter and mixins
 		q.PorterExe, err = installPorter(q.QliksenseHome, q.PorterExe)
 		if err != nil {
-			fmt.Println("Exit: CheckMinVersion()")
+			logrus.Println("Exit: CheckMinVersion()")
 			log.Fatalf("error installing porter: %v", err)
 		}
 
 		if _, err = installMixins(q.PorterExe, q.QliksenseHome); err != nil {
-			fmt.Println("Exit: CheckMinVersion()")
+			logrus.Println("Exit: CheckMinVersion()")
 			log.Fatalf("error installing mixin: %v", err)
 		}
 	}
@@ -161,17 +162,17 @@ func checkPorterVersion(dependencies map[string]string, q *qliksense.Qliksense) 
 func checkCLIVersion(dependencies map[string]string) {
 	// Infer info about the minimum cli version
 	var cliVersionFromDependencies, tmp string
-	fmt.Printf("\n------------ CLI version check -----------\n")
+	logrus.Printf("------------ CLI version check -----------")
 	tmp, _ = dependencies["org.qlik.operator.cli.sense-installer.version.min"]
 	if len(tmp) != 0 {
 		cliVersionFromDependencies = tmp
 	}
-	fmt.Printf("\nCLI version from dependencies map: %v\n", cliVersionFromDependencies)
+	logrus.Printf("\nCLI version from dependencies map: %v\n", cliVersionFromDependencies)
 
 	// Checking version below
 	updateComponent = versionCheck("CLI", pkg.Version, cliVersionFromDependencies)
 	if updateComponent {
-		log.Fatalf("Please download a newer version of CLI and retry the operation, exiting now.")
+		logrus.Fatal("Please download a newer version of CLI and retry the operation, exiting now.")
 	}
 }
 
@@ -188,7 +189,7 @@ func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]s
 	currentInstalledMixinVersions, err := q.CallPorter([]string{"mixins", "list"}, func(x string) (out *string) {
 		out = new(string)
 		*out = strings.ReplaceAll(x, "porter", "qliksense porter")
-		fmt.Println(*out)
+		logrus.Println(*out)
 		return
 	})
 	if err != nil {
@@ -225,7 +226,7 @@ func determineVersion(versionString string) (string, error) {
 			break
 		}
 	}
-	fmt.Printf("Version string: %v\n", currentComponentVersionNumber)
+	logrus.Printf("Version string: %v\n", currentComponentVersionNumber)
 	if currentComponentVersionNumber != nil {
 		return currentComponentVersionNumber.String(), nil
 	}
@@ -237,7 +238,7 @@ func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 	currentPorterVersion, err := q.CallPorter([]string{"version"}, func(x string) (out *string) {
 		out = new(string)
 		*out = strings.ReplaceAll(x, "porter", "qliksense porter")
-		fmt.Println(*out)
+		logrus.Println(*out)
 		return
 	})
 	if err != nil {
@@ -254,24 +255,24 @@ func versionCheck(component string, currentVersion string, versionFromSourceOfTr
 	}
 	componentVersionFromDependenciesYaml, err := semver.NewVersion(versionFromSourceOfTruth)
 	if err != nil {
-		fmt.Printf("There has been an error parsing version from source of truth: %s\n", err)
+		logrus.Printf("There has been an error parsing version from source of truth: %s\n", err)
 		return true
 	}
-	fmt.Printf("%s version from source of truth: %s\n", component, componentVersionFromDependenciesYaml)
+	logrus.Printf("%s version from source of truth: %s\n", component, componentVersionFromDependenciesYaml)
 
 	currentComponentVersion, err := semver.NewVersion(currentVersion)
 	if err != nil {
-		fmt.Printf("There has been an error parsing version from the derived current version: %s\n", err)
+		logrus.Printf("There has been an error parsing version from the derived current version: %s\n", err)
 		return true
 	}
-	fmt.Printf("\nCurrently installed %s version: %v\n", component, currentComponentVersion)
+	logrus.Printf("\nCurrently installed %s version: %v\n", component, currentComponentVersion)
 
 	// check component version
 	if currentComponentVersion.LessThan(componentVersionFromDependenciesYaml) {
-		fmt.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
+		logrus.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
 		return true
 	}
-	fmt.Printf("Current %s version is greater than version from dependencies, nothing to do.\n\n", component)
+	logrus.Printf("Current %s version is greater than version from dependencies, nothing to do.\n\n", component)
 	return false
 }
 
