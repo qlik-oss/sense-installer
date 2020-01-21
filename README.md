@@ -42,6 +42,10 @@ For each version of a qliksense sense edge build there should be a corresponding
 ### Download
 
 - Download the appropriate executable for your platform from the [releases page](https://github.com/qlik-oss/sense-installer/releases).
+- To allow the CLI to download and initialize dependencies (including porter and it's associated mixins), simply execute `qliksense` with no arguments
+  - `qliksense`
+  
+#### Porter CLI
 - *Optional*: If wanting to use porter CLI directly, two environment variables will need to be set so as not to conflict with an existing porter installation:
   - _Bash_
 
@@ -57,8 +61,7 @@ For each version of a qliksense sense edge build there should be a corresponding
     PS> $Env:PATH="$Env:USERPROFILE\.qliksense;$Env:PATH"
     ```
 
-- To allow the CLI to download and initialize dependencies (including porter and it's associated mixins), simply execute `qliksense` with no arguments
-  - `qliksense`
+
 
 ### Generate Credentials from published bundle
 
@@ -84,7 +87,7 @@ For each version of a qliksense sense edge build there should be a corresponding
         path: $Env:USERPROFILE\.kube\config
     "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
     ```
-  - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Generate Credentials from published bundle](#generate-credentials-from-published-bundle) above)*
+  - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Porter CLI](#porter-cli) above)*
     - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`, replace `<credential_name>` with a name of your choosing.
     - Select `file path` and specify full path to a kube config file ex. _Bash_: `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
 
