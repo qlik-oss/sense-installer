@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -106,7 +107,7 @@ func checkMixinVersion(dependencies map[string]string, q *qliksense.Qliksense) {
 		}
 		// if tmp is not empty and mixin requires download and install
 		if shouldUpdateMixin {
-			fmt.Println("Downloading a newer version of mixin")
+			fmt.Println("Downloading a newer version of mixin:", k)
 			// download and install the new mixin
 			mURL, ok := mixinURLs[k]
 			if ok {
@@ -175,6 +176,15 @@ func checkCLIVersion(dependencies map[string]string) {
 }
 
 func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]string, error) {
+	if _, err := os.Stat(filepath.Join(q.QliksenseHome, mixinDirVar)); err != nil {
+		if os.IsNotExist(err) {
+			// if path doesnt exist, return empty map, and let porter take care of the rest
+			return map[string]string{}, nil
+		} else {
+			return nil, err
+		}
+	}
+
 	result := map[string]string{}
 	currentInstalledMixinVersions, err := q.CallPorter([]string{"mixins", "list"}, func(x string) (out *string) {
 		out = new(string)
