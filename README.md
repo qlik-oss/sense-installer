@@ -84,7 +84,7 @@ For each version of a qliksense sense edge build there should be a corresponding
         path: $Env:USERPROFILE\.kube\config
     "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
     ```
-  - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Generate Credentials from published bundle](#generate_credentials_from_published_bundle) above)*
+  - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Generate Credentials from published bundle](#generate-credentials-from-published-bundle) above)*
     - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`, replace `<credential_name>` with a name of your choosing.
     - Select `file path` and specify full path to a kube config file ex. _Bash_: `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
 
