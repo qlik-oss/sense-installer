@@ -70,16 +70,26 @@ For each version of a qliksense sense edge build there should be a corresponding
   `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
 
   - or generating file manually like this
-  
-  ```console
-  cat <<'EOF' > /home/user/.qliksense/credentials/kube-cred.yaml
-  name: kube-cred
-  credentials:
-  - name: kubeconfig
-    source:
-      path: /home/user/.kube/config
-  EOF
-  ```
+     - _Bash_
+     ```shell
+     cat <<EOF > $HOME/.qliksense/credentials/kube-cred.yaml
+     name: kube-cred
+     credentials:
+     - name: kubeconfig
+       source:
+         path: $HOME/.kube/config
+     EOF
+     ```
+   - _PowerShell_
+     ```yaml
+     PS> Add-Content -Value @"
+     name: kube-cred
+     credentials:
+     - name: kubeconfig
+       source:
+         path: $Env:USERPROFILE\.kube\config
+     "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
+     ```
 
 ### Qlik Sense version and image list
 
