@@ -240,16 +240,19 @@ func determineCurrentPorterVersion(q *qliksense.Qliksense) (string, error) {
 
 func versionCheck(component string, currentVersion string, versionFromSourceOfTruth string) bool {
 
+	if strings.HasPrefix(versionFromSourceOfTruth, "-v ") {
+		versionFromSourceOfTruth = strings.Replace(versionFromSourceOfTruth, "-v ", "", 1)
+	}
 	componentVersionFromDependenciesYaml, err := semver.NewVersion(versionFromSourceOfTruth)
 	if err != nil {
-		fmt.Printf("There has been an error! %s", err)
+		fmt.Printf("There has been an error parsing version from source of truth: %s\n", err)
 		return true
 	}
-	fmt.Printf("%s version from source of truth: %s", component, componentVersionFromDependenciesYaml)
+	fmt.Printf("%s version from source of truth: %s\n", component, componentVersionFromDependenciesYaml)
 
 	currentComponentVersion, err := semver.NewVersion(currentVersion)
 	if err != nil {
-		fmt.Printf("There has been an error! %s", err)
+		fmt.Printf("There has been an error parsing version from the derived current version: %s\n", err)
 		return true
 	}
 	fmt.Printf("\nCurrently installed %s version: %v\n", component, currentComponentVersion)
