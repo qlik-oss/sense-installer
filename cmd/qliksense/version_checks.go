@@ -180,9 +180,8 @@ func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]s
 		if os.IsNotExist(err) {
 			// if path doesnt exist, return empty map, and let porter take care of the rest
 			return map[string]string{}, nil
-		} else {
-			return nil, err
 		}
+		return nil, err
 	}
 
 	result := map[string]string{}
@@ -193,7 +192,7 @@ func retrieveCurrentInstalledMixinVersions(q *qliksense.Qliksense) (map[string]s
 		return
 	})
 	if err != nil {
-		log.Printf("ERROR occurred during porter call: %v", err)
+		log.Printf("error occurred when retrieving mixins list: %v", err)
 		return nil, err
 	}
 	currentInstalledMixinVersionsArr := strings.Split(currentInstalledMixinVersions, "\n")
