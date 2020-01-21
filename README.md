@@ -81,14 +81,14 @@ For each version of a qliksense sense edge build there should be a corresponding
     EOF
     ```
     - _PowerShell_
-    ```yaml
+    ```shell
     PS> Add-Content -Value @"
     name: kube-cred
     credentials:
     - name: kubeconfig
       source:
-        path: $Env:USERPROFILE\\.kube\\config
-    "@ -Path $Env:USERPROFILE\\.qliksense\\credentials\\kube-cred.yaml
+        path: $Env:USERPROFILE\.kube\config
+    "@ -Path $Env:USERPROFILE\.qliksense\credentials\kube-cred.yaml
     ```
 
 ### Qlik Sense version and image list
