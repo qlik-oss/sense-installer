@@ -19,7 +19,6 @@ func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cob
 		buildPreflightAlias(porterCmd, q),
 		buildUninstallAlias(porterCmd, q),
 	}
-
 }
 
 func buildBuildAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
