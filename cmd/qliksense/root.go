@@ -288,7 +288,7 @@ func downloadFile(url string, filepath string) error {
 		err  error
 		resp *http.Response
 	)
-	fmt.Printf("Porter download link: %s\n", url)
+	logDebugMessage("Porter download link: %s\n", url)
 	// Create the file
 	if out, err = os.Create(filepath); err != nil {
 		return err
