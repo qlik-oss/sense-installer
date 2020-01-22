@@ -106,7 +106,6 @@ func installPorter(qlikSenseHome, porterExe string) (string, error) {
 		}
 		os.Chmod(porterExe, 0755)
 	}
-	// }
 	return porterExe, nil
 }
 
