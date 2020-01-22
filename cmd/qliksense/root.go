@@ -20,6 +20,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+// To run this project in ddebug mode, run:
+// export QLIKSENSE_DEBUG=true
+// qliksense <command>
+
 const (
 	winOS            = "porter-windows-amd64.exe"
 	linuxOS          = "porter-linux-amd64"
@@ -80,21 +84,6 @@ func installPorter(qlikSenseHome, porterExe string) (string, error) {
 		porterDownloadURL string
 		err               error
 	)
-	// if _, err = os.Stat(qlikSenseHome); err != nil {
-	// 	if os.IsNotExist(err) {
-	// 		downloadPorter = true
-	// 	} else {
-	// 		return "", err
-	// 	}
-	// } else {
-	// 	if _, err = os.Stat(porterExe); err != nil {
-	// 		if os.IsNotExist(err) {
-	// 			downloadPorter = true
-	// 		} else {
-	// 			return "", err
-	// 		}
-	// 	}
-	// }
 
 	// if downloadPorter {
 	os.Mkdir(qlikSenseHome, os.ModePerm)
@@ -117,7 +106,6 @@ func installPorter(qlikSenseHome, porterExe string) (string, error) {
 		}
 		os.Chmod(porterExe, 0755)
 	}
-	// }
 	return porterExe, nil
 }
 
@@ -189,7 +177,7 @@ func installMixins(porterExe, qlikSenseHome string) (string, error) {
 		mixin, mixinOpts string
 		mixinsVar        = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
-			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
+			"qliksense":  "-v v0.16.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
 			"kubernetes": "-v latest",
 			"helm":       "-v latest",
