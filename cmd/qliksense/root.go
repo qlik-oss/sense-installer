@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -18,8 +21,9 @@ import (
 )
 
 const (
-	//	porterURLBase   = "https://deislabs.blob.core.windows.net/porter"
-	porterURLBase    = "https://github.com/qlik-oss/sense-installer/releases/download"
+	winOS            = "porter-windows-amd64.exe"
+	linuxOS          = "porter-linux-amd64"
+	macOS            = "porter-darwin-amd64"
 	porterHomeVar    = "PORTER_HOME"
 	qlikSenseHomeVar = "QLIKSENSE_HOME"
 	qlikSenseDirVar  = ".qliksense"
@@ -29,27 +33,163 @@ const (
 
 func initAndExecute() error {
 	var (
-		porterExe string
-		err       error
+		porterExe, qlikSenseHome string
+		err                      error
 	)
-	if porterExe, err = installPorter(); err != nil {
-		return err
+
+	porterExe, qlikSenseHome, err = setUpPaths()
+	if err != nil {
+		log.Fatal(err)
 	}
-	if err := rootCmd(qliksense.New(porterExe)).Execute(); err != nil {
+
+	if err = rootCmd(qliksense.New(porterExe, qlikSenseHome)).Execute(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func installPorter() (string, error) {
+func setUpPaths() (string, string, error) {
 	var (
-		porterPermaLink = pkg.Version
-		//porterPermaLink                                          = "v0.3.0"
-		destination, homeDir, mixin, mixinOpts, qlikSenseHome, porterExe, ext string
-		mixinsVar                                                             = map[string]string{
+		porterExe, homeDir, qlikSenseHome string
+		err                               error
+	)
+	porterExe = "porter"
+	if runtime.GOOS == "windows" {
+		porterExe = porterExe + ".exe"
+	}
+	if qlikSenseHome = os.Getenv(qlikSenseHomeVar); qlikSenseHome == "" {
+		if homeDir, err = homedir.Dir(); err != nil {
+			return "", "", err
+		}
+		if homeDir, err = homedir.Expand(homeDir); err != nil {
+			return "", "", err
+		}
+		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
+	}
+	os.Setenv(porterHomeVar, qlikSenseHome)
+
+	porterExe = filepath.Join(qlikSenseHome, porterExe)
+	return porterExe, qlikSenseHome, nil
+}
+
+func installPorter(qlikSenseHome, porterExe string) (string, error) {
+	var (
+		destination string
+		// downloadPorter    = true
+		porterDownloadURL string
+		err               error
+	)
+	// if _, err = os.Stat(qlikSenseHome); err != nil {
+	// 	if os.IsNotExist(err) {
+	// 		downloadPorter = true
+	// 	} else {
+	// 		return "", err
+	// 	}
+	// } else {
+	// 	if _, err = os.Stat(porterExe); err != nil {
+	// 		if os.IsNotExist(err) {
+	// 			downloadPorter = true
+	// 		} else {
+	// 			return "", err
+	// 		}
+	// 	}
+	// }
+
+	// if downloadPorter {
+	os.Mkdir(qlikSenseHome, os.ModePerm)
+	destination = filepath.Join(qlikSenseHome, porterRuntime)
+	// construct url to download porter from
+	porterDownloadURL = constructPorterURL(runtime.GOOS)
+
+	if (runtime.GOOS == "linux" && runtime.GOARCH == "amd64") || runtime.GOOS == "darwin" {
+		if err = downloadFile(porterDownloadURL, destination); err != nil {
+			return "", err
+		}
+		os.Chmod(destination, 0755)
+		if _, err = copy(destination, porterExe); err != nil {
+			return "", err
+		}
+		os.Chmod(porterExe, 0755)
+	} else if runtime.GOOS == "windows" {
+		if err = downloadFile(porterDownloadURL, porterExe); err != nil {
+			return "", err
+		}
+		os.Chmod(porterExe, 0755)
+	}
+	// }
+	return porterExe, nil
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version number of qliksense cli",
+	Long:  `All software has versions. This is Hugo's`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
+	},
+}
+
+func constructPorterURL(runtimeOS string) string {
+	// FYI: Porter does not support other architectures other than amd64
+	const (
+		porterURLBase = "https://cdn.deislabs.io/porter/"
+		winOS         = "porter-windows-amd64.exe"
+		linuxOS       = "porter-linux-amd64"
+		macOS         = "porter-darwin-amd64"
+	)
+	var url, version string
+	version = retrievePorterVersion()
+	if runtimeOS == "linux" {
+		url = porterURLBase + version + "/" + linuxOS
+	} else if runtimeOS == "windows" {
+		url = porterURLBase + version + "/" + winOS
+	} else if runtimeOS == "darwin" {
+		url = porterURLBase + version + "/" + macOS
+	}
+	return url
+}
+
+func retrievePorterVersion() string {
+	type apiInfo struct {
+		TagName string `json:"tag_name,omitempty"`
+		Name    string `json:"name,omitempty"`
+	}
+	const porterRepoURL = "https://api.github.com/repos/deislabs/porter/releases/latest"
+
+	resp, err := http.Get(porterRepoURL)
+	if err != nil {
+		fmt.Printf("Error occurred while retrieving porter version info: %v\n", err)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("response status was not OK while retrieving porter version info\n")
+		return ""
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error occurred while reading porter version info: %v\n", err)
+		return ""
+	}
+	result := &apiInfo{}
+	err = json.Unmarshal(body, result)
+	if err != nil {
+		fmt.Printf("Error occurred while unmarshalling porter version info: %v\n", err)
+		return ""
+	}
+	fmt.Printf("Porter Version: %s\n", result.Name)
+	return result.Name
+}
+
+func installMixins(porterExe, qlikSenseHome string) (string, error) {
+	var (
+		mixin, mixinOpts string
+		mixinsVar        = map[string]string{
 			"kustomize":  "-v 0.2-beta-3-0e19ca4 --url https://github.com/donmstewart/porter-kustomize/releases/download",
-			"qliksense":  "-v v0.14.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
+			"qliksense":  "-v v0.11.0 --url https://github.com/qlik-oss/porter-qliksense/releases/download",
 			"exec":       "-v latest",
 			"kubernetes": "-v latest",
 			"helm":       "-v latest",
@@ -60,64 +200,8 @@ func installPorter() (string, error) {
 			"gcloud":     "-v latest",
 		}
 		downloadMixins map[string]string
-		downloadPorter bool
 		err            error
-		cmd            *exec.Cmd
 	)
-	porterExe = "porter"
-	if runtime.GOOS == "windows" {
-		porterExe = porterExe + ".exe"
-	}
-	if qlikSenseHome = os.Getenv(qlikSenseHomeVar); qlikSenseHome == "" {
-		if homeDir, err = homedir.Dir(); err != nil {
-			return "", err
-		}
-		if homeDir, err = homedir.Expand(homeDir); err != nil {
-			return "", err
-		}
-		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
-	}
-	os.Setenv(porterHomeVar, qlikSenseHome)
-	//TODO: Check if porter version is one alreadu is one for this build
-	porterExe = filepath.Join(qlikSenseHome, porterExe)
-	if _, err = os.Stat(qlikSenseHome); err != nil {
-		if os.IsNotExist(err) {
-			downloadPorter = true
-		} else {
-			return "", err
-		}
-	} else {
-		if _, err = os.Stat(porterExe); err != nil {
-			if os.IsNotExist(err) {
-				downloadPorter = true
-			} else {
-				return "", err
-			}
-		}
-	}
-	if downloadPorter {
-		os.Mkdir(qlikSenseHome, os.ModePerm)
-		destination = filepath.Join(qlikSenseHome, porterRuntime)
-		if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/porter-linux-amd64", destination); err != nil {
-			return "", err
-		}
-		os.Chmod(destination, 0755)
-		if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
-			if _, err = copy(filepath.Join(qlikSenseHome, porterRuntime), porterExe); err != nil {
-				return "", err
-			}
-			os.Chmod(porterExe, 0755)
-		} else {
-			if runtime.GOOS == "windows" {
-				ext = ".exe"
-			}
-			if err = downloadFile(porterURLBase+"/"+porterPermaLink+"/"+"porter-"+runtime.GOOS+"-"+runtime.GOARCH+ext, porterExe); err != nil {
-				return "", err
-			}
-			os.Chmod(porterExe, 0755)
-		}
-	}
-
 	if _, err = os.Stat(filepath.Join(qlikSenseHome, mixinDirVar)); err != nil {
 		if os.IsNotExist(err) {
 			downloadMixins = mixinsVar
@@ -137,24 +221,27 @@ func installPorter() (string, error) {
 		}
 	}
 	for mixin, mixinOpts = range downloadMixins {
-		cmd = exec.Command(porterExe, append([]string{"mixin", "install", mixin}, strings.Split(mixinOpts, " ")...)...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err = cmd.Run(); err != nil {
+		if _, err = installMixin(porterExe, mixin, mixinOpts); err != nil {
 			return "", err
 		}
 	}
-	return porterExe, nil
-
+	return "", err
 }
 
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version number of qliksense cli",
-	Long:  `All software has versions. This is Hugo's`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
-	},
+func installMixin(porterExe, mixin, mixinOpts string) (string, error) {
+	var cmd *exec.Cmd
+
+	args := []string{"mixin", "install", mixin}
+	if mixinOpts != "" {
+		args = append(args, strings.Fields(mixinOpts)...)
+	}
+	cmd = exec.Command(porterExe, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+	return "", nil
 }
 
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {
@@ -201,6 +288,7 @@ func downloadFile(url string, filepath string) error {
 		err  error
 		resp *http.Response
 	)
+	logDebugMessage("Porter download link: %s\n", url)
 	// Create the file
 	if out, err = os.Create(filepath); err != nil {
 		return err

@@ -12,17 +12,17 @@ import (
 func buildAliasCommands(porterCmd *cobra.Command, q *qliksense.Qliksense) []*cobra.Command {
 
 	return []*cobra.Command{
-		buildBuildAlias(porterCmd),
+		buildBuildAlias(porterCmd, q),
 		buildInstallAlias(porterCmd, q),
 		buildUpgradeAlias(porterCmd, q),
-		buildAboutAlias(porterCmd),
+		buildAboutAlias(porterCmd, q),
 		buildPreflightAlias(porterCmd, q),
 		buildUninstallAlias(porterCmd, q),
 	}
 
 }
 
-func buildBuildAlias(porterCmd *cobra.Command) *cobra.Command {
+func buildBuildAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
 	var (
 		c *cobra.Command
 	)
@@ -82,6 +82,9 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense install --driver debug
   qliksense install MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
 `,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			checkMinVersion(opts.Tag, q)
+		},
 		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
@@ -151,6 +154,9 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
   qliksense upgrade --driver debug
   qliksense upgrade MyAppFromTag --tag qlik/qliksense-cnab-bundle:v1.0.0
 `,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			checkMinVersion(opts.Tag, q)
+		},
 		//DisableFlagParsing: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Push images here.
@@ -273,7 +279,7 @@ type aboutOptions struct {
 	CNABFile string
 }
 
-func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
+func buildAboutAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobra.Command {
 	var (
 		c    *cobra.Command
 		opts *aboutOptions
@@ -285,6 +291,9 @@ func buildAboutAlias(porterCmd *cobra.Command) *cobra.Command {
 		Use:   "about",
 		Short: "About Qlik Sense",
 		Long:  "Gives the verion of QLik Sense on Kuberntetes and versions of images.",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			checkMinVersion(opts.Tag, q)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = opts.getTagDefaults(args)
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "about"}, args...))
@@ -317,6 +326,9 @@ func buildPreflightAlias(porterCmd *cobra.Command, q *qliksense.Qliksense) *cobr
 		Use:   "preflight",
 		Short: "Preflight Checks",
 		Long:  "Perform Preflight Checks",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			checkMinVersion(opts.Tag, q)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			args = append(os.Args[1:], opts.getTagDefaults(args)...)
 			return porterCmd.RunE(porterCmd, append([]string{"invoke", "--action", "preflight"}, args...))
