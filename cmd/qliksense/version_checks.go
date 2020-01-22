@@ -90,7 +90,7 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 
 func checkMixinVersion(dependencies map[string]string, q *qliksense.Qliksense) {
 	var tmp string
-	fmt.Println("------------ Mixins version check -----------")
+	logDebugMessage("------------ Mixins version check -----------")
 	currentMixinVersions, err := retrieveCurrentInstalledMixinVersions(q)
 	if err != nil {
 		log.Fatal(err)
@@ -127,7 +127,7 @@ func checkPorterVersion(dependencies map[string]string, q *qliksense.Qliksense) 
 	// Infer info about the min porter version
 	var porterVersionFromDependencies, tmp string
 	var err error
-	fmt.Println("------------ Porter version check -----------")
+	logDebugMessage("------------ Porter version check -----------")
 	tmp, _ = dependencies["org.qlik.operator.cli.porter.version.min"]
 	if len(tmp) != 0 {
 		porterVersionFromDependencies = tmp
@@ -163,7 +163,7 @@ func checkPorterVersion(dependencies map[string]string, q *qliksense.Qliksense) 
 func checkCLIVersion(dependencies map[string]string) {
 	// Infer info about the minimum cli version
 	var cliVersionFromDependencies, tmp string
-	fmt.Printf("\n------------ CLI version check -----------\n")
+	logDebugMessage("\n------------ CLI version check -----------\n")
 	tmp, _ = dependencies["org.qlik.operator.cli.sense-installer.version.min"]
 	if len(tmp) != 0 {
 		cliVersionFromDependencies = tmp
@@ -273,7 +273,7 @@ func versionCheck(component string, currentVersion string, versionFromSourceOfTr
 		fmt.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
 		return true
 	}
-	fmt.Printf("Current %s version is greater than version from dependencies, upgrade not necessary.\n\n", component)
+	logDebugMessage("Current %s version is greater than version from dependencies, upgrade not necessary.\n\n", component)
 	return false
 }
 
