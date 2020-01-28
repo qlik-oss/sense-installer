@@ -91,7 +91,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 			args = append(os.Args[2:], opts.getTagValue(args)...)
 			if registry = opts.findKey("dockerRegistry"); registry != nil {
 				if len(*registry) > 0 {
-					q.TagAndPushImages(*registry)
+					q.TagAndPushImages(*registry, false)
 				}
 			}
 			return porterCmd.RunE(porterCmd, append([]string{"install"}, args...))
@@ -163,7 +163,7 @@ For example, the 'debug' driver may be specified, which simply logs the info giv
 			args = append(os.Args[2:], opts.getTagValue(args)...)
 			if registry = opts.findKey("dockerRegistry"); registry != nil {
 				if len(*registry) > 0 {
-					q.TagAndPushImages(*registry)
+					q.TagAndPushImages(*registry, false)
 				}
 			}
 			return porterCmd.RunE(porterCmd, append([]string{"upgrade"}, args...))
