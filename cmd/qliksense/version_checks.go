@@ -47,7 +47,7 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 		// --tag exists
 		logDebugMessage("Input tag: %s, %s\n", tag, strings.Replace(tag, "bundle", "invocation", 1))
 		// Pull the image and store labels in a map
-		dependencies, err = q.PullImage(strings.Replace(tag, "bundle", "invocation", 1))
+		dependencies, err = q.PullImage(strings.Replace(tag, "bundle", "invocation", 1), true)
 		logDebugMessage("\nDependencies map from the inspected image: %v\n", dependencies)
 		if err != nil {
 			log.Fatalf("unable to pull the requested image: %v", err)
