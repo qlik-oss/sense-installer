@@ -1,11 +1,12 @@
 # qliksense about
 
-About action will display inside information regarding [qliksense-k8](https://github.com/qlik-oss/qliksense-k8s) repo. By default it will display a particular hard-coded `qliksense-k8@tag` and hard-coded profile for that version of `qliksense` installer.
+About action will display inside information regarding [qliksense-k8](https://github.com/qlik-oss/qliksense-k8s) release.
 
-in addition to the default `qliksense about`, it will support following flags
+it will support following flags
 
 - `qliksense about 1.0.0` display default profile for tag `1.0.0`.
 - `qliksense about 1.0.0 --profile=docker-desktop`
+- `qliksense about` # assuming current directory has `manifests/docker-desktop`
 
 using other supported commands user might have built the CR into the location `~/.qliksense/myqliksense.yaml`
 
