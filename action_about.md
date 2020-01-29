@@ -16,8 +16,8 @@ kind: QlikSense
 metadata:
   name: myqliksense
 spec:
-  profile: manifests/docker-desktop
-  manifestsRoot: /Usr/ddd/my-k8-repo
+  profile: docker-desktop
+  manifestsRoot: /Usr/ddd/my-k8-repo/manifests
   namespace: myqliksense
   storageClassName: efs
   configs:
