@@ -260,6 +260,11 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	}
 	// add version command
 	cmd.AddCommand(versionCmd)
+
+	// add operator command
+	cmd.AddCommand(operatorCmd)
+	operatorCmd.AddCommand(operatorViewCmd(p))
+
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	return cmd
