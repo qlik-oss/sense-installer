@@ -36,7 +36,7 @@ build: generate
 	mkdir -p $(BINDIR)
 	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 
-xbuild-all:
+xbuild-all: generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
     	$(foreach ARCH, $(SUPPORTED_ARCHES), \
             	$(MAKE) $(MAKE_OPTS) CLIENT_PLATFORM=$(OS) CLIENT_ARCH=$(ARCH) MIXIN=$(MIXIN) xbuild; \
