@@ -32,18 +32,44 @@ FILE_EXT=
 endif
 
 .PHONY: build
-build:
+build: clean generate
 	mkdir -p $(BINDIR)
 	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 
-xbuild-all:
+xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
     	$(foreach ARCH, $(SUPPORTED_ARCHES), \
             	$(MAKE) $(MAKE_OPTS) CLIENT_PLATFORM=$(OS) CLIENT_ARCH=$(ARCH) MIXIN=$(MIXIN) xbuild; \
     	))
-
+	$(MAKE) clean-packr
 xbuild: $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 	mkdir -p $(dir $@)
 	GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
 
+
+generate: get-crds packr2
+	go generate ./...
+
+HAS_PACKR2 := $(shell command -v packr2)
+packr2:
+ifndef HAS_PACKR2
+	go get -u github.com/gobuffalo/packr/v2/packr2
+endif
+
+clean: clean-packr
+	-rm -fr bin/
+	-rm -rf /tmp/operator
+	-rm -fr pkg/qliksense/crds
+
+clean-packr: packr2
+	cd pkg/qliksense && packr2 clean
+
+get-crds: 
+	git clone git@github.com:qlik-oss/qliksense-operator.git -b ms-3 /tmp/operator
+	mkdir -p pkg/qliksense/crds/cr
+	mkdir -p pkg/qliksense/crds/crd
+	mkdir -p pkg/qliksense/crds/crd-deploy
+	cp /tmp/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
+	cp /tmp/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
+	cp /tmp/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
