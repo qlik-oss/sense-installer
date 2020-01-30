@@ -6,7 +6,9 @@ it will support following flags
 
 - `qliksense about 1.0.0` display default profile for tag `1.0.0`.
 - `qliksense about 1.0.0 --profile=docker-desktop`
-- `qliksense about` # assuming current directory has `manifests/docker-desktop`
+- `qliksense about` 
+  - assuming current directory has `manifests/docker-desktop`
+  - or get version information from pull of `qliksense-k8s` `master`
 
 using other supported commands user might have built the CR into the location `~/.qliksense/myqliksense.yaml`
 
@@ -34,4 +36,6 @@ spec:
 
 In that case the command would be
 
-- `qliksense about` # display from `/Usr/ddd/my-k8-repo/manifests/docker-desktop` location
+- `qliksense about`
+   - display from `/Usr/ddd/my-k8-repo/manifests/docker-desktop` location
+   - pull from `master` if directory invalid/empty
