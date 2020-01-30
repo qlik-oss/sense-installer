@@ -2,27 +2,32 @@ package qliksense
 
 import (
 	"fmt"
-	_ "gopkg.in/yaml.v2"
+	"io"
+	"os"
 	"strings"
 )
 
 func (q *Qliksense) ViewOperatorCrd() {
-	for _, v := range q.getFileList("crd") {
-		q.printYamlFile(v)
-	}
-	for _, v := range q.getFileList("crd-deploy") {
-		q.printYamlFile(v)
-	}
+	io.WriteString(os.Stdout, q.GetCRDString())
 }
 
-func (q *Qliksense) printYamlFile(packrFile string) {
+// this will return crd,deployment,role, rolebinding,serviceaccount for operator
+func (q *Qliksense) GetCRDString() string {
+	result := ""
+	for _, v := range q.getFileList("crd") {
+		result = q.getYamlFile(v)
+	}
+	for _, v := range q.getFileList("crd-deploy") {
+		result = result + q.getYamlFile(v)
+	}
+	return result
+}
+func (q *Qliksense) getYamlFile(packrFile string) string {
 	s, err := q.CrdBox.FindString(packrFile)
 	if err != nil {
 		fmt.Printf("Cannot read file %s", packrFile)
 	}
-	fmt.Println(s)
-	fmt.Println("---")
-
+	return fmt.Sprintln("#soruce: " + packrFile + "\n\n" + s + "\n---")
 }
 func (q *Qliksense) getFileList(resourceType string) []string {
 	var resList []string
