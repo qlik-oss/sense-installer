@@ -253,6 +253,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// For qliksense overrides/commands
 
 	cmd.AddCommand(pullQliksenseImages(p))
+	cmd.AddCommand(about(p))
 	porterCmd = porter(p)
 	cmd.AddCommand(porterCmd)
 	for _, alias = range buildAliasCommands(porterCmd, p) {
