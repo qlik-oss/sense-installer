@@ -43,7 +43,7 @@ require (
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
-	github.com/hashicorp/go-getter v1.4.1 // indirect
+	github.com/hashicorp/go-getter v1.4.1
 	github.com/hashicorp/go-version v1.2.0 // indirect
 
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
