@@ -268,6 +268,9 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	//add fetch command
 	cmd.AddCommand(fetchCmd(p))
 
+	// add install command
+	cmd.AddCommand(installCmd(p))
+
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
 	return cmd

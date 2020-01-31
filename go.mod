@@ -47,6 +47,7 @@ require (
 	github.com/hashicorp/go-version v1.2.0 // indirect
 
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/jinzhu/gorm v1.9.11 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect
@@ -54,6 +55,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/qlik-oss/k-apis v0.0.0-20200129195735-c41e55729bde
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect
@@ -68,7 +70,7 @@ require (
 	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
 	gopkg.in/fatih/pool.v2 v2.0.0 // indirect
 	gopkg.in/gorethink/gorethink.v3 v3.0.5 // indirect
-	gopkg.in/yaml.v2 v2.2.7
-	sigs.k8s.io/kustomize/api v0.0.0-00010101000000-000000000000
+	gopkg.in/yaml.v2 v2.2.8
+	sigs.k8s.io/kustomize/api v0.3.2
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
 )

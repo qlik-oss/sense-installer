@@ -7,12 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func fetchCmd(q *qliksense.Qliksense) *cobra.Command {
+func installCmd(q *qliksense.Qliksense) *cobra.Command {
 	c := &cobra.Command{
-		Use:     "fetch",
-		Short:   "fetch a release from qliksense-k8s repo",
-		Long:    `fetch a release from qliksense-k8s repo`,
-		Example: `qliksense fetch <version>`,
+		Use:     "install",
+		Short:   "install a qliksense release",
+		Long:    `install a qliksesne release`,
+		Example: `qliksense install <version>`,
 		Args: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 1 {
 				return errors.New("requires a version (i.e. v1.0.0)")
@@ -23,7 +23,7 @@ func fetchCmd(q *qliksense.Qliksense) *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			q.FetchQK8s(args[0])
+			q.InstallQK8s(args[0])
 		},
 	}
 	return c
