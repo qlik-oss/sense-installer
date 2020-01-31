@@ -493,15 +493,12 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				t.Fatalf("unexpected error: %v\n", err)
 			}
 
-			ok, reason, verificationError := testCase.verify(configDirectory, isTemporary, profile)
-			cleanupError := testCase.cleanup(configDirectory)
-
-			if verificationError != nil {
-				t.Fatalf("unexpected verification error: %v\n", verificationError)
+			if ok, reason, err := testCase.verify(configDirectory, isTemporary, profile); err != nil {
+				t.Fatalf("unexpected verification error: %v\n", err)
 			} else if !ok {
 				t.Fatalf("verification failed: %v\n", reason)
-			} else if cleanupError != nil {
-				t.Fatalf("unexpected cleanup error: %v\n", cleanupError)
+			} else if err := testCase.cleanup(configDirectory); err != nil {
+				t.Fatalf("unexpected cleanup error: %v\n", err)
 			}
 		})
 	}
