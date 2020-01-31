@@ -2,16 +2,16 @@ package main
 
 import (
 	"fmt"
+	"github.com/Masterminds/semver/v3"
+	"github.com/qlik-oss/sense-installer/pkg"
+	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/Masterminds/semver/v3"
-	"github.com/qlik-oss/sense-installer/pkg"
-	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -286,7 +286,9 @@ func logDebugMessage(strMessage string, args ...interface{}) {
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
+		fmt.Println("File does not exist")
 		return false
 	}
+	logDebugMessage("Either File exists OR a different error occurred")
 	return !info.IsDir()
 }

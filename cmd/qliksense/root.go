@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,9 +12,14 @@ import (
 	"runtime"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
+
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+
+	// "github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,6 +37,9 @@ const (
 	qlikSenseDirVar  = ".qliksense"
 	mixinDirVar      = "mixins"
 	porterRuntime    = "porter-runtime"
+
+	qliksenseConfigFile  = "config.yaml"
+	qliksenseContextsDir = "contexts"
 )
 
 func initAndExecute() error {
@@ -40,6 +47,9 @@ func initAndExecute() error {
 		porterExe, qlikSenseHome string
 		err                      error
 	)
+
+	// setting logrus configs
+	logrusConfigs()
 
 	porterExe, qlikSenseHome, err = setUpPaths()
 	if err != nil {
@@ -50,9 +60,72 @@ func initAndExecute() error {
 		return err
 	}
 
+	// create dirs and appropriate files for setting up contexts
+	log.Debugf("QliksenseHomeDir: %s", qlikSenseHome)
+	setUpContext(qlikSenseHome)
 	return nil
 }
 
+func logrusConfigs() {
+	Formatter := new(log.TextFormatter)
+	Formatter.TimestampFormat = "02-01-2006 15:04:05"
+	Formatter.FullTimestamp = true
+	log.SetLevel(log.DebugLevel)
+	log.SetFormatter(Formatter)
+}
+
+func setUpContext(qlikSenseHome string) {
+	// create config.yaml and populate it
+
+	// create contexts/ -> qliksense-default/ -> qliksense-default.yaml
+	// func createContextSetup(contextname) {
+	// qliksense-default/ -> qliksense-default.yaml
+	// we know at this point that qliksense home dir exists, we will proceed to create other necessary dirs and files
+
+	if !fileExists(filepath.Join(qlikSenseHome, qliksenseConfigFile)) {
+		log.Debugf("config.yaml doesnt exist, creating it now...")
+		f, err := os.Create(filepath.Join(qlikSenseHome, qliksenseConfigFile))
+		if err != nil {
+			panic(err)
+		}
+		log.Debugf("File created: %s", filepath.Join(qlikSenseHome, qliksenseConfigFile))
+		defer f.Close()
+
+		// TO-DO: write default configs into config.yaml
+		var qliksenseConfig *qliksense.QliksenseConfig
+		qliksenseConfig.AddBaseQliksenseConfigs()
+		x, err := yaml.Marshal(qliksenseConfig)
+		if err != nil {
+			log.Fatalf("An error occurred during marshalling config: %v", err)
+		}
+		log.Debugf("Marshalled yaml:\n%s\nWriting to file...", x)
+
+		// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
+		var err1 error
+		os.MkdirAll(qliksense.QliksenseConfigContextHome, os.ModePerm)
+		f, err1 = os.OpenFile(filepath.Join(qlikSenseHome, qliksense.QliksenseConfigContextHome), os.O_RDWR|os.O_CREATE, os.ModePerm)
+		if err1 != nil {
+			panic(err1)
+		}
+
+		defer f.Close()
+
+		numBytes, err2 := f.Write(x)
+		if err2 != nil {
+			panic(err2)
+		}
+		log.Debugf("wrote %d bytes\n", numBytes)
+
+		// create contexts/
+		if err := os.Mkdir(filepath.Join(qlikSenseHome, qliksenseContextsDir), os.ModeDir); err != nil {
+			log.Debug("Not able to create the contexts/ dir")
+		} else {
+			log.Debug("Created the contexts/")
+		}
+	} else {
+		log.Error("config.yaml already exists..")
+	}
+}
 func setUpPaths() (string, string, error) {
 	var (
 		porterExe, homeDir, qlikSenseHome string
@@ -261,6 +334,37 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add version command
 	cmd.AddCommand(versionCmd)
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+
+	// create 'config' commands
+	qliksenseConfigCmd := qliksenseConfigCmds(p)
+	// add app config commands to root command
+	cmd.AddCommand(qliksenseConfigCmd)
+
+	// create set-context config sub command
+	log.Debug("About to start set-context config cmds")
+	setContextCmd := setContextConfigCmd(p)
+	// add the set-context config command as a sub-command to the app config command
+	qliksenseConfigCmd.AddCommand(setContextCmd)
+
+	// create set profile/namespace/storageClassName/git-repository config sub-command
+	setOtherConfigsCmd := setOtherConfigsCmd(p)
+	// add the set profile/namespace/storageClassName/git-repository config command as a sub-command to the app config command
+	qliksenseConfigCmd.AddCommand(setOtherConfigsCmd)
+
+	// create setConfigs sub-command
+	setConfigsCmd := setConfigsCmd(p)
+	// add the set ### config command as a sub-command to the app config sub-command
+	qliksenseConfigCmd.AddCommand(setConfigsCmd)
+
+	// create setConfigs sub-command
+	setSecretsCmd := setSecretsCmd(p)
+	// add the set ### config command as a sub-command to the app config sub-command
+	qliksenseConfigCmd.AddCommand(setSecretsCmd)
+
+	// create view config sub-command
+	viewCmd := viewConfigCmd(p)
+	// add the view config command as a sub-command to the app config sub-command
+	qliksenseConfigCmd.AddCommand(viewCmd)
 
 	return cmd
 }
