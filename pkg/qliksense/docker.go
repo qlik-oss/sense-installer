@@ -39,25 +39,11 @@ func (p *Qliksense) PullImages(args []string, engine bool) error {
 	var (
 		image, versionFile, imagesDir, yamlVersion, homeDir string
 		err                                                 error
-		valid                                               bool
 		images                                              Images
 	)
 	println("getting images list...")
-	if yamlVersion, err = p.CallPorter(append([]string{"invoke", "--action", "about"}, args...),
-		func(x string) (out *string) {
-			if strings.HasPrefix(x, "qlikSenseVersion") {
-				valid = true
-			}
-			if strings.HasPrefix(x, "execution") {
-				valid = false
-			}
-			if valid {
-				return &x
-			}
-			return nil
-		}); err != nil {
-		return err
-	}
+
+	// TODO: get the image list like about function does
 
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
@@ -231,25 +217,8 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 		image       string
 		err         error
 		yamlVersion string
-		valid       bool
 		images      Images
 	)
-
-	if yamlVersion, err = p.CallPorter([]string{"invoke", "--action", "about"},
-		func(x string) (out *string) {
-			if strings.HasPrefix(x, "qlikSenseVersion") {
-				valid = true
-			}
-			if strings.HasPrefix(x, "execution") {
-				valid = false
-			}
-			if valid {
-				return &x
-			}
-			return nil
-		}); err != nil {
-		return err
-	}
 
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
