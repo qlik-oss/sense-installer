@@ -29,8 +29,8 @@ type ContextSpec struct {
 
 // Context is exported
 type Context struct {
-	Name       string `json:"name,omitempty" yaml:"name,omitempty"`
-	CRLocation string `json:"crLocation,omitempty" yaml:"crLocation,omitempty"`
+	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	CrFile string `json:"crFile,omitempty" yaml:"crFile,omitempty"`
 }
 
 // Metadata is exported
