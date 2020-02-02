@@ -33,16 +33,15 @@ func (p *Qliksense) PullImages(args []string, engine bool) error {
 	var (
 		image, versionFile, imagesDir, yamlVersion, homeDir string
 		err                                                 error
-		valid                                               bool
-		images                                              VersionOutput
+		images                                              *VersionOutput
 	)
 	println("getting images list...")
 
-	// TODO: get the image list like about function does
-
-	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
+	// TODO: get getref and profile from config/cr for About function call
+	if images, err = p.About("v0.0.1", "docker-desktop"); err != nil {
 		return err
 	}
+
 	if homeDir, err = homedir.Dir(); err != nil {
 		return err
 	}
@@ -212,7 +211,6 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 		image       string
 		err         error
 		yamlVersion string
-		valid       bool
 		images      VersionOutput
 	)
 
