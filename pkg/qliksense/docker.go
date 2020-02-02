@@ -29,16 +29,16 @@ import (
 )
 
 // PullImages ...
-func (p *Qliksense) PullImages(args []string, engine bool) error {
+func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 	var (
-		image, versionFile, imagesDir, yamlVersion, homeDir string
-		err                                                 error
-		images                                              *VersionOutput
+		image, versionFile, imagesDir, homeDir string
+		err                                    error
+		versionOut                             *VersionOutput
 	)
 	println("getting images list...")
 
 	// TODO: get getref and profile from config/cr for About function call
-	if images, err = p.About("v0.0.1", "docker-desktop"); err != nil {
+	if versionOut, err = p.About(gitRef, profile); err != nil {
 		return err
 	}
 
@@ -47,18 +47,20 @@ func (p *Qliksense) PullImages(args []string, engine bool) error {
 	}
 	imagesDir = filepath.Join(homeDir, ".qliksense", "images")
 	os.MkdirAll(imagesDir, 0644)
-	versionFile = filepath.Join(imagesDir, images.QliksenseVersion)
+	versionFile = filepath.Join(imagesDir, versionOut.QliksenseVersion)
 
 	if _, err = os.Stat(versionFile); err != nil {
 		if os.IsNotExist(err) {
-			if err = ioutil.WriteFile(versionFile, []byte(yamlVersion), 0644); err != nil {
+			if yamlVersion, err := yaml.Marshal(versionOut); err != nil {
+				return err
+			} else if err = ioutil.WriteFile(versionFile, yamlVersion, 0644); err != nil {
 				return err
 			}
 		} else {
 			return errors.Errorf("Unable to determine About file %v exists", versionFile)
 		}
 	}
-	for _, image = range images.Images {
+	for _, image = range versionOut.Images {
 		if _, err = p.PullImage(image, engine); err != nil {
 			fmt.Print(err)
 		}

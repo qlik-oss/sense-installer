@@ -12,7 +12,7 @@ type Qliksense struct {
 }
 
 // New qliksense client, initialized with useful defaults.
-func New(porterExe, qliksenseHome string) *Qliksense {
+func New(qliksenseHome string) *Qliksense {
 	return &Qliksense{
 		QliksenseHome: qliksenseHome,
 		CrdBox:        packr.New("crds", "./crds"),

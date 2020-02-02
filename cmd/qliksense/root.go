@@ -1,16 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
@@ -76,7 +72,7 @@ var versionCmd = &cobra.Command{
 
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	var (
-		cmd, alias *cobra.Command
+		cmd *cobra.Command
 	)
 
 	cmd = &cobra.Command{
@@ -119,7 +115,6 @@ func downloadFile(url string, filepath string) error {
 		err  error
 		resp *http.Response
 	)
-	logDebugMessage("Porter download link: %s\n", url)
 	// Create the file
 	if out, err = os.Create(filepath); err != nil {
 		return err
