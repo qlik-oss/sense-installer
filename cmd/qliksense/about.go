@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 	"strings"
 )
 
 type aboutCommandOptions struct {
-	Profile 		string
+	Profile string
 }
 
 func about(q *qliksense.Qliksense) *cobra.Command {
@@ -39,9 +40,11 @@ qliksense about --profile=test
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if gitRef, err := getAboutCommandGitRef(args); err != nil {
 				return err
-			} else if out, err := q.About(gitRef, opts.Profile); err != nil {
+			} else if vout, err := q.About(gitRef, opts.Profile); err != nil {
 				return err
-			} else if _, err := fmt.Println(string(out)); err != nil {
+			} else if out, err := yaml.Marshal(vout); err != nil {
+				return err
+			} else if _, err := fmt.Println(out); err != nil {
 				return err
 			}
 			return nil

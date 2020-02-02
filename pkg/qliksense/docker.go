@@ -28,18 +28,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Images ...
-type Images struct {
-	QliksenseVersion string   `yaml:"qlikSenseVersion"`
-	Images           []string `yaml:"images"`
-}
-
 // PullImages ...
 func (p *Qliksense) PullImages(args []string, engine bool) error {
 	var (
 		image, versionFile, imagesDir, yamlVersion, homeDir string
 		err                                                 error
-		images                                              Images
+		valid                                               bool
+		images                                              VersionOutput
 	)
 	println("getting images list...")
 
@@ -217,7 +212,8 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 		image       string
 		err         error
 		yamlVersion string
-		images      Images
+		valid       bool
+		images      VersionOutput
 	)
 
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
