@@ -28,19 +28,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Images ...
-type Images struct {
-	QliksenseVersion string   `yaml:"qlikSenseVersion"`
-	Images           []string `yaml:"images"`
-}
-
 // PullImages ...
 func (p *Qliksense) PullImages(args []string, engine bool) error {
 	var (
 		image, versionFile, imagesDir, yamlVersion, homeDir string
 		err                                                 error
 		valid                                               bool
-		images                                              Images
+		images                                              VersionOutput
 	)
 	println("getting images list...")
 	if yamlVersion, err = p.CallPorter(append([]string{"invoke", "--action", "about"}, args...),
@@ -232,7 +226,7 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 		err         error
 		yamlVersion string
 		valid       bool
-		images      Images
+		images      VersionOutput
 	)
 
 	if yamlVersion, err = p.CallPorter([]string{"invoke", "--action", "about"},

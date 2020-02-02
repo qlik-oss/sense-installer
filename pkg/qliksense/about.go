@@ -46,7 +46,7 @@ type helmChart struct {
 	ChartVersion     string `yaml:"chartVersion"`
 }
 
-type versionOutput struct {
+type VersionOutput struct {
 	QliksenseVersion string   `yaml:"qlikSenseVersion"`
 	Images           []string `yaml:"images"`
 }
@@ -63,7 +63,7 @@ const (
 	gitUrl         = "https://github.com/qlik-oss/qliksense-k8s"
 )
 
-func (p *Qliksense) About(gitRef, profile string) ([]byte, error) {
+func (p *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
 	configDirectory, isTemporary, profile, err := getConfigDirectory(gitUrl, gitRef, profile)
 	if err != nil {
 		return nil, err
@@ -87,10 +87,10 @@ func (p *Qliksense) About(gitRef, profile string) ([]byte, error) {
 		return nil, err
 	}
 
-	return yaml.Marshal(versionOutput{
+	return &VersionOutput{
 		QliksenseVersion: chartVersion,
 		Images:           images,
-	})
+	}, nil
 }
 
 func getConfigDirectory(gitUrl, gitRef, profileEntered string) (dir string, isTemporary bool, profile string, err error) {
