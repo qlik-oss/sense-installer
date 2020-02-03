@@ -46,14 +46,14 @@ func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 		return err
 	}
 	imagesDir = filepath.Join(homeDir, ".qliksense", "images")
-	os.MkdirAll(imagesDir, 0644)
+	os.MkdirAll(imagesDir, os.ModePerm)
 	versionFile = filepath.Join(imagesDir, versionOut.QliksenseVersion)
 
 	if _, err = os.Stat(versionFile); err != nil {
 		if os.IsNotExist(err) {
 			if yamlVersion, err := yaml.Marshal(versionOut); err != nil {
 				return err
-			} else if err = ioutil.WriteFile(versionFile, yamlVersion, 0644); err != nil {
+			} else if err = ioutil.WriteFile(versionFile, yamlVersion, os.ModePerm); err != nil {
 				return err
 			}
 		} else {
@@ -116,9 +116,9 @@ func (p *Qliksense) pullImage(imageName string) (map[string]string, error) {
 
 	fmt.Printf("==> Pulling image %v:%v", nameTag[0], nameTag[1])
 	fmt.Println()
-	os.MkdirAll(targetDir, 0644)
+	os.MkdirAll(targetDir, os.ModePerm)
 	blobDir = filepath.Join(homeDir, ".qliksense", "blobs")
-	os.MkdirAll(blobDir, 0644)
+	os.MkdirAll(blobDir, os.ModePerm)
 
 	if destRef, err = alltransports.ParseImageName("oci:" + targetDir); err != nil {
 		return nil, err
@@ -308,7 +308,7 @@ func (p *Qliksense) tagAndPush(image string, registryName string) error {
 	defer policyContext.Destroy()
 
 	blobDir = filepath.Join(homeDir, ".qliksense", "blobs")
-	os.MkdirAll(blobDir, 0644)
+	os.MkdirAll(blobDir, os.ModePerm)
 
 	_, err = copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,
