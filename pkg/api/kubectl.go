@@ -23,5 +23,6 @@ func KubectlApply(manifests string) error {
 		fmt.Printf("kubectl apply failed with %s\n", err)
 		return err
 	}
+	os.Remove(tempYaml.Name())
 	return nil
 }
