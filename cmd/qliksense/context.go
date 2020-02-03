@@ -186,7 +186,7 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 		if qliksense.FileExists(qliksenseContextsFile) {
 			qliksense.ReadFromFile(&qliksenseCR, qliksenseContextsFile)
 
-			fmt.Printf("Read QliksenseCR: %v", qliksenseCR)
+			log.Debugf("Read QliksenseCR: %v", qliksenseCR)
 			log.Debugf("Read context file: %s", qliksenseContextsFile)
 
 			// modify appropriate fields
@@ -197,24 +197,18 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 				log.Debugf("Split string: %v", argsString)
 				switch argsString[0] {
 				case "profile":
-					log.Debugf("profile switch case activated")
 					log.Debugf("Current profile: %s, Incoming profile: %s", qliksenseCR.Spec.Profile, argsString[1])
 					qliksenseCR.Spec.Profile = argsString[1]
 					log.Debugf("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
 				case "namespace":
-					log.Debugf("namespace switch case activated")
 					log.Debugf("Current namespace: %s, Incoming namespace: %s", qliksenseCR.Spec.NameSpace, argsString[1])
 					qliksenseCR.Spec.NameSpace = argsString[1]
 					log.Debugf("Current namespace after modification: %s ", qliksenseCR.Spec.NameSpace)
 				case "git.repository":
-					log.Debugf("git.repository switch case activated")
-					log.Debugf("git.repository switch case activated")
 					log.Debugf("Current git.repository: %s, Incoming git.repository: %s", qliksenseCR.Spec.Git.Repository, argsString[1])
 					qliksenseCR.Spec.Git.Repository = argsString[1]
 					log.Debugf("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
 				case "storageClassName":
-					log.Debugf("StorageClassName switch case activated")
-					log.Debugf("storageClassName switch case activated")
 					log.Debugf("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
 					qliksenseCR.Spec.StorageClassName = argsString[1]
 					log.Debugf("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
@@ -231,7 +225,7 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 		}
 	} else {
 		// current-context is empty
-		fmt.Println(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+		log.Debug(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
 	}
 	return nil
 }
