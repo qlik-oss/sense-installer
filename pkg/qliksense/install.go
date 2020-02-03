@@ -13,7 +13,12 @@ func (q *Qliksense) InstallQK8s(version string) {
 	// step4: config view | kubectl apply -f # generates Custom Resource manifest (CR)
 
 	//io.WriteString(os.Stdout, q.GetCRDString())
-	fmt.Println(version)
-	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	qConfig.GetCurrentCR()
+	//fmt.Println(version)
+	fmt.Println("Fetching " + version)
+	//qConfig := qapi.NewQConfig(q.QliksenseHome)
+	//qcr, err := qConfig.GetCurrentCR()
+
+	//TODO: may need to check if CRD already installed, but doing apply does not hurt for now
+	//install crd into cluster
+	qapi.KubectlApply(q.GetCRDString())
 }
