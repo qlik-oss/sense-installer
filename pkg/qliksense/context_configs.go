@@ -3,8 +3,6 @@ package qliksense
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/qlik-oss/k-apis/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
@@ -38,47 +36,6 @@ func ReadQliksenseContextConfig(qliksenseCR *api.QliksenseCR, fileName string) {
 	}
 }
 
-// WriteQliksenseContextConfigToFile is exported
-func WriteQliksenseContextConfigToFile(qliksenseConfig *api.QliksenseConfig, qliksenseCR *api.QliksenseCR, qliksenseFile string) {
-	log.Debug("Entry: WriteQliksenseContextConfigToFile()")
-	if qliksenseCR != nil {
-		log.Debug("This action is about writing to a context file")
-		if !FileExists(qliksenseFile) {
-			log.Debugf("File %s doesnt exist, creating it now...", qliksenseFile)
-			file, err := os.OpenFile(qliksenseFile, os.O_RDWR|os.O_CREATE, os.ModePerm)
-			if err != nil {
-				log.Debugf("There was an error creating the file: %s, %v", qliksenseFile, err)
-				panic(err)
-			}
-			log.Debugf("File created: %s", qliksenseFile)
-			defer file.Close()
-
-			log.Debugf("Adding CommonConfig to %s", qliksenseFile)
-			// infer context name from the filename path
-			contextName := strings.Replace(filepath.Base(qliksenseFile), ".yaml", "", 1)
-
-			qliksenseCR1 := AddCommonConfig(*qliksenseCR, contextName)
-			log.Debug("Added CommonConfig to %s", qliksenseFile)
-			x, err := yaml.Marshal(qliksenseCR1)
-			if err != nil {
-				log.Fatalf("An error occurred during marshalling CR: %v", err)
-			}
-			log.Debugf("Marshalled yaml:\n%s\nWriting to file...", x)
-
-			numBytes, err := file.Write(x)
-			if err != nil {
-				panic(err)
-			}
-			log.Debugf("wrote %d bytes\n", numBytes)
-			log.Debugf("Wrote Struct into %s", qliksenseFile)
-		} else {
-			log.Debug("File %s already exists ", qliksenseFile)
-		}
-	} else {
-		log.Debug("This section is about writing into the base config file %s", qliksenseFile)
-	}
-}
-
 // WriteToFile is exported
 func WriteToFile(content interface{}, targetFile string) {
 	log.Debug("Entry: WriteToFile()")
@@ -99,6 +56,9 @@ func WriteToFile(content interface{}, targetFile string) {
 	}
 	log.Debugf("Marshalled yaml:\n%s\nWriting to file...", x)
 
+	// truncating the file before we write new content
+	file.Truncate(0)
+	file.Seek(0, 0)
 	numBytes, err := file.Write(x)
 	if err != nil {
 		log.Fatal(err)

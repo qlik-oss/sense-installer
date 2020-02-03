@@ -55,9 +55,7 @@ func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
-		// opts *aboutOptions
 	)
-	// opts = &aboutOptions{}
 
 	cmd = &cobra.Command{
 		Use:     "set",
@@ -73,14 +71,12 @@ func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
-		// opts *aboutOptions
 	)
-	// opts = &aboutOptions{}
 
 	cmd = &cobra.Command{
-		Use:     "set-config",
+		Use:     "set-configs",
 		Short:   "",
-		Example: `qliksense config set-config`,
+		Example: `qliksense config set-configs`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return setConfigs(q)
 		},
@@ -91,9 +87,7 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
-		// opts *aboutOptions
 	)
-	// opts = &aboutOptions{}
 
 	cmd = &cobra.Command{
 		Use:     "set-secrets",
@@ -132,8 +126,8 @@ func viewQliksenseConfig(q *qliksense.Qliksense) error {
 	currentContext := qliksenseConfig.Spec.CurrentContext
 	log.Debugf("Current-context from config.yaml: %s", currentContext)
 
-	// look for file with that name+.yaml in contexts/, if not exists=> output error and show qliksense-default.yaml
-	// cat it out
+	// check for existence of a file with that name.yaml in contexts/, if it exists-> display it.
+	// If it does not exist-> output error
 	if currentContext != "" {
 		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext+".yaml")
 		log.Debugf("Context file path: %s", qliksenseContextsFile)
@@ -143,6 +137,8 @@ func viewQliksenseConfig(q *qliksense.Qliksense) error {
 				log.Fatalf("Unable to read the file: %v", err)
 			}
 			fmt.Printf("%s", content)
+		} else {
+			log.Fatalf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
 		}
 	} else {
 		// current-context is empty
@@ -153,17 +149,6 @@ func viewQliksenseConfig(q *qliksense.Qliksense) error {
 }
 
 func qliksenseConfigs(q *qliksense.Qliksense) error {
-
-	// var yamlConfig YamlConfig
-
-	// yamlConfig.readYamlConfig(testYamlFile)
-	// log.Debugf("Config read from the given yaml:\n\nApiVersion: %s\nKind: %s\n\n", string(yamlConfig.ApiVersion), string(yamlConfig.Kind))
-	// yamlConfig.ApiVersion = "blah"
-	// yamlConfig.Kind = "CustomResource"
-	// yamlConfig.writeYamlConfigToFile("myqliksense.yaml") // TO-DO: derive the filename from the context-name
-
-	// create a file: /.qliksense/config/qliksense_config.yaml
-	// write baseConfig yaml into it.
 
 	return nil
 }
@@ -177,6 +162,11 @@ func setConfigs(q *qliksense.Qliksense) error {
 }
 
 func setOtherConfigs(q *qliksense.Qliksense) error {
+	// refer to config.yaml -> retrieve current-context
+	// read the context.yaml file
+	// modify appropriate fields
+	// write modified content into context.yaml
+
 	return nil
 }
 
