@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
@@ -25,6 +23,19 @@ func configApplyCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense config apply`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.ConfigApplyQK8s()
+		},
+	}
+	return c
+}
+
+func configViewCmd(q *qliksense.Qliksense) *cobra.Command {
+	c := &cobra.Command{
+		Use:     "view",
+		Short:   "view the qliksense operator CR",
+		Long:    `display the operator CR, that has been created for the current context`,
+		Example: `qliksense config view`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ConfigViewCR()
 		},
 	}
 	return c

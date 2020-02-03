@@ -22,8 +22,8 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 			}
 			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			q.InstallQK8s(args[0])
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.InstallQK8s(args[0])
 		},
 	}
 	return c

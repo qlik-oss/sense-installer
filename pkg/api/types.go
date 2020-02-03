@@ -11,14 +11,14 @@ type CommonConfig struct {
 
 // QliksenseConfig is exported
 type QliksenseConfig struct {
-	CommonConfig
-	Spec *ContextSpec `json:"spec" yaml:"spec"`
+	CommonConfig `json:",inline" yaml:",inline"`
+	Spec         *ContextSpec `json:"spec" yaml:"spec"`
 }
 
 // QliksenseCR is exported
 type QliksenseCR struct {
-	CommonConfig
-	Spec *config.CRSpec `json:"spec,omitempty" yaml:"spec,omitempty"`
+	CommonConfig `json:",inline" yaml:",inline"`
+	Spec         *config.CRSpec `json:"spec,omitempty" yaml:"spec,omitempty"`
 }
 
 // ContextSpec is exported

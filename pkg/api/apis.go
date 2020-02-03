@@ -74,6 +74,10 @@ func getCRObject(crfile string) (*QliksenseCR, error) {
 		return nil, err
 	}
 	cr := &QliksenseCR{}
-	yaml.Unmarshal(data, cr)
+	err = yaml.Unmarshal(data, cr)
+	if err != nil {
+		fmt.Println("cannot unmarshal cr ", err)
+		return nil, err
+	}
 	return cr, nil
 }

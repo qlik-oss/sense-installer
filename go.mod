@@ -55,7 +55,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.0-20200129195735-c41e55729bde
+	github.com/qlik-oss/k-apis v0.0.0-20200203145714-b9dddf739fe7
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect

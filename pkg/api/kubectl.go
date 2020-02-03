@@ -15,12 +15,13 @@ func KubectlApply(manifests string) error {
 	}
 	tempYaml.WriteString(manifests)
 
-	cmd := exec.Command("kubectl", "apply", "-f", tempYaml.Name())
+	cmd := exec.Command("kubectl", "apply", "-f", tempYaml.Name(), "--validate=false")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 	if err != nil {
 		fmt.Printf("kubectl apply failed with %s\n", err)
+		fmt.Println("temp CRD file: " + tempYaml.Name())
 		return err
 	}
 	os.Remove(tempYaml.Name())
