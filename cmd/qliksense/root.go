@@ -58,6 +58,7 @@ func setUpPaths() (string, error) {
 		}
 		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
 	}
+	os.Mkdir(qlikSenseHome, os.ModePerm)
 	return qlikSenseHome, nil
 }
 
