@@ -29,50 +29,38 @@ import (
 )
 
 // PullImages ...
-func (p *Qliksense) PullImages(args []string, engine bool) error {
+func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 	var (
-		image, versionFile, imagesDir, yamlVersion, homeDir string
-		err                                                 error
-		valid                                               bool
-		images                                              VersionOutput
+		image, versionFile, imagesDir, homeDir string
+		err                                    error
+		versionOut                             *VersionOutput
 	)
 	println("getting images list...")
-	if yamlVersion, err = p.CallPorter(append([]string{"invoke", "--action", "about"}, args...),
-		func(x string) (out *string) {
-			if strings.HasPrefix(x, "qlikSenseVersion") {
-				valid = true
-			}
-			if strings.HasPrefix(x, "execution") {
-				valid = false
-			}
-			if valid {
-				return &x
-			}
-			return nil
-		}); err != nil {
+
+	// TODO: get getref and profile from config/cr for About function call
+	if versionOut, err = p.About(gitRef, profile); err != nil {
 		return err
 	}
 
-	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
-		return err
-	}
 	if homeDir, err = homedir.Dir(); err != nil {
 		return err
 	}
 	imagesDir = filepath.Join(homeDir, ".qliksense", "images")
-	os.MkdirAll(imagesDir, 0644)
-	versionFile = filepath.Join(imagesDir, images.QliksenseVersion)
+	os.MkdirAll(imagesDir, os.ModePerm)
+	versionFile = filepath.Join(imagesDir, versionOut.QliksenseVersion)
 
 	if _, err = os.Stat(versionFile); err != nil {
 		if os.IsNotExist(err) {
-			if err = ioutil.WriteFile(versionFile, []byte(yamlVersion), 0644); err != nil {
+			if yamlVersion, err := yaml.Marshal(versionOut); err != nil {
+				return err
+			} else if err = ioutil.WriteFile(versionFile, yamlVersion, os.ModePerm); err != nil {
 				return err
 			}
 		} else {
 			return errors.Errorf("Unable to determine About file %v exists", versionFile)
 		}
 	}
-	for _, image = range images.Images {
+	for _, image = range versionOut.Images {
 		if _, err = p.PullImage(image, engine); err != nil {
 			fmt.Print(err)
 		}
@@ -128,9 +116,9 @@ func (p *Qliksense) pullImage(imageName string) (map[string]string, error) {
 
 	fmt.Printf("==> Pulling image %v:%v", nameTag[0], nameTag[1])
 	fmt.Println()
-	os.MkdirAll(targetDir, 0644)
+	os.MkdirAll(targetDir, os.ModePerm)
 	blobDir = filepath.Join(homeDir, ".qliksense", "blobs")
-	os.MkdirAll(blobDir, 0644)
+	os.MkdirAll(blobDir, os.ModePerm)
 
 	if destRef, err = alltransports.ParseImageName("oci:" + targetDir); err != nil {
 		return nil, err
@@ -225,25 +213,8 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 		image       string
 		err         error
 		yamlVersion string
-		valid       bool
 		images      VersionOutput
 	)
-
-	if yamlVersion, err = p.CallPorter([]string{"invoke", "--action", "about"},
-		func(x string) (out *string) {
-			if strings.HasPrefix(x, "qlikSenseVersion") {
-				valid = true
-			}
-			if strings.HasPrefix(x, "execution") {
-				valid = false
-			}
-			if valid {
-				return &x
-			}
-			return nil
-		}); err != nil {
-		return err
-	}
 
 	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
 		return err
@@ -337,7 +308,7 @@ func (p *Qliksense) tagAndPush(image string, registryName string) error {
 	defer policyContext.Destroy()
 
 	blobDir = filepath.Join(homeDir, ".qliksense", "blobs")
-	os.MkdirAll(blobDir, 0644)
+	os.MkdirAll(blobDir, os.ModePerm)
 
 	_, err = copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,

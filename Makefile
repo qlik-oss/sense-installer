@@ -35,13 +35,14 @@ endif
 build: clean generate
 	mkdir -p $(BINDIR)
 	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	$(MAKE) clean
 
 xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
     	$(foreach ARCH, $(SUPPORTED_ARCHES), \
             	$(MAKE) $(MAKE_OPTS) CLIENT_PLATFORM=$(OS) CLIENT_ARCH=$(ARCH) MIXIN=$(MIXIN) xbuild; \
     	))
-	$(MAKE) clean-packr
+	$(MAKE) clean
 xbuild: $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 	mkdir -p $(dir $@)
@@ -58,7 +59,6 @@ ifndef HAS_PACKR2
 endif
 
 clean: clean-packr
-	-rm -fr bin/
 	-rm -rf /tmp/operator
 	-rm -fr pkg/qliksense/crds
 
