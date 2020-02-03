@@ -23,8 +23,8 @@ func configApplyCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "generate the patchs and apply manifests to k8s",
 		Long:    `generate patches based on CR and apply manifests to k8s`,
 		Example: `qliksense config apply`,
-		Run: func(cmd *cobra.Command, args []string) {
-			q.ConfigApplyQK8s()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ConfigApplyQK8s()
 		},
 	}
 	return c
