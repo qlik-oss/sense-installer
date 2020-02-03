@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -62,7 +63,7 @@ func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "configure a key value pair into the current context",
 		Example: `qliksense config set <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return setOtherConfigs(q)
+			return setOtherConfigs(q, args)
 		},
 	}
 	return cmd
@@ -161,12 +162,77 @@ func setConfigs(q *qliksense.Qliksense) error {
 	return nil
 }
 
-func setOtherConfigs(q *qliksense.Qliksense) error {
-	// refer to config.yaml -> retrieve current-context
-	// read the context.yaml file
-	// modify appropriate fields
-	// write modified content into context.yaml
+func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
+	//Usage:
+	// qliksense config set profile=docker-desktop
+	// qliksense config set namespace=qliksense
+	// qliksense config set storageClassName=efs
+	// qliksense config set git.repository="https://github.com/my-org/qliksense-k8s"
 
+	// retieve current context from config.yaml
+	var qliksenseConfig api.QliksenseConfig
+	qliksenseConfigFile := filepath.Join(q.QliksenseHome, qliksenseConfigFile)
+	log.Debugf("qliksenseConfigFile: %s", qliksenseConfigFile)
+
+	qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	currentContext := qliksenseConfig.Spec.CurrentContext
+	log.Debugf("Current-context from config.yaml: %s", currentContext)
+
+	// read the context.yaml file
+	var qliksenseCR api.QliksenseCR
+	if currentContext != "" {
+		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext+".yaml")
+		log.Debugf("Context file path: %s", qliksenseContextsFile)
+		if qliksense.FileExists(qliksenseContextsFile) {
+			qliksense.ReadFromFile(&qliksenseCR, qliksenseContextsFile)
+
+			fmt.Printf("Read QliksenseCR: %v", qliksenseCR)
+			log.Debugf("Read context file: %s", qliksenseContextsFile)
+
+			// modify appropriate fields
+			log.Debugf("Here is the command: %s", args[0])
+			// split args[0] into key and value
+			if len(args) > 0 {
+				argsString := strings.Split(args[0], "=")
+				log.Debugf("Split string: %v", argsString)
+				switch argsString[0] {
+				case "profile":
+					log.Debugf("profile switch case activated")
+					log.Debugf("Current profile: %s, Incoming profile: %s", qliksenseCR.Spec.Profile, argsString[1])
+					qliksenseCR.Spec.Profile = argsString[1]
+					log.Debugf("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
+				case "namespace":
+					log.Debugf("namespace switch case activated")
+					log.Debugf("Current namespace: %s, Incoming namespace: %s", qliksenseCR.Spec.NameSpace, argsString[1])
+					qliksenseCR.Spec.NameSpace = argsString[1]
+					log.Debugf("Current namespace after modification: %s ", qliksenseCR.Spec.NameSpace)
+				case "git.repository":
+					log.Debugf("git.repository switch case activated")
+					log.Debugf("git.repository switch case activated")
+					log.Debugf("Current git.repository: %s, Incoming git.repository: %s", qliksenseCR.Spec.Git.Repository, argsString[1])
+					qliksenseCR.Spec.Git.Repository = argsString[1]
+					log.Debugf("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
+				case "storageClassName":
+					log.Debugf("StorageClassName switch case activated")
+					log.Debugf("storageClassName switch case activated")
+					log.Debugf("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
+					qliksenseCR.Spec.StorageClassName = argsString[1]
+					log.Debugf("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+				default:
+					log.Debugf("default switch case activated")
+				}
+			} else {
+				log.Fatalf("No args were provided. Please provide args to configure the current context")
+			}
+			// write modified content into context.yaml
+			qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+		} else {
+			log.Fatalf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
+		}
+	} else {
+		// current-context is empty
+		fmt.Println(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+	}
 	return nil
 }
 
