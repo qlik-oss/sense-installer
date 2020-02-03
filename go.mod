@@ -22,7 +22,6 @@ replace (
 require (
 	cloud.google.com/go v0.52.0 // indirect
 	cloud.google.com/go/storage v1.5.0 // indirect
-	github.com/Masterminds/semver/v3 v3.0.3
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
@@ -31,7 +30,6 @@ require (
 	github.com/cloudflare/cfssl v1.4.1 // indirect
 	github.com/containerd/containerd v1.3.2 // indirect
 	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
-	github.com/containers/image v3.0.2+incompatible
 	github.com/containers/image/v5 v5.1.0
 	github.com/docker/cli v0.0.0-20191212191748-ebca1413117a
 	github.com/docker/distribution v2.7.1+incompatible
@@ -43,8 +41,6 @@ require (
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
-	github.com/hashicorp/go-getter v1.4.1
-	github.com/hashicorp/go-version v1.2.0 // indirect
 
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jinzhu/gorm v1.9.11 // indirect
@@ -54,21 +50,22 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/qlik-oss/k-apis v0.0.0-20200203220006-5efcd248b52e
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect
 	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
-	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
-	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
-	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
+	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/tools v0.0.0-20200130002326-2f3ba24bd6e7 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
 	gopkg.in/fatih/pool.v2 v2.0.0 // indirect
 	gopkg.in/gorethink/gorethink.v3 v3.0.5 // indirect
-	gopkg.in/yaml.v2 v2.2.7
-	sigs.k8s.io/kustomize/api v0.0.0-00010101000000-000000000000
+	gopkg.in/yaml.v2 v2.2.8
+	sigs.k8s.io/kustomize/api v0.3.2
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
 )
+
+exclude github.com/Azure/go-autorest v12.0.0+incompatible

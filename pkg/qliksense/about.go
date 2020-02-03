@@ -2,8 +2,6 @@ package qliksense
 
 import (
 	"bytes"
-	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,7 +10,7 @@ import (
 	"reflect"
 	"sort"
 
-	gogetter "github.com/hashicorp/go-getter"
+	kapis_git "github.com/qlik-oss/k-apis/git"
 	"gopkg.in/yaml.v2"
 )
 
@@ -148,20 +146,11 @@ func downloadFromGitRepoToTmpDir(gitUrl, gitRef string) (string, error) {
 }
 
 func downloadFromGitRepo(gitUrl, gitRef, destDir string) error {
-	client := &gogetter.Client{
-		Ctx:  context.Background(),
-		Dst:  destDir,
-		Dir:  true,
-		Src:  fmt.Sprintf("git::%v?ref=%v", gitUrl, gitRef),
-		Mode: gogetter.ClientModeDir,
-		Detectors: []gogetter.Detector{
-			new(gogetter.GitHubDetector),
-		},
-		Getters: map[string]gogetter.Getter{
-			"git": &gogetter.GitGetter{},
-		},
+	if repo, err := kapis_git.CloneRepository(destDir, gitUrl, nil); err != nil {
+		return err
+	} else {
+		return kapis_git.Checkout(repo, gitRef, "", nil)
 	}
-	return client.Get()
 }
 
 func configExistsInCurrentDirectory(profile string) (exists bool, currentDirectory string, err error) {
