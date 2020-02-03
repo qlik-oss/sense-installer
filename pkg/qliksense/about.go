@@ -2,19 +2,18 @@ package qliksense
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"sort"
 
+	gogetter "github.com/hashicorp/go-getter"
 	"gopkg.in/yaml.v2"
-	"sigs.k8s.io/kustomize/api/filesys"
-	"sigs.k8s.io/kustomize/api/konfig"
-	"sigs.k8s.io/kustomize/api/krusty"
-	"sigs.k8s.io/kustomize/api/types"
 )
 
 type patch struct {
@@ -47,7 +46,7 @@ type helmChart struct {
 	ChartVersion     string `yaml:"chartVersion"`
 }
 
-type versionOutput struct {
+type VersionOutput struct {
 	QliksenseVersion string   `yaml:"qlikSenseVersion"`
 	Images           []string `yaml:"images"`
 }
@@ -59,13 +58,26 @@ func (nw *nullWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (p *Qliksense) About(tag, directory, profile string) ([]byte, error) {
-	chartVersion, err := getChartVersion(filepath.Join(directory, "transformers", "qseokversion.yaml"), "qliksense")
+const (
+	defaultProfile = "docker-desktop"
+	gitUrl         = "https://github.com/qlik-oss/qliksense-k8s"
+)
+
+func (p *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
+	configDirectory, isTemporary, profile, err := getConfigDirectory(gitUrl, gitRef, profile)
+	if err != nil {
+		return nil, err
+	}
+	if isTemporary {
+		defer os.RemoveAll(configDirectory)
+	}
+
+	chartVersion, err := getChartVersion(filepath.Join(configDirectory, "transformers", "qseokversion.yaml"), "qliksense")
 	if err != nil {
 		return nil, err
 	}
 
-	kuzManifest, err := executeKustomizeBuild(filepath.Join(directory, "manifests", profile))
+	kuzManifest, err := executeKustomizeBuild(filepath.Join(configDirectory, "manifests", profile))
 	if err != nil {
 		return nil, err
 	}
@@ -75,35 +87,96 @@ func (p *Qliksense) About(tag, directory, profile string) ([]byte, error) {
 		return nil, err
 	}
 
-	return yaml.Marshal(versionOutput{
+	return &VersionOutput{
 		QliksenseVersion: chartVersion,
 		Images:           images,
-	})
+	}, nil
 }
 
-func executeKustomizeBuild(directory string) ([]byte, error) {
-	log.SetOutput(&nullWriter{})
-	defer func() {
-		log.SetOutput(os.Stderr)
-	}()
+func getConfigDirectory(gitUrl, gitRef, profileEntered string) (dir string, isTemporary bool, profile string, err error) {
+	profile = profileEntered
+	if profile == "" {
+		profile = defaultProfile
+	}
 
-	fSys := filesys.MakeFsOnDisk()
-	options := &krusty.Options{
-		DoLegacyResourceSort: false,
-		LoadRestrictions:     types.LoadRestrictionsNone,
-		DoPrune:              false,
+	if gitRef != "" {
+		if dir, err = downloadFromGitRepoToTmpDir(gitUrl, gitRef); err != nil {
+			return "", false, "", err
+		} else {
+			return dir, true, profile, nil
+		}
 	}
-	pluginConfig, err := konfig.EnabledPluginConfig()
+
+	var exists bool
+	exists, dir, err = configExistsInCurrentDirectory(profile)
 	if err != nil {
-		return nil, err
+		return "", false, "", err
+	} else if exists {
+		return dir, false, profile, nil
 	}
-	options.PluginConfig = pluginConfig
-	k := krusty.MakeKustomizer(fSys, options)
-	resMap, err := k.Run(directory)
+
+	var profileFromCR string
+	exists, dir, profileFromCR, err = configExistsInCR()
 	if err != nil {
-		return nil, err
+		return "", false, "", err
+	} else if exists {
+		if profileEntered == "" {
+			profile = profileFromCR
+		}
+		return dir, false, profile, nil
 	}
-	return resMap.AsYaml()
+
+	if dir, err = downloadFromGitRepoToTmpDir(gitUrl, "master"); err != nil {
+		return "", false, "", err
+	} else {
+		return dir, true, profile, nil
+	}
+}
+
+func downloadFromGitRepoToTmpDir(gitUrl, gitRef string) (string, error) {
+	if tmpDir, err := ioutil.TempDir("", ""); err != nil {
+		return "", err
+	} else {
+		downloadPath := path.Join(tmpDir, "repo")
+		if err := downloadFromGitRepo(gitUrl, gitRef, downloadPath); err != nil {
+			_ = os.RemoveAll(tmpDir)
+			return "", err
+		} else {
+			return downloadPath, nil
+		}
+	}
+}
+
+func downloadFromGitRepo(gitUrl, gitRef, destDir string) error {
+	client := &gogetter.Client{
+		Ctx:  context.Background(),
+		Dst:  destDir,
+		Dir:  true,
+		Src:  fmt.Sprintf("git::%v?ref=%v", gitUrl, gitRef),
+		Mode: gogetter.ClientModeDir,
+		Detectors: []gogetter.Detector{
+			new(gogetter.GitHubDetector),
+		},
+		Getters: map[string]gogetter.Getter{
+			"git": &gogetter.GitGetter{},
+		},
+	}
+	return client.Get()
+}
+
+func configExistsInCurrentDirectory(profile string) (exists bool, currentDirectory string, err error) {
+	currentDirectory, err = os.Getwd()
+	if err == nil {
+		info, err := os.Stat(path.Join(currentDirectory, "manifests", profile))
+		if err == nil && info.IsDir() {
+			exists = true
+		}
+	}
+	return exists, currentDirectory, err
+}
+
+func configExistsInCR() (exists bool, directory string, profile string, err error) {
+	return exists, directory, profile, err
 }
 
 func getImageList(yamlContent []byte) ([]string, error) {
