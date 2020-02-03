@@ -17,6 +17,7 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 
 	// "github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -40,6 +41,8 @@ const (
 
 	qliksenseConfigFile  = "config.yaml"
 	qliksenseContextsDir = "contexts"
+
+	defaultQliksenseContext = "qliksense-default"
 )
 
 func initAndExecute() error {
@@ -62,7 +65,7 @@ func initAndExecute() error {
 
 	// create dirs and appropriate files for setting up contexts
 	log.Debugf("QliksenseHomeDir: %s", qlikSenseHome)
-	setUpContext(qlikSenseHome)
+	setUpQliksenseContext(qlikSenseHome)
 	return nil
 }
 
@@ -74,53 +77,55 @@ func logrusConfigs() {
 	log.SetFormatter(Formatter)
 }
 
-func setUpContext(qlikSenseHome string) {
-	// create config.yaml and populate it
+func setUpQliksenseContext(qlikSenseHome string) {
+	qliksenseConfigFile := filepath.Join(qlikSenseHome, qliksenseConfigFile)
+	if !qliksense.FileExists(qliksenseConfigFile) {
 
-	// create contexts/ -> qliksense-default/ -> qliksense-default.yaml
-	// func createContextSetup(contextname) {
-	// qliksense-default/ -> qliksense-default.yaml
-	// we know at this point that qliksense home dir exists, we will proceed to create other necessary dirs and files
-
-	if !fileExists(filepath.Join(qlikSenseHome, qliksenseConfigFile)) {
 		log.Debugf("config.yaml doesnt exist, creating it now...")
-		f, err := os.Create(filepath.Join(qlikSenseHome, qliksenseConfigFile))
+		f, err := os.Create(qliksenseConfigFile)
 		if err != nil {
+			log.Debug("There was an error creating the config.yaml file: %v", err)
 			panic(err)
 		}
-		log.Debugf("File created: %s", filepath.Join(qlikSenseHome, qliksenseConfigFile))
+		log.Debugf("File created: %s", qliksenseConfigFile)
 		defer f.Close()
 
-		// TO-DO: write default configs into config.yaml
-		var qliksenseConfig *qliksense.QliksenseConfig
-		qliksenseConfig.AddBaseQliksenseConfigs()
+		var qliksenseConfig api.QliksenseConfig
+		log.Debug("Adding BaseConfig")
+		qliksenseConfig = qliksense.AddBaseQliksenseConfigs(qliksenseConfig, defaultQliksenseContext)
+		log.Debug("Added BaseConfig")
 		x, err := yaml.Marshal(qliksenseConfig)
 		if err != nil {
 			log.Fatalf("An error occurred during marshalling config: %v", err)
 		}
 		log.Debugf("Marshalled yaml:\n%s\nWriting to file...", x)
 
-		// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
-		var err1 error
-		os.MkdirAll(qliksense.QliksenseConfigContextHome, os.ModePerm)
-		f, err1 = os.OpenFile(filepath.Join(qlikSenseHome, qliksense.QliksenseConfigContextHome), os.O_RDWR|os.O_CREATE, os.ModePerm)
-		if err1 != nil {
-			panic(err1)
-		}
-
-		defer f.Close()
-
-		numBytes, err2 := f.Write(x)
-		if err2 != nil {
-			panic(err2)
+		numBytes, err := f.Write(x)
+		if err != nil {
+			panic(err)
 		}
 		log.Debugf("wrote %d bytes\n", numBytes)
+		log.Debug("Wrote Struct into config.yaml")
+
+		// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
+		log.Debug("Creating contexts/")
 
 		// create contexts/
-		if err := os.Mkdir(filepath.Join(qlikSenseHome, qliksenseContextsDir), os.ModeDir); err != nil {
+		qliksenseContextsDir1 := filepath.Join(qlikSenseHome, qliksenseContextsDir)
+		if err := os.Mkdir(qliksenseContextsDir1, 0700); err != nil {
 			log.Debug("Not able to create the contexts/ dir")
 		} else {
-			log.Debug("Created the contexts/")
+			log.Debug("Created contexts/")
+
+			// ******************* creating contexts/qliksense-default.yaml file *********************
+			qliksenseDefaultContextFile := filepath.Join(qlikSenseHome, qliksenseContextsDir, defaultQliksenseContext+".yaml")
+			var qliksenseCR api.QliksenseCR
+			qliksenseCR.Metadata.Name = defaultQliksenseContext
+			log.Debug("Going into WriteQliksenseContextConfigToFile()")
+			qliksense.WriteQliksenseContextConfigToFile(nil, &qliksenseCR, qliksenseDefaultContextFile)
+			log.Debug("WriteQliksenseContextConfigToFile() Over")
+			// ***************** created contexts/qliksense-default.yaml file ************************
+
 		}
 	} else {
 		log.Error("config.yaml already exists..")

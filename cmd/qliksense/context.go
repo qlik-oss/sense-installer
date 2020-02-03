@@ -3,6 +3,7 @@ package main
 import (
 	"path/filepath"
 
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -169,20 +170,20 @@ func setContextConfig(q *qliksense.Qliksense, args []string) error {
 	// if it exists: pull up it's config info and load in memory, look for more updates by way of subsequent commands, and then finally save the updated configs to the file.
 	// if it doesnt exist, create a file in the name of the context specified, gather all the configs that are requested by way of subsequent commands, then save the entire
 	// thing in a file with the same name as the context.
-	var qliksenseContext, tmpQliksenseContext *qliksense.QliksenseContext
+	var qliksenseCR, tmpQliksenseCR *api.QliksenseCR
 	log.Debug("Hello World!!!")
 	if len(args) > 0 && len(args) == 1 {
 		log.Debugf("The command received: %s", args)
 		// check if file exists
-		if fileExists(filepath.Join(qliksense.QliksenseConfigHome, args[0]+".yaml")) {
+		if qliksense.FileExists(filepath.Join(qliksense.QliksenseConfigHome, args[0]+".yaml")) {
 			log.Debug("File exists...")
-			qliksenseContext.ReadQliksenseContextConfig(args[0] + ".yaml")
+			// ReadQliksenseContextConfig(qliksenseCR, args[0]+".yaml")
 		} else {
 			log.Debug("File doesn't exist, will create it now.")
-			qliksenseContext.WriteQliksenseConfigToFile(args[0])
+			// WriteQliksenseConfigToFile(qliksenseCR, args[0])
 		}
-		tmpQliksenseContext = qliksenseContext
-		log.Debug("Temp yaml config here: %v", tmpQliksenseContext)
+		tmpQliksenseCR = qliksenseCR
+		log.Debug("Temp yaml config here: %v", tmpQliksenseCR)
 	} else {
 		log.Fatalf("Please provide a name to configure the context with.")
 	}

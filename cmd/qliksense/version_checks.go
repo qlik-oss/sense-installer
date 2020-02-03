@@ -55,7 +55,7 @@ func checkMinVersion(tag string, q *qliksense.Qliksense) {
 
 	} else {
 		// Tag is empty, hence looking for dependenciesFile.yaml, exit if this file is not present
-		if fileExists(dependenciesFile) {
+		if qliksense.FileExists(dependenciesFile) {
 			// read the dependencies.yaml and store into a map
 			yamlFile, err := ioutil.ReadFile(dependenciesFile)
 			if err != nil {
@@ -281,14 +281,4 @@ func logDebugMessage(strMessage string, args ...interface{}) {
 	if os.Getenv("QLIKSENSE_DEBUG") == "true" {
 		fmt.Printf(strMessage, args...)
 	}
-}
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		fmt.Println("File does not exist")
-		return false
-	}
-	logDebugMessage("Either File exists OR a different error occurred")
-	return !info.IsDir()
 }
