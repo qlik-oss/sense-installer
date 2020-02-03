@@ -47,7 +47,7 @@ func WriteQliksenseContextConfigToFile(qliksenseConfig *api.QliksenseConfig, qli
 			log.Debugf("File %s doesnt exist, creating it now...", qliksenseFile)
 			file, err := os.OpenFile(qliksenseFile, os.O_RDWR|os.O_CREATE, os.ModePerm)
 			if err != nil {
-				log.Debug("There was an error creating the file: %s, %v", qliksenseFile, err)
+				log.Debugf("There was an error creating the file: %s, %v", qliksenseFile, err)
 				panic(err)
 			}
 			log.Debugf("File created: %s", qliksenseFile)
@@ -76,6 +76,51 @@ func WriteQliksenseContextConfigToFile(qliksenseConfig *api.QliksenseConfig, qli
 		}
 	} else {
 		log.Debug("This section is about writing into the base config file %s", qliksenseFile)
+	}
+}
+
+// WriteToFile is exported
+func WriteToFile(content interface{}, targetFile string) {
+	log.Debug("Entry: WriteToFile()")
+	if content == nil || targetFile == "" {
+		return
+	}
+	log.Debug("This action is about writing to a file")
+	// log.Debugf("File %s doesnt exist, creating it now...", targetFile)
+	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0700)
+	if err != nil {
+		log.Debug("There was an error creating the file: %s, %v", targetFile, err)
+		log.Fatal(err)
+	}
+	defer file.Close()
+	x, err := yaml.Marshal(content)
+	if err != nil {
+		log.Fatalf("An error occurred during marshalling CR: %v", err)
+	}
+	log.Debugf("Marshalled yaml:\n%s\nWriting to file...", x)
+
+	numBytes, err := file.Write(x)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Debugf("wrote %d bytes\n", numBytes)
+	log.Debugf("Wrote Struct into %s", targetFile)
+}
+
+// ReadFromFile is exported
+func ReadFromFile(content interface{}, sourceFile string) {
+	log.Debug("Entry: ReadFromFile()")
+	if content == nil || sourceFile == "" {
+		return
+	}
+	log.Debug("This action is about reading from a file")
+	contents, err := ioutil.ReadFile(sourceFile)
+	if err != nil {
+		log.Debug("There was an error reading from file: %s, %v", sourceFile, err)
+		log.Fatal(err)
+	}
+	if err := yaml.Unmarshal(contents, content); err != nil {
+		log.Fatalf("An error occurred during unmarshalling: %v", err)
 	}
 }
 
@@ -112,13 +157,27 @@ func setOtherConfigs(q *Qliksense) error {
 	return nil
 }
 
-// FileExists is exported
-func FileExists(filename string) bool {
+func checkExits(filename string) os.FileInfo {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		log.Debug("File does not exist")
-		return false
+		return nil
 	}
 	log.Debug("Either File exists OR a different error occurred")
-	return !info.IsDir()
+	return info
+}
+
+// FileExists is exported
+func FileExists(filename string) bool {
+	if fe := checkExits(filename); fe != nil && !fe.IsDir() {
+		return true
+	}
+	return false
+}
+
+func DirExists(dirname string) bool {
+	if fe := checkExits(dirname); fe != nil && fe.IsDir() {
+		return true
+	}
+	return false
 }

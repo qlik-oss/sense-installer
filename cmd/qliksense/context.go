@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"path/filepath"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
@@ -76,9 +78,9 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	// opts = &aboutOptions{}
 
 	cmd = &cobra.Command{
-		Use:     "view",
-		Short:   "view qliksense current context configuration",
-		Example: `qliksense config view`,
+		Use:     "set-config",
+		Short:   "",
+		Example: `qliksense config set-config`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return setConfigs(q)
 		},
@@ -94,9 +96,9 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	// opts = &aboutOptions{}
 
 	cmd = &cobra.Command{
-		Use:     "view",
-		Short:   "view qliksense current context configuration",
-		Example: `qliksense config view`,
+		Use:     "set-secrets",
+		Short:   "",
+		Example: `qliksense config set-secrets`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return setSecrets(q)
 		},
@@ -107,9 +109,7 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 func viewConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
-		// opts *aboutOptions
 	)
-	// opts = &aboutOptions{}
 
 	cmd = &cobra.Command{
 		Use:     "view",
@@ -123,15 +123,32 @@ func viewConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func viewQliksenseConfig(q *qliksense.Qliksense) error {
-	// log.Debugf("Displaying file %s", fileName)
-	// yamlFile, err := ioutil.ReadFile(fileName)
-	// if err != nil {
-	// 	log.Fatalf("Error reading from source: %s\n", err)
-	// }
-	// err = yaml.Unmarshal([]byte(yamlFile), yamlConfig)
-	// if err != nil {
-	// 	log.Fatalf("Error when parsing from source: %s\n", err)
-	// }
+	// retieve current context from config.yaml
+	var qliksenseConfig api.QliksenseConfig
+	qliksenseConfigFile := filepath.Join(q.QliksenseHome, qliksenseConfigFile)
+	log.Debugf("qliksenseConfigFile: %s", qliksenseConfigFile)
+
+	qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	currentContext := qliksenseConfig.Spec.CurrentContext
+	log.Debugf("Current-context from config.yaml: %s", currentContext)
+
+	// look for file with that name+.yaml in contexts/, if not exists=> output error and show qliksense-default.yaml
+	// cat it out
+	if currentContext != "" {
+		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext+".yaml")
+		log.Debugf("Context file path: %s", qliksenseContextsFile)
+		if qliksense.FileExists(qliksenseContextsFile) {
+			content, err := ioutil.ReadFile(qliksenseContextsFile)
+			if err != nil {
+				log.Fatalf("Unable to read the file: %v", err)
+			}
+			fmt.Printf("%s", content)
+		}
+	} else {
+		// current-context is empty
+		fmt.Println(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+	}
+
 	return nil
 }
 
@@ -170,20 +187,9 @@ func setContextConfig(q *qliksense.Qliksense, args []string) error {
 	// if it exists: pull up it's config info and load in memory, look for more updates by way of subsequent commands, and then finally save the updated configs to the file.
 	// if it doesnt exist, create a file in the name of the context specified, gather all the configs that are requested by way of subsequent commands, then save the entire
 	// thing in a file with the same name as the context.
-	var qliksenseCR, tmpQliksenseCR *api.QliksenseCR
-	log.Debug("Hello World!!!")
-	if len(args) > 0 && len(args) == 1 {
+	if len(args) == 1 {
 		log.Debugf("The command received: %s", args)
-		// check if file exists
-		if qliksense.FileExists(filepath.Join(qliksense.QliksenseConfigHome, args[0]+".yaml")) {
-			log.Debug("File exists...")
-			// ReadQliksenseContextConfig(qliksenseCR, args[0]+".yaml")
-		} else {
-			log.Debug("File doesn't exist, will create it now.")
-			// WriteQliksenseConfigToFile(qliksenseCR, args[0])
-		}
-		tmpQliksenseCR = qliksenseCR
-		log.Debug("Temp yaml config here: %v", tmpQliksenseCR)
+		setUpQliksenseContext(q.QliksenseHome, args[0])
 	} else {
 		log.Fatalf("Please provide a name to configure the context with.")
 	}
