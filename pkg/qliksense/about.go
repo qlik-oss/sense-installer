@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"sort"
 
-	kapis_git "github.com/qlik-oss/k-apis/git"
+	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 	"gopkg.in/yaml.v2"
 )
 

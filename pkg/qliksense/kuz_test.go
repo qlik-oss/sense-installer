@@ -1,11 +1,12 @@
 package qliksense
 
 import (
-	kapis_git "github.com/qlik-oss/k-apis/git"
 	"io/ioutil"
 	"os"
 	"path"
 	"testing"
+
+	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 )
 
 func Test_executeKustomizeBuild(t *testing.T) {

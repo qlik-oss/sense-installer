@@ -1,6 +1,6 @@
 package api
 
-import "github.com/qlik-oss/k-apis/config"
+import "github.com/qlik-oss/k-apis/pkg/config"
 
 // CommonConfig is exported
 type CommonConfig struct {
