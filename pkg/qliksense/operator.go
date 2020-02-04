@@ -15,14 +15,14 @@ func (q *Qliksense) ViewOperatorCrd() {
 func (q *Qliksense) GetCRDString() string {
 	result := ""
 	for _, v := range q.getFileList("crd") {
-		result = q.getYamlFile(v)
+		result = q.getYamlFromPackrFile(v)
 	}
 	for _, v := range q.getFileList("crd-deploy") {
-		result = result + q.getYamlFile(v)
+		result = result + q.getYamlFromPackrFile(v)
 	}
 	return result
 }
-func (q *Qliksense) getYamlFile(packrFile string) string {
+func (q *Qliksense) getYamlFromPackrFile(packrFile string) string {
 	s, err := q.CrdBox.FindString(packrFile)
 	if err != nil {
 		fmt.Printf("Cannot read file %s", packrFile)
