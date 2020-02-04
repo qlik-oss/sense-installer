@@ -70,7 +70,7 @@ clean-packr: packr2
 	cd pkg/qliksense && packr2 clean
 
 get-crds: 
-	git clone git@github.com:qlik-oss/qliksense-operator.git -b ms-3 /tmp/operator
+	git clone git@github.com:qlik-oss/qliksense-operator.git -b custom_cr /tmp/operator
 	mkdir -p pkg/qliksense/crds/cr
 	mkdir -p pkg/qliksense/crds/crd
 	mkdir -p pkg/qliksense/crds/crd-deploy
