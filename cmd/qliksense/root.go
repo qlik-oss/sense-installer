@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -46,7 +46,7 @@ func initAndExecute() error {
 
 	// create dirs and appropriate files for setting up contexts
 	if len(os.Args) == 1 {
-		log.Debugf("QliksenseHomeDir: %s", qlikSenseHome)
+		qliksense.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 		setUpQliksenseDefaultContext(qlikSenseHome)
 		return nil
 	}
@@ -78,7 +78,7 @@ func setUpQliksenseContext(qlikSenseHome, contextName string) {
 			log.Fatalf("Not able to create the contexts/ dir: %v", err)
 		}
 	}
-	log.Debug("Created contexts/")
+	qliksense.LogDebugMessage("Created contexts/")
 	// creating contexts/qliksense-default.yaml file
 
 	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
@@ -87,10 +87,10 @@ func setUpQliksenseContext(qlikSenseHome, contextName string) {
 	if err := os.Mkdir(filepath.Join(qliksenseContextsDir1, contextName), 0700); err != nil {
 		log.Fatalf("Not able to create the contexts/qliksense-default/ dir: %v", err)
 	}
-	log.Debug("Created contexts/qliksense-default/ directory")
+	qliksense.LogDebugMessage("Created contexts/qliksense-default/ directory")
 	if !qliksense.FileExists(qliksenseContextFile) {
 		qliksenseCR = qliksense.AddCommonConfig(qliksenseCR, contextName)
-		log.Debugf("Added Context: %s", contextName)
+		qliksense.LogDebugMessage("Added Context: %s", contextName)
 	} else {
 		qliksense.ReadFromFile(&qliksenseCR, qliksenseContextFile)
 	}
@@ -100,7 +100,7 @@ func setUpQliksenseContext(qlikSenseHome, contextName string) {
 	if len(qliksenseConfig.Spec.Contexts) > 0 {
 		for _, ctx := range qliksenseConfig.Spec.Contexts {
 			if ctx.Name == contextName {
-				ctx.CRLocation = qliksenseContextFile
+				ctx.CrFile = qliksenseContextFile
 				ctxTrack = true
 				break
 			}
@@ -108,8 +108,8 @@ func setUpQliksenseContext(qlikSenseHome, contextName string) {
 	}
 	if !ctxTrack {
 		qliksenseConfig.Spec.Contexts = append(qliksenseConfig.Spec.Contexts, api.Context{
-			Name:       contextName,
-			CRLocation: qliksenseContextFile,
+			Name:   contextName,
+			CrFile: qliksenseContextFile,
 		})
 	}
 	qliksenseConfig.Spec.CurrentContext = contextName

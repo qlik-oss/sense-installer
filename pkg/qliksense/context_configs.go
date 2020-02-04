@@ -2,11 +2,11 @@ package qliksense
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 
-	"github.com/qlik-oss/k-apis/config"
+	"github.com/qlik-oss/k-apis/pkg/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
-	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -31,7 +31,7 @@ func WriteToFile(content interface{}, targetFile string) {
 	}
 	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0700)
 	if err != nil {
-		log.Debug("There was an error creating the file: %s, %v", targetFile, err)
+		LogDebugMessage("There was an error creating the file: %s, %v", targetFile, err)
 		log.Fatal(err)
 	}
 	defer file.Close()
@@ -39,7 +39,7 @@ func WriteToFile(content interface{}, targetFile string) {
 	if err != nil {
 		log.Fatalf("An error occurred during marshalling CR: %v", err)
 	}
-	log.Debugf("Marshalled yaml:\n%s\nWriting to file...", x)
+	LogDebugMessage("Marshalled yaml:\n%s\nWriting to file...", x)
 
 	// truncating the file before we write new content
 	file.Truncate(0)
@@ -48,7 +48,7 @@ func WriteToFile(content interface{}, targetFile string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Debugf("Wrote content into %s", targetFile)
+	LogDebugMessage("Wrote content into %s", targetFile)
 }
 
 // ReadFromFile reads content from specified sourcefile
@@ -58,7 +58,7 @@ func ReadFromFile(content interface{}, sourceFile string) {
 	}
 	contents, err := ioutil.ReadFile(sourceFile)
 	if err != nil {
-		log.Debug("There was an error reading from file: %s, %v", sourceFile, err)
+		LogDebugMessage("There was an error reading from file: %s, %v", sourceFile, err)
 		log.Fatal(err)
 	}
 	if err := yaml.Unmarshal(contents, content); err != nil {
@@ -95,10 +95,10 @@ func AddBaseQliksenseConfigs(qliksenseConfig api.QliksenseConfig, defaultQliksen
 func checkExits(filename string) os.FileInfo {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
-		log.Debug("File does not exist")
+		LogDebugMessage("File does not exist")
 		return nil
 	}
-	log.Debug("File exists")
+	LogDebugMessage("File exists")
 	return info
 }
 
@@ -116,4 +116,11 @@ func DirExists(dirname string) bool {
 		return true
 	}
 	return false
+}
+
+// LogDebugMessage logs a debug message
+func LogDebugMessage(strMessage string, args ...interface{}) {
+	if os.Getenv("QLIKSENSE_DEBUG") == "true" {
+		log.Printf(strMessage, args...)
+	}
 }

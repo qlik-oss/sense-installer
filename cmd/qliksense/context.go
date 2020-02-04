@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/qlik-oss/k-apis/config"
+	"github.com/qlik-oss/k-apis/pkg/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	log "github.com/sirupsen/logrus"
