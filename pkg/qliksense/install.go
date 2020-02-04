@@ -2,6 +2,7 @@ package qliksense
 
 import (
 	"fmt"
+	kapiconfig "github.com/qlik-oss/k-apis/pkg/config"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -37,6 +38,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 	if opts.AcceptEULA != "" {
+		if qcr.Spec.Configs == nil {
+			qcr.Spec.Configs = make(map[string]kapiconfig.NameValues)
+		}
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}
 	if opts.StorageClass != "" {
