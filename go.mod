@@ -22,6 +22,7 @@ replace (
 require (
 	cloud.google.com/go v0.52.0 // indirect
 	cloud.google.com/go/storage v1.5.0 // indirect
+	github.com/Masterminds/semver/v3 v3.0.3
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
@@ -43,6 +44,7 @@ require (
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
+	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/jinzhu/gorm v1.9.11 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/mattn/go-sqlite3 v2.0.1+incompatible // indirect

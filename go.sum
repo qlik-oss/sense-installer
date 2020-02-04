@@ -896,12 +896,6 @@ github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/procfs v0.0.5 h1:3+auTFlqw+ZaQYJARz6ArODtkaIwtvBTx3N2NehQlL8=
 github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
-github.com/qlik-oss/k-apis v0.0.0-20200203214359-8ebb4f2ee914 h1:OM69xGFuaWSgna4+Eufg4jhDgSk2Rt4RPikm3PXhaXk=
-github.com/qlik-oss/k-apis v0.0.0-20200203214359-8ebb4f2ee914/go.mod h1:FDHuThas5MNw192Sk2IGy9fv8S06BLiuz2vfskZ162Q=
-github.com/qlik-oss/k-apis v0.0.0-20200203215344-de573fbee268 h1:CyAmDkEywfvgvwHH+Cc7pwBXsNz5pBGZUy/p10SrkCc=
-github.com/qlik-oss/k-apis v0.0.0-20200203215344-de573fbee268/go.mod h1:FDHuThas5MNw192Sk2IGy9fv8S06BLiuz2vfskZ162Q=
-github.com/qlik-oss/k-apis v0.0.0-20200203220006-5efcd248b52e h1:eJBM30Ti8B0EyFCFPI9Mdm81jmTnDkvT4KhpDcEdOSo=
-github.com/qlik-oss/k-apis v0.0.0-20200203220006-5efcd248b52e/go.mod h1:FDHuThas5MNw192Sk2IGy9fv8S06BLiuz2vfskZ162Q=
 github.com/qlik-oss/k-apis v0.0.1 h1:XgKSi2Lu/Jsc0XeBRCObw8urt9vVjtgr7INq6kjJpV0=
 github.com/qlik-oss/k-apis v0.0.1/go.mod h1:FDHuThas5MNw192Sk2IGy9fv8S06BLiuz2vfskZ162Q=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200129153315-09eb26c762c8 h1:WLVkArXf58T+3SHDvSddE8P6OjkeeUtGEgHk8LDdfeo=
