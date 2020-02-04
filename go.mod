@@ -62,7 +62,7 @@ require (
 	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
 	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
-	golang.org/x/net v0.0.0-20200114155413-6afb5195e5aa
+	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
 	golang.org/x/tools v0.0.0-20200130002326-2f3ba24bd6e7
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
