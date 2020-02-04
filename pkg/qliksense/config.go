@@ -2,10 +2,11 @@ package qliksense
 
 import (
 	"fmt"
-	"github.com/qlik-oss/k-apis"
+	"path/filepath"
+
+	"github.com/qlik-oss/k-apis/pkg/cr"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"gopkg.in/yaml.v2"
-	"path/filepath"
 )
 
 const (
