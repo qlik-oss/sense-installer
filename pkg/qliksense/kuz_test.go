@@ -54,9 +54,9 @@ func Test_executeKustomizeBuild_onQlikConfig(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	configPath := path.Join(tmpDir, "config")
-	if repo, err := kapis_git.CloneRepository(configPath, gitUrl, nil); err != nil {
+	if repo, err := kapis_git.CloneRepository(configPath, defaultGitUrl, nil); err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
-	} else if err := kapis_git.Checkout(repo, "v0.0.1", "", nil); err != nil {
+	} else if err := kapis_git.Checkout(repo, "v1.21.23-edge", "", nil); err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
 	}
 
