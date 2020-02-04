@@ -259,10 +259,10 @@ func Test_About_getConfigDirectory(t *testing.T) {
 	}
 
 	var testCases = []struct {
-		name           string
-		setup          func(t *testing.T) (gitUrl, gitRef, profileEntered string)
-		verify         func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error)
-		cleanup        func(configDir string) error
+		name    string
+		setup   func(t *testing.T) (gitUrl, gitRef, profileEntered string)
+		verify  func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error)
+		cleanup func(configDir string) error
 	}{
 		{
 			name: "config in current directory and default profile",
