@@ -49,8 +49,8 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.Namespace != "" {
 		qcr.Spec.NameSpace = opts.Namespace
 	}
-	qConfig.WriteCurrentContextCR(qcr)
-
+	//TODO: do we need to write
+	//qConfig.WriteCurrentContextCR(qcr)
 	if err := applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err

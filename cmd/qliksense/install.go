@@ -30,8 +30,8 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	f := c.Flags()
 	f.StringVarP(&opts.AcceptEULA, "acceptEULA", "a", "", "AcceptEULA for qliksense")
-	f.StringVarP(&opts.AcceptEULA, "namespace", "n", "", "Namespace where to install the qliksense")
-	f.StringVarP(&opts.AcceptEULA, "storageClass", "s", "", "Storage class for qliksense")
+	f.StringVarP(&opts.Namespace, "namespace", "n", "", "Namespace where to install the qliksense")
+	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
 
 	return c
 }
