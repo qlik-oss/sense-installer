@@ -2,8 +2,6 @@ package qliksense
 
 import (
 	"bytes"
-	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,7 +10,7 @@ import (
 	"reflect"
 	"sort"
 
-	gogetter "github.com/hashicorp/go-getter"
+	kapis_git "github.com/qlik-oss/k-apis/git"
 	"gopkg.in/yaml.v2"
 )
 
@@ -60,11 +58,11 @@ func (nw *nullWriter) Write(p []byte) (n int, err error) {
 
 const (
 	defaultProfile = "docker-desktop"
-	gitUrl         = "https://github.com/qlik-oss/qliksense-k8s"
+	defaultGitUrl  = "https://github.com/qlik-oss/qliksense-k8s"
 )
 
 func (p *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
-	configDirectory, isTemporary, profile, err := getConfigDirectory(gitUrl, gitRef, profile)
+	configDirectory, isTemporary, profile, err := getConfigDirectory(defaultGitUrl, gitRef, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -148,20 +146,11 @@ func downloadFromGitRepoToTmpDir(gitUrl, gitRef string) (string, error) {
 }
 
 func downloadFromGitRepo(gitUrl, gitRef, destDir string) error {
-	client := &gogetter.Client{
-		Ctx:  context.Background(),
-		Dst:  destDir,
-		Dir:  true,
-		Src:  fmt.Sprintf("git::%v?ref=%v", gitUrl, gitRef),
-		Mode: gogetter.ClientModeDir,
-		Detectors: []gogetter.Detector{
-			new(gogetter.GitHubDetector),
-		},
-		Getters: map[string]gogetter.Getter{
-			"git": &gogetter.GitGetter{},
-		},
+	if repo, err := kapis_git.CloneRepository(destDir, gitUrl, nil); err != nil {
+		return err
+	} else {
+		return kapis_git.Checkout(repo, gitRef, "", nil)
 	}
-	return client.Get()
 }
 
 func configExistsInCurrentDirectory(profile string) (exists bool, currentDirectory string, err error) {
