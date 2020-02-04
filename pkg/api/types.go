@@ -11,8 +11,9 @@ type CommonConfig struct {
 
 // QliksenseConfig is exported
 type QliksenseConfig struct {
-	CommonConfig `json:",inline" yaml:",inline"`
-	Spec         *ContextSpec `json:"spec" yaml:"spec"`
+	CommonConfig      `json:",inline" yaml:",inline"`
+	Spec              *ContextSpec `json:"spec" yaml:"spec"`
+	QliksenseHomePath string       `json:"-" yaml:"-"`
 }
 
 // QliksenseCR is exported
