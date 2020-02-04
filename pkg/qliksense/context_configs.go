@@ -22,6 +22,7 @@ const (
 	QliksenseContextKind          = "Qliksense"
 	QliksenseContextLabel         = "v1.0.0"
 	QliksenseContextManifestsRoot = "/Usr/ddd/my-k8-repo/manifests"
+	QliksenseDefaultProfile       = "docker-desktop"
 )
 
 // ReadQliksenseContextConfig is exported
@@ -96,6 +97,7 @@ func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.Qlikse
 	qliksenseCR.Metadata.Labels["Version"] = QliksenseContextLabel
 	qliksenseCR.Spec = &config.CRSpec{}
 	qliksenseCR.Spec.ManifestsRoot = QliksenseContextManifestsRoot
+	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
 	log.Debug("Exit: addCommonConfig()")
 	return qliksenseCR
 }
