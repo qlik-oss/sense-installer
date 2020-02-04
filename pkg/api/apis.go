@@ -138,3 +138,12 @@ func (cr *QliksenseCR) AddLabelToCr(key, value string) error {
 	cr.Metadata.Labels[key] = value
 	return nil
 }
+
+func (cr *QliksenseCR) AddConfigsToCr(svc, key, value string) error {
+
+	if cr.Metadata.Labels == nil {
+		cr.Metadata.Labels = make(map[string]string)
+	}
+	cr.Metadata.Labels[key] = value
+	return nil
+}

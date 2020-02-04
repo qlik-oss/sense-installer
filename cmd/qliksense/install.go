@@ -8,6 +8,7 @@ import (
 )
 
 func installCmd(q *qliksense.Qliksense) *cobra.Command {
+	opts := &qliksense.InstallCommandOptions{}
 	c := &cobra.Command{
 		Use:     "install",
 		Short:   "install a qliksense release",
@@ -23,8 +24,14 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.InstallQK8s(args[0])
+			return q.InstallQK8s(args[0], opts)
 		},
 	}
+
+	f := c.Flags()
+	f.StringVarP(&opts.AcceptEULA, "acceptEULA", "a", "", "AcceptEULA for qliksense")
+	f.StringVarP(&opts.AcceptEULA, "namespace", "n", "", "Namespace where to install the qliksense")
+	f.StringVarP(&opts.AcceptEULA, "storageClass", "s", "", "Storage class for qliksense")
+
 	return c
 }
