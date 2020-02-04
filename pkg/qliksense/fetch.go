@@ -2,7 +2,7 @@ package qliksense
 
 import (
 	"fmt"
-	kapis_git "github.com/qlik-oss/k-apis/git"
+	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -33,6 +33,6 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 		return err
 	}
 	qcr.Spec.ManifestsRoot = qConfig.BuildCurrentManifestsRoot(version)
-
+	qcr.AddLabelToCr("version", version)
 	return qConfig.WriteCurrentContextCR(qcr)
 }

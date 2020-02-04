@@ -130,3 +130,11 @@ func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
 func (qc *QliksenseConfig) WriteCurrentContextCR(cr *QliksenseCR) error {
 	return qc.WriteCR(cr, qc.Spec.CurrentContext)
 }
+
+func (cr *QliksenseCR) AddLabelToCr(key, value string) error {
+	if cr.Metadata.Labels == nil {
+		cr.Metadata.Labels = make(map[string]string)
+	}
+	cr.Metadata.Labels[key] = value
+	return nil
+}
