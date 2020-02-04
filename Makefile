@@ -37,6 +37,10 @@ build: clean generate
 	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 	$(MAKE) clean
 
+.PHONY: test
+test:
+	go test -tags "$(BUILDTAGS)" -v ./...
+
 xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
     	$(foreach ARCH, $(SUPPORTED_ARCHES), \

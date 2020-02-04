@@ -9,6 +9,7 @@ jobs:
     working_directory: /go/src/github.com/qlik-oss/sense-installer
     steps:
       - checkout
+      - run: make test
       - run: make build
   build_release:
     docker:
@@ -16,6 +17,7 @@ jobs:
     working_directory: /go/src/github.com/qlik-oss/sense-installer
     steps:
       - checkout
+      - run: make test
       - run: make xbuild-all
       - run:
           name: "Publish Release on GitHub"
@@ -28,21 +30,14 @@ workflows:
     jobs:
       - build:
           filters:
-            branches:
-              only: master
+            tags:
+              ignore: /^v.*/
   build_release:
     jobs:
-      - build:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /v.*/
       - build_release:
-          requires:
-            - build
           filters:
+            tags:
+              only: /^v.*/
             branches:
               ignore: /.*/
-            tags:
-              only: /v.*/
+
