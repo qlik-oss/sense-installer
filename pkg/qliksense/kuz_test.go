@@ -46,7 +46,11 @@ metadata:
 	}
 }
 
-func Test_executeKustomizeBuild_onQlikConfig(t *testing.T) {
+func Test_executeKustomizeBuild_onQlikConfig_DISABLED(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode")
+	}
+
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v\n", err)

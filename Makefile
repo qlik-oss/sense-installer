@@ -39,7 +39,7 @@ build: clean generate
 
 .PHONY: test
 test:
-	go test -count=1 -tags "$(BUILDTAGS)" -v ./...
+	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
 
 xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
