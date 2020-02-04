@@ -22,7 +22,7 @@ func qliksenseConfigCmds(q *qliksense.Qliksense) *cobra.Command {
 	cmd = &cobra.Command{
 		Use:     "config",
 		Short:   "Set qliksense application configuration",
-		Example: `qliksense config <sub-commnad>`,
+		Example: `qliksense config <sub-command>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.Help()
 			return nil
@@ -101,7 +101,6 @@ func viewConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
 	)
-
 	cmd = &cobra.Command{
 		Use:     "view",
 		Short:   "view qliksense current context configuration",
@@ -139,15 +138,13 @@ func viewQliksenseConfig(q *qliksense.Qliksense) error {
 		}
 	} else {
 		// current-context is empty
-		fmt.Println(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+		log.Info(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
 	}
 
 	return nil
 }
 
 func setSecrets(q *qliksense.Qliksense, args []string) error {
-	// Usage:
-	// qliksense config set-secrets qliksense[name=messagingPassword]="abc123"  --secret
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
 	qliksenseCR.Spec.Secrets = processConfigArgs(args, qliksenseCR.Spec.Secrets)
@@ -159,10 +156,7 @@ func setSecrets(q *qliksense.Qliksense, args []string) error {
 }
 
 func setConfigs(q *qliksense.Qliksense, args []string) error {
-	// Usage:
-	// qliksense config set-configs qliksense[name=acceptEULA]="yes"
 	// retieve current context from config.yaml
-
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
 	qliksenseCR.Spec.Configs = processConfigArgs(args, qliksenseCR.Spec.Configs)
 
@@ -214,9 +208,6 @@ func processConfigArgs(args []string, configsMap map[string]config.NameValues) m
 	for _, arg := range args {
 		result := re1.FindStringSubmatch(arg)
 		fmt.Printf("finding matches...\n")
-		// for k, v := range result {
-		// 	fmt.Printf("%d. %s\n", k, v)
-		// }
 
 		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
 		if len(result) != 4 {
@@ -258,17 +249,11 @@ func processConfigArgs(args []string, configsMap map[string]config.NameValues) m
 }
 
 func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
-	//Usage:
-	// qliksense config set profile=docker-desktop
-	// qliksense config set namespace=qliksense
-	// qliksense config set storageClassName=efs
-	// qliksense config set git.repository="https://github.com/my-org/qliksense-k8s"
-
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
 
 	// modify appropriate fields
-	log.Debugf("Here is the command: %s", args[0])
+	log.Debugf("Command: %s", args[0])
 	// split args[0] into key and value
 	if len(args) > 0 {
 		argsString := strings.Split(args[0], "=")
@@ -304,11 +289,6 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 
 // set the context for qliksense kubernetes resources to live in
 func setContextConfig(q *qliksense.Qliksense, args []string) error {
-
-	//check if file exists in the name of the given context name
-	// if it exists: pull up it's config info and load in memory, look for more updates by way of subsequent commands, and then finally save the updated configs to the file.
-	// if it doesnt exist, create a file in the name of the context specified, gather all the configs that are requested by way of subsequent commands, then save the entire
-	// thing in a file with the same name as the context.
 	if len(args) == 1 {
 		log.Debugf("The command received: %s", args)
 		setUpQliksenseContext(q.QliksenseHome, args[0])

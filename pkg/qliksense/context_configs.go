@@ -11,13 +11,12 @@ import (
 )
 
 const (
-	QliksenseConfigHome        = "/.qliksense"
-	QliksenseConfigContextHome = "/.qliksense/contexts"
-
-	QliksenseConfigApiVersion = "config.qlik.com/v1"
-	QliksenseConfigKind       = "QliksenseConfig"
-	QliksenseMetadataName     = "QliksenseConfigMetadata"
-
+	// Below are some constants to support qliksense context setup
+	QliksenseConfigHome           = "/.qliksense"
+	QliksenseConfigContextHome    = "/.qliksense/contexts"
+	QliksenseConfigApiVersion     = "config.qlik.com/v1"
+	QliksenseConfigKind           = "QliksenseConfig"
+	QliksenseMetadataName         = "QliksenseConfigMetadata"
 	QliksenseContextApiVersion    = "qlik.com/v1"
 	QliksenseContextKind          = "Qliksense"
 	QliksenseContextLabel         = "v1.0.0"
@@ -25,25 +24,11 @@ const (
 	QliksenseDefaultProfile       = "docker-desktop"
 )
 
-// ReadQliksenseContextConfig is exported
-func ReadQliksenseContextConfig(qliksenseCR *api.QliksenseCR, fileName string) {
-	log.Debugf("Reading file %s", fileName)
-	yamlFile, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		log.Fatalf("Error reading from source: %s\n", err)
-	}
-	if err = yaml.Unmarshal([]byte(yamlFile), qliksenseCR); err != nil {
-		log.Fatalf("Error when parsing from source: %s\n", err)
-	}
-}
-
-// WriteToFile is exported
+// WriteToFile writes content into specified file
 func WriteToFile(content interface{}, targetFile string) {
-	log.Debug("Entry: WriteToFile()")
 	if content == nil || targetFile == "" {
 		return
 	}
-	log.Debug("This action is about writing to a file")
 	// log.Debugf("File %s doesnt exist, creating it now...", targetFile)
 	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0700)
 	if err != nil {
@@ -60,21 +45,18 @@ func WriteToFile(content interface{}, targetFile string) {
 	// truncating the file before we write new content
 	file.Truncate(0)
 	file.Seek(0, 0)
-	numBytes, err := file.Write(x)
+	_, err = file.Write(x)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Debugf("wrote %d bytes\n", numBytes)
-	log.Debugf("Wrote Struct into %s", targetFile)
+	log.Debugf("Wrote content into %s", targetFile)
 }
 
-// ReadFromFile is exported
+// ReadFromFile reads content from specified sourcefile
 func ReadFromFile(content interface{}, sourceFile string) {
-	log.Debug("Entry: ReadFromFile()")
 	if content == nil || sourceFile == "" {
 		return
 	}
-	log.Debug("This action is about reading from a file")
 	contents, err := ioutil.ReadFile(sourceFile)
 	if err != nil {
 		log.Debug("There was an error reading from file: %s, %v", sourceFile, err)
@@ -85,9 +67,8 @@ func ReadFromFile(content interface{}, sourceFile string) {
 	}
 }
 
-// AddCommonConfig is exported
+// AddCommonConfig adds common configs into CRs
 func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.QliksenseCR {
-	log.Debug("Entry: addCommonConfig()")
 	qliksenseCR.ApiVersion = QliksenseContextApiVersion
 	qliksenseCR.Kind = QliksenseContextKind
 	if qliksenseCR.Metadata.Name == "" {
@@ -98,25 +79,18 @@ func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.Qlikse
 	qliksenseCR.Spec = &config.CRSpec{}
 	qliksenseCR.Spec.ManifestsRoot = QliksenseContextManifestsRoot
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
-	log.Debug("Exit: addCommonConfig()")
 	return qliksenseCR
 }
 
-// AddBaseQliksenseConfigs is exported
+// AddBaseQliksenseConfigs adds configs into config.yaml
 func AddBaseQliksenseConfigs(qliksenseConfig api.QliksenseConfig, defaultQliksenseContext string) api.QliksenseConfig {
-	log.Debug("Entry: AddBaseQliksenseConfigs()")
 	qliksenseConfig.ApiVersion = QliksenseConfigApiVersion
 	qliksenseConfig.Kind = QliksenseConfigKind
 	qliksenseConfig.Metadata.Name = QliksenseMetadataName
 	if defaultQliksenseContext != "" {
 		qliksenseConfig.Spec.CurrentContext = defaultQliksenseContext
 	}
-	log.Debug("Exit: AddBaseQliksenseConfigs()")
 	return qliksenseConfig
-}
-
-func setOtherConfigs(q *Qliksense) error {
-	return nil
 }
 
 func checkExits(filename string) os.FileInfo {
@@ -129,7 +103,7 @@ func checkExits(filename string) os.FileInfo {
 	return info
 }
 
-// FileExists is exported
+// FileExists checks if a file exists
 func FileExists(filename string) bool {
 	if fe := checkExits(filename); fe != nil && !fe.IsDir() {
 		return true
@@ -137,6 +111,7 @@ func FileExists(filename string) bool {
 	return false
 }
 
+// DirExists checks if a directory exists
 func DirExists(dirname string) bool {
 	if fe := checkExits(dirname); fe != nil && fe.IsDir() {
 		return true

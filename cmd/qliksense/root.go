@@ -88,33 +88,29 @@ func setUpQliksenseContext(qlikSenseHome, contextName string) {
 	qliksenseConfigFile := filepath.Join(qlikSenseHome, qliksenseConfigFile)
 	var qliksenseConfig api.QliksenseConfig
 	if !qliksense.FileExists(qliksenseConfigFile) {
-		log.Debug("Adding BaseConfig")
 		qliksenseConfig = qliksense.AddBaseQliksenseConfigs(qliksenseConfig, contextName)
-		log.Debug("Added BaseConfig")
 	} else {
 		qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
 	}
 	// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
-	log.Debug("Creating contexts/")
-	// create contexts/
+
 	qliksenseContextsDir1 := filepath.Join(qlikSenseHome, qliksenseContextsDir)
 	if !qliksense.DirExists(qliksenseContextsDir1) {
 		if err := os.Mkdir(qliksenseContextsDir1, 0700); err != nil {
 			log.Fatalf("Not able to create the contexts/ dir: %v", err)
 		}
-		log.Debug("created contexts/ directory")
 	}
+	log.Debug("Created contexts/")
 	// creating contexts/qliksense-default.yaml file
+
 	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
 	var qliksenseCR api.QliksenseCR
 
 	if err := os.Mkdir(filepath.Join(qliksenseContextsDir1, contextName), 0700); err != nil {
 		log.Fatalf("Not able to create the contexts/qliksense-default/ dir: %v", err)
 	}
-	log.Debug("created contexts/qliksense-default/ directory")
-
+	log.Debug("Created contexts/qliksense-default/ directory")
 	if !qliksense.FileExists(qliksenseContextFile) {
-		log.Debugf("Adding Context: %s", contextName)
 		qliksenseCR = qliksense.AddCommonConfig(qliksenseCR, contextName)
 		log.Debugf("Added Context: %s", contextName)
 	} else {
@@ -357,7 +353,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(qliksenseConfigCmd)
 
 	// create set-context config sub command
-	// log.Debug("About to start set-context config cmds")
 	setContextCmd := setContextConfigCmd(p)
 	// add the set-context config command as a sub-command to the app config command
 	qliksenseConfigCmd.AddCommand(setContextCmd)
