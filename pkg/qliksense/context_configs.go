@@ -29,7 +29,6 @@ func WriteToFile(content interface{}, targetFile string) {
 	if content == nil || targetFile == "" {
 		return
 	}
-	// log.Debugf("File %s doesnt exist, creating it now...", targetFile)
 	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0700)
 	if err != nil {
 		log.Debug("There was an error creating the file: %s, %v", targetFile, err)
