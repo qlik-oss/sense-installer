@@ -2,7 +2,7 @@ package qliksense
 
 import (
 	"fmt"
-	"os"
+	"github.com/mitchellh/go-homedir"
 	"path"
 	"path/filepath"
 
@@ -41,7 +41,7 @@ func applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		return err
 	}
 
-	userHomeDir, err := os.UserHomeDir()
+	userHomeDir, err := homedir.Dir()
 	if err != nil {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
 		return err
