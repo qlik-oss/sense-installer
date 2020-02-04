@@ -89,7 +89,7 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	cmd = &cobra.Command{
 		Use:     "set-secrets",
 		Short:   "set secrets configurations into the qliksense context",
-		Example: `qliksense config set-secrets <key>=<value>`,
+		Example: `qliksense config set-secrets <key>=<value> --secret`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return setSecrets(q, args)
 		},
@@ -145,11 +145,6 @@ func viewQliksenseConfig(q *qliksense.Qliksense) error {
 	return nil
 }
 
-func qliksenseConfigs(q *qliksense.Qliksense) error {
-
-	return nil
-}
-
 func setSecrets(q *qliksense.Qliksense, args []string) error {
 	// Usage:
 	// qliksense config set-secrets qliksense[name=messagingPassword]="abc123"  --secret
@@ -185,7 +180,10 @@ func retrieveCurrentContextInfo(q *qliksense.Qliksense) (api.QliksenseCR, string
 	qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
 	currentContext := qliksenseConfig.Spec.CurrentContext
 	log.Debugf("Current-context from config.yaml: %s", currentContext)
-
+	if currentContext == "" {
+		// current-context is empty
+		log.Error(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+	}
 	// read the context.yaml file
 	var qliksenseCR api.QliksenseCR
 	if currentContext == "" {
@@ -267,63 +265,40 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 	// qliksense config set git.repository="https://github.com/my-org/qliksense-k8s"
 
 	// retieve current context from config.yaml
-	var qliksenseConfig api.QliksenseConfig
-	qliksenseConfigFile := filepath.Join(q.QliksenseHome, qliksenseConfigFile)
-	log.Debugf("qliksenseConfigFile: %s", qliksenseConfigFile)
+	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
 
-	qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
-	currentContext := qliksenseConfig.Spec.CurrentContext
-	log.Debugf("Current-context from config.yaml: %s", currentContext)
-
-	// read the context.yaml file
-	var qliksenseCR api.QliksenseCR
-	if currentContext != "" {
-		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext, currentContext+".yaml")
-		log.Debugf("Context file path: %s", qliksenseContextsFile)
-		if qliksense.FileExists(qliksenseContextsFile) {
-			qliksense.ReadFromFile(&qliksenseCR, qliksenseContextsFile)
-
-			log.Debugf("Read QliksenseCR: %v", qliksenseCR)
-			log.Debugf("Read context file: %s", qliksenseContextsFile)
-
-			// modify appropriate fields
-			log.Debugf("Here is the command: %s", args[0])
-			// split args[0] into key and value
-			if len(args) > 0 {
-				argsString := strings.Split(args[0], "=")
-				log.Debugf("Split string: %v", argsString)
-				switch argsString[0] {
-				case "profile":
-					log.Debugf("Current profile: %s, Incoming profile: %s", qliksenseCR.Spec.Profile, argsString[1])
-					qliksenseCR.Spec.Profile = argsString[1]
-					log.Debugf("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
-				case "namespace":
-					log.Debugf("Current namespace: %s, Incoming namespace: %s", qliksenseCR.Spec.NameSpace, argsString[1])
-					qliksenseCR.Spec.NameSpace = argsString[1]
-					log.Debugf("Current namespace after modification: %s ", qliksenseCR.Spec.NameSpace)
-				case "git.repository":
-					log.Debugf("Current git.repository: %s, Incoming git.repository: %s", qliksenseCR.Spec.Git.Repository, argsString[1])
-					qliksenseCR.Spec.Git.Repository = argsString[1]
-					log.Debugf("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
-				case "storageClassName":
-					log.Debugf("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
-					qliksenseCR.Spec.StorageClassName = argsString[1]
-					log.Debugf("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
-				default:
-					log.Debugf("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName or git.repository arguments")
-				}
-			} else {
-				log.Fatalf("No args were provided. Please provide args to configure the current context")
-			}
-			// write modified content into context.yaml
-			qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-		} else {
-			log.Fatalf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
+	// modify appropriate fields
+	log.Debugf("Here is the command: %s", args[0])
+	// split args[0] into key and value
+	if len(args) > 0 {
+		argsString := strings.Split(args[0], "=")
+		log.Debugf("Split string: %v", argsString)
+		switch argsString[0] {
+		case "profile":
+			log.Debugf("Current profile: %s, Incoming profile: %s", qliksenseCR.Spec.Profile, argsString[1])
+			qliksenseCR.Spec.Profile = argsString[1]
+			log.Debugf("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
+		case "namespace":
+			log.Debugf("Current namespace: %s, Incoming namespace: %s", qliksenseCR.Spec.NameSpace, argsString[1])
+			qliksenseCR.Spec.NameSpace = argsString[1]
+			log.Debugf("Current namespace after modification: %s ", qliksenseCR.Spec.NameSpace)
+		case "git.repository":
+			log.Debugf("Current git.repository: %s, Incoming git.repository: %s", qliksenseCR.Spec.Git.Repository, argsString[1])
+			qliksenseCR.Spec.Git.Repository = argsString[1]
+			log.Debugf("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
+		case "storageClassName":
+			log.Debugf("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
+			qliksenseCR.Spec.StorageClassName = argsString[1]
+			log.Debugf("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+		default:
+			log.Debugf("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName or git.repository arguments")
 		}
 	} else {
-		// current-context is empty
-		log.Debug(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+		log.Fatalf("No args were provided. Please provide args to configure the current context")
 	}
+	// write modified content into context.yaml
+	qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
 	return nil
 }
 
