@@ -21,12 +21,8 @@ func executeKustomizeBuild(directory string) ([]byte, error) {
 		DoLegacyResourceSort: false,
 		LoadRestrictions:     types.LoadRestrictionsNone,
 		DoPrune:              false,
+		PluginConfig:         konfig.DisabledPluginConfig(),
 	}
-	pluginConfig, err := konfig.EnabledPluginConfig()
-	if err != nil {
-		return nil, err
-	}
-	options.PluginConfig = pluginConfig
 	k := krusty.MakeKustomizer(fSys, options)
 	resMap, err := k.Run(directory)
 	if err != nil {

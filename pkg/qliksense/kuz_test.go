@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	kapis_git "github.com/qlik-oss/k-apis/git"
 	"io/ioutil"
 	"os"
 	"path"
@@ -42,5 +43,24 @@ metadata:
 `
 	if string(result) != expectedK8sYaml {
 		t.Fatalf("expected k8s yaml: [%v] but got: [%v]\n", expectedK8sYaml, string(result))
+	}
+}
+
+func Test_executeKustomizeBuild_onQlikConfig(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v\n", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	configPath := path.Join(tmpDir, "config")
+	if repo, err := kapis_git.CloneRepository(configPath, gitUrl, nil); err != nil {
+		t.Fatalf("unexpected error: %v\n", err)
+	} else if err := kapis_git.Checkout(repo, "v0.0.1", "", nil); err != nil {
+		t.Fatalf("unexpected error: %v\n", err)
+	}
+
+	if _, err := executeKustomizeBuild(path.Join(configPath, "manifests", "base")); err != nil {
+		t.Fatalf("unexpected kustomize error: %v\n", err)
 	}
 }
