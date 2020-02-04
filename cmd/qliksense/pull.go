@@ -6,28 +6,22 @@ import (
 )
 
 func pullQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
-	var (
-		cmd  *cobra.Command
-		opts *aboutOptions
-	)
-	opts = &aboutOptions{}
+	opts := &aboutCommandOptions{}
 
-	cmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "pull",
-		Short:   "Pull docker images for offline install",
+		Short:   "Pull docke images for offline install",
 		Example: `qliksense pull`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.PullImages(opts.getTagDefaults(args))
+			if gitRef, err := getAboutCommandGitRef(args); err != nil {
+				return err
+			} else if err = q.PullImages(gitRef, opts.Profile, false); err != nil {
+				return err
+			}
+			return nil
 		},
 	}
 	f := cmd.Flags()
-	f.StringVarP(&opts.Version, "version", "v", "latest",
-		"From version of Qlik Sense The images will be pulled")
-	f.StringVarP(&opts.Tag, "tag", "t", "",
-		"Use a bundle in an OCI registry specified by the given tag")
-	f.StringVarP(&opts.File, "file", "f", "",
-		"Path to the porter manifest file. Defaults to the bundle in the current directory.")
-	f.StringVar(&opts.CNABFile, "cnab-file", "",
-		"Path to the CNAB bundle.json file.")
+	f.StringVar(&opts.Profile, "profile", "", "Configuration profile")
 	return cmd
 }
