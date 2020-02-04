@@ -75,7 +75,6 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "set configurations into the qliksense context",
 		Example: `qliksense config set-configs <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Debug("Entry: ****** setConfigs() *************")
 			return setConfigs(q, args)
 		},
 	}
@@ -89,10 +88,10 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	cmd = &cobra.Command{
 		Use:     "set-secrets",
-		Short:   "",
-		Example: `qliksense config set-secrets`,
+		Short:   "set secrets configurations into the qliksense context",
+		Example: `qliksense config set-secrets <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return setSecrets(q)
+			return setSecrets(q, args)
 		},
 	}
 	return cmd
@@ -151,7 +150,16 @@ func qliksenseConfigs(q *qliksense.Qliksense) error {
 	return nil
 }
 
-func setSecrets(q *qliksense.Qliksense) error {
+func setSecrets(q *qliksense.Qliksense, args []string) error {
+	// Usage:
+	// qliksense config set-secrets qliksense[name=messagingPassword]="abc123"  --secret
+	// retieve current context from config.yaml
+	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
+	qliksenseCR.Spec.Secrets = processConfigArgs(args, qliksenseCR.Spec.Secrets)
+
+	// write modified content into context.yaml
+	qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
 	return nil
 }
 
@@ -159,6 +167,17 @@ func setConfigs(q *qliksense.Qliksense, args []string) error {
 	// Usage:
 	// qliksense config set-configs qliksense[name=acceptEULA]="yes"
 	// retieve current context from config.yaml
+
+	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
+	qliksenseCR.Spec.Configs = processConfigArgs(args, qliksenseCR.Spec.Configs)
+
+	// write modified content into context.yaml
+	qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
+	return nil
+}
+
+func retrieveCurrentContextInfo(q *qliksense.Qliksense) (api.QliksenseCR, string) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, qliksenseConfigFile)
 	log.Debugf("qliksenseConfigFile: %s", qliksenseConfigFile)
@@ -182,7 +201,10 @@ func setConfigs(q *qliksense.Qliksense, args []string) error {
 
 	log.Debugf("Read QliksenseCR: %v", qliksenseCR)
 	log.Debugf("Read context file: %s", qliksenseContextsFile)
+	return qliksenseCR, qliksenseContextsFile
+}
 
+func processConfigArgs(args []string, configsMap map[string]config.NameValues) map[string]config.NameValues {
 	// prepare received args
 	log.Debugf("Here is the command: %s", args[0])
 	// split args[0] into key and value
@@ -200,9 +222,9 @@ func setConfigs(q *qliksense.Qliksense, args []string) error {
 
 		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
 		if len(result) != 4 {
-			log.Fatalf("Please provide valid args for this command")
+			log.Error("Please provide valid args for this command")
+			continue
 		}
-		configsMap := qliksenseCR.Spec.Configs
 		if len(configsMap) == 0 {
 			configsMap = map[string]config.NameValues{}
 		}
@@ -233,12 +255,8 @@ func setConfigs(q *qliksense.Qliksense, args []string) error {
 			})
 		}
 		configsMap[result[1]] = nameValues
-		qliksenseCR.Spec.Configs = configsMap
 	}
-	// write modified content into context.yaml
-	qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	return configsMap
 }
 
 func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
