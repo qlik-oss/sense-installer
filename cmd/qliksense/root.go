@@ -105,8 +105,14 @@ func setUpQliksenseContext(qlikSenseHome, contextName string) {
 		log.Debug("created contexts/ directory")
 	}
 	// creating contexts/qliksense-default.yaml file
-	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName+".yaml")
+	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
 	var qliksenseCR api.QliksenseCR
+
+	if err := os.Mkdir(filepath.Join(qliksenseContextsDir1, contextName), 0700); err != nil {
+		log.Fatalf("Not able to create the contexts/qliksense-default/ dir: %v", err)
+	}
+	log.Debug("created contexts/qliksense-default/ directory")
+
 	if !qliksense.FileExists(qliksenseContextFile) {
 		log.Debugf("Adding Context: %s", contextName)
 		qliksenseCR = qliksense.AddCommonConfig(qliksenseCR, contextName)

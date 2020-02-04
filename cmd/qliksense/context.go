@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
 	"strings"
 
+	"github.com/qlik-oss/k-apis/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	log "github.com/sirupsen/logrus"
@@ -22,13 +24,7 @@ func qliksenseConfigCmds(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Set qliksense application configuration",
 		Example: `qliksense config <sub-commnad>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// if len(args) == 0 {
-			// 	log.Debug("We do not have any args...")
 			cmd.Help()
-			// } else {
-			// 	log.Debug("We have some args...")
-			// 	return qliksenseConfigs(q)
-			// }
 			return nil
 		},
 	}
@@ -76,10 +72,11 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	cmd = &cobra.Command{
 		Use:     "set-configs",
-		Short:   "",
-		Example: `qliksense config set-configs`,
+		Short:   "set configurations into the qliksense context",
+		Example: `qliksense config set-configs <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return setConfigs(q)
+			log.Debug("Entry: ****** setConfigs() *************")
+			return setConfigs(q, args)
 		},
 	}
 	return cmd
@@ -130,7 +127,7 @@ func viewQliksenseConfig(q *qliksense.Qliksense) error {
 	// check for existence of a file with that name.yaml in contexts/, if it exists-> display it.
 	// If it does not exist-> output error
 	if currentContext != "" {
-		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext+".yaml")
+		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext, currentContext+".yaml")
 		log.Debugf("Context file path: %s", qliksenseContextsFile)
 		if qliksense.FileExists(qliksenseContextsFile) {
 			content, err := ioutil.ReadFile(qliksenseContextsFile)
@@ -158,7 +155,89 @@ func setSecrets(q *qliksense.Qliksense) error {
 	return nil
 }
 
-func setConfigs(q *qliksense.Qliksense) error {
+func setConfigs(q *qliksense.Qliksense, args []string) error {
+	// Usage:
+	// qliksense config set-configs qliksense[name=acceptEULA]="yes"
+	// retieve current context from config.yaml
+	var qliksenseConfig api.QliksenseConfig
+	qliksenseConfigFile := filepath.Join(q.QliksenseHome, qliksenseConfigFile)
+	log.Debugf("qliksenseConfigFile: %s", qliksenseConfigFile)
+
+	qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	currentContext := qliksenseConfig.Spec.CurrentContext
+	log.Debugf("Current-context from config.yaml: %s", currentContext)
+
+	// read the context.yaml file
+	var qliksenseCR api.QliksenseCR
+	if currentContext == "" {
+		// current-context is empty
+		log.Fatal(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+	}
+	qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext, currentContext+".yaml")
+	log.Debugf("Context file path: %s", qliksenseContextsFile)
+	if !qliksense.FileExists(qliksenseContextsFile) {
+		log.Fatalf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
+	}
+	qliksense.ReadFromFile(&qliksenseCR, qliksenseContextsFile)
+
+	log.Debugf("Read QliksenseCR: %v", qliksenseCR)
+	log.Debugf("Read context file: %s", qliksenseContextsFile)
+
+	// prepare received args
+	log.Debugf("Here is the command: %s", args[0])
+	// split args[0] into key and value
+	if len(args) == 0 {
+		log.Fatalf("No args were provided. Please provide args to configure the current context")
+	}
+
+	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*\w+"*)`)
+	for _, arg := range args {
+		result := re1.FindStringSubmatch(arg)
+		fmt.Printf("finding matches...\n")
+		// for k, v := range result {
+		// 	fmt.Printf("%d. %s\n", k, v)
+		// }
+
+		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
+		if len(result) != 4 {
+			log.Fatalf("Please provide valid args for this command")
+		}
+		configsMap := qliksenseCR.Spec.Configs
+		if len(configsMap) == 0 {
+			configsMap = map[string]config.NameValues{}
+		}
+		track := false
+		for k1 := range configsMap {
+			if k1 == result[1] {
+				track = true
+				break
+			}
+		}
+		if !track {
+			configsMap[result[1]] = config.NameValues{}
+		}
+		nameValues := configsMap[result[1]]
+		nvTrack := false
+		for ind, nv := range nameValues {
+			if nv.Name == result[2] {
+				nv.Value = result[3]
+				nameValues[ind] = nv
+				nvTrack = true
+				break
+			}
+		}
+		if !nvTrack {
+			nameValues = append(nameValues, config.NameValue{
+				Name:  result[2],
+				Value: result[3],
+			})
+		}
+		configsMap[result[1]] = nameValues
+		qliksenseCR.Spec.Configs = configsMap
+	}
+	// write modified content into context.yaml
+	qliksense.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
 	return nil
 }
 
@@ -181,7 +260,7 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 	// read the context.yaml file
 	var qliksenseCR api.QliksenseCR
 	if currentContext != "" {
-		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext+".yaml")
+		qliksenseContextsFile := filepath.Join(q.QliksenseHome, qliksenseContextsDir, currentContext, currentContext+".yaml")
 		log.Debugf("Context file path: %s", qliksenseContextsFile)
 		if qliksense.FileExists(qliksenseContextsFile) {
 			qliksense.ReadFromFile(&qliksenseCR, qliksenseContextsFile)
@@ -213,7 +292,7 @@ func setOtherConfigs(q *qliksense.Qliksense, args []string) error {
 					qliksenseCR.Spec.StorageClassName = argsString[1]
 					log.Debugf("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
 				default:
-					log.Debugf("default switch case activated")
+					log.Debugf("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName or git.repository arguments")
 				}
 			} else {
 				log.Fatalf("No args were provided. Please provide args to configure the current context")

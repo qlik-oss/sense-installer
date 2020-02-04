@@ -123,7 +123,7 @@ func checkExits(filename string) os.FileInfo {
 		log.Debug("File does not exist")
 		return nil
 	}
-	log.Debug("Either File exists OR a different error occurred")
+	log.Debug("File exists")
 	return info
 }
 
