@@ -2,6 +2,8 @@ package qliksense
 
 import (
 	"fmt"
+	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
@@ -39,8 +41,14 @@ func applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		return err
 	}
 
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf(`error fetching user's home directory: %v\n`, err)
+		return err
+	}
+
 	// generate patches
-	cr.GeneratePatches(qcr.Spec)
+	cr.GeneratePatches(qcr.Spec, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.ManifestsRoot, qcr.Spec.Profile)
 	mByte, err := executeKustomizeBuild(profilePath)
