@@ -31,8 +31,7 @@ require (
 	github.com/cloudflare/cfssl v1.4.1 // indirect
 	github.com/containerd/containerd v1.3.2 // indirect
 	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
-	github.com/containers/image v3.0.2+incompatible
-	github.com/containers/image/v5 v5.1.0
+	github.com/containers/image/v5 v5.2.0
 	github.com/docker/cli v0.0.0-20191212191748-ebca1413117a
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7
@@ -54,7 +53,7 @@ require (
 	github.com/miekg/pkcs11 v1.0.3 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/qlik-oss/k-apis v0.0.0-20200203145714-b9dddf739fe7
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
