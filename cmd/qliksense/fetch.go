@@ -22,8 +22,8 @@ func fetchCmd(q *qliksense.Qliksense) *cobra.Command {
 			}
 			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
-			q.FetchQK8s(args[0])
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.FetchQK8s(args[0])
 		},
 	}
 	return c
