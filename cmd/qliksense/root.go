@@ -11,10 +11,8 @@ import (
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
-	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 
-	// "github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -26,11 +24,6 @@ import (
 const (
 	qlikSenseHomeVar = "QLIKSENSE_HOME"
 	qlikSenseDirVar  = ".qliksense"
-
-	qliksenseConfigFile  = "config.yaml"
-	qliksenseContextsDir = "contexts"
-
-	defaultQliksenseContext = "qliksense-default"
 )
 
 func initAndExecute() error {
@@ -47,7 +40,7 @@ func initAndExecute() error {
 	// create dirs and appropriate files for setting up contexts
 	if len(os.Args) == 1 {
 		qliksense.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
-		setUpQliksenseDefaultContext(qlikSenseHome)
+		qliksense.SetUpQliksenseDefaultContext(qlikSenseHome)
 		return nil
 	}
 
@@ -56,64 +49,6 @@ func initAndExecute() error {
 	}
 
 	return nil
-}
-
-func setUpQliksenseDefaultContext(qlikSenseHome string) {
-	setUpQliksenseContext(qlikSenseHome, defaultQliksenseContext)
-}
-
-func setUpQliksenseContext(qlikSenseHome, contextName string) {
-	qliksenseConfigFile := filepath.Join(qlikSenseHome, qliksenseConfigFile)
-	var qliksenseConfig api.QliksenseConfig
-	if !qliksense.FileExists(qliksenseConfigFile) {
-		qliksenseConfig = qliksense.AddBaseQliksenseConfigs(qliksenseConfig, contextName)
-	} else {
-		qliksense.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
-	}
-	// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
-
-	qliksenseContextsDir1 := filepath.Join(qlikSenseHome, qliksenseContextsDir)
-	if !qliksense.DirExists(qliksenseContextsDir1) {
-		if err := os.Mkdir(qliksenseContextsDir1, 0700); err != nil {
-			log.Fatalf("Not able to create the contexts/ dir: %v", err)
-		}
-	}
-	qliksense.LogDebugMessage("Created contexts/")
-	// creating contexts/qliksense-default.yaml file
-
-	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
-	var qliksenseCR api.QliksenseCR
-
-	if err := os.Mkdir(filepath.Join(qliksenseContextsDir1, contextName), 0700); err != nil {
-		log.Fatalf("Not able to create the contexts/qliksense-default/ dir: %v", err)
-	}
-	qliksense.LogDebugMessage("Created contexts/qliksense-default/ directory")
-	if !qliksense.FileExists(qliksenseContextFile) {
-		qliksenseCR = qliksense.AddCommonConfig(qliksenseCR, contextName)
-		qliksense.LogDebugMessage("Added Context: %s", contextName)
-	} else {
-		qliksense.ReadFromFile(&qliksenseCR, qliksenseContextFile)
-	}
-
-	qliksense.WriteToFile(&qliksenseCR, qliksenseContextFile)
-	ctxTrack := false
-	if len(qliksenseConfig.Spec.Contexts) > 0 {
-		for _, ctx := range qliksenseConfig.Spec.Contexts {
-			if ctx.Name == contextName {
-				ctx.CrFile = qliksenseContextFile
-				ctxTrack = true
-				break
-			}
-		}
-	}
-	if !ctxTrack {
-		qliksenseConfig.Spec.Contexts = append(qliksenseConfig.Spec.Contexts, api.Context{
-			Name:   contextName,
-			CrFile: qliksenseContextFile,
-		})
-	}
-	qliksenseConfig.Spec.CurrentContext = contextName
-	qliksense.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 }
 
 func setUpPaths() (string, error) {
@@ -185,35 +120,17 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	// create 'config' commands
-	qliksenseConfigCmd := qliksenseConfigCmds(p)
-	// add app config commands to root command
-	cmd.AddCommand(qliksenseConfigCmd)
-
-	// create set-context config sub command
-	setContextCmd := setContextConfigCmd(p)
 	// add the set-context config command as a sub-command to the app config command
-	qliksenseConfigCmd.AddCommand(setContextCmd)
+	configCmd.AddCommand(setContextConfigCmd(p))
 
-	// create set profile/namespace/storageClassName/git-repository config sub-command
-	setOtherConfigsCmd := setOtherConfigsCmd(p)
 	// add the set profile/namespace/storageClassName/git-repository config command as a sub-command to the app config command
-	qliksenseConfigCmd.AddCommand(setOtherConfigsCmd)
+	configCmd.AddCommand(setOtherConfigsCmd(p))
 
-	// create setConfigs sub-command
-	setConfigsCmd := setConfigsCmd(p)
 	// add the set ### config command as a sub-command to the app config sub-command
-	qliksenseConfigCmd.AddCommand(setConfigsCmd)
+	configCmd.AddCommand(setConfigsCmd(p))
 
-	// create setConfigs sub-command
-	setSecretsCmd := setSecretsCmd(p)
 	// add the set ### config command as a sub-command to the app config sub-command
-	qliksenseConfigCmd.AddCommand(setSecretsCmd)
-
-	// create view config sub-command
-	viewCmd := viewConfigCmd(p)
-	// add the view config command as a sub-command to the app config sub-command
-	qliksenseConfigCmd.AddCommand(viewCmd)
+	configCmd.AddCommand(setSecretsCmd(p))
 
 	return cmd
 }

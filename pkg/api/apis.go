@@ -3,11 +3,12 @@ package api
 import (
 	"errors"
 	"fmt"
-	"github.com/jinzhu/copier"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/jinzhu/copier"
+	"gopkg.in/yaml.v2"
 )
 
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
