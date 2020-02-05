@@ -15,19 +15,17 @@ import (
 
 const (
 	// Below are some constants to support qliksense context setup
-	QliksenseConfigHome           = "/.qliksense"
-	QliksenseConfigContextHome    = "/.qliksense/contexts"
-	QliksenseConfigApiVersion     = "config.qlik.com/v1"
-	QliksenseConfigKind           = "QliksenseConfig"
-	QliksenseMetadataName         = "QliksenseConfigMetadata"
-	QliksenseContextApiVersion    = "qlik.com/v1"
-	QliksenseContextKind          = "Qliksense"
-	QliksenseContextLabel         = "v1.0.0"
-	QliksenseContextManifestsRoot = "/Usr/ddd/my-k8-repo/manifests"
-	QliksenseDefaultProfile       = "docker-desktop"
-	QliksenseConfigFile           = "config.yaml"
-	QliksenseContextsDir          = "contexts"
-	DefaultQliksenseContext       = "qliksense-default"
+	QliksenseConfigHome        = "/.qliksense"
+	QliksenseConfigContextHome = "/.qliksense/contexts"
+	QliksenseConfigApiVersion  = "config.qlik.com/v1"
+	QliksenseConfigKind        = "QliksenseConfig"
+	QliksenseMetadataName      = "QliksenseConfigMetadata"
+	QliksenseContextApiVersion = "qlik.com/v1"
+	QliksenseContextKind       = "Qliksense"
+	QliksenseDefaultProfile    = "docker-desktop"
+	QliksenseConfigFile        = "config.yaml"
+	QliksenseContextsDir       = "contexts"
+	DefaultQliksenseContext    = "qliksense-default"
 )
 
 // WriteToFile writes content into specified file
@@ -82,10 +80,7 @@ func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.Qlikse
 	if qliksenseCR.Metadata.Name == "" {
 		qliksenseCR.Metadata.Name = contextName
 	}
-	qliksenseCR.Metadata.Labels = map[string]string{}
-	qliksenseCR.Metadata.Labels["Version"] = QliksenseContextLabel
 	qliksenseCR.Spec = &config.CRSpec{}
-	qliksenseCR.Spec.ManifestsRoot = QliksenseContextManifestsRoot
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
 	return qliksenseCR
 }
