@@ -2,7 +2,6 @@ package qliksense
 
 import (
 	"fmt"
-	kapiconfig "github.com/qlik-oss/k-apis/pkg/config"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -38,9 +37,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 	if opts.AcceptEULA != "" {
-		if qcr.Spec.Configs == nil {
-			qcr.Spec.Configs = make(map[string]kapiconfig.NameValues)
-		}
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}
 	if opts.StorageClass != "" {
@@ -49,8 +45,8 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.Namespace != "" {
 		qcr.Spec.NameSpace = opts.Namespace
 	}
-	//TODO: do we need to write
-	//qConfig.WriteCurrentContextCR(qcr)
+
+	qConfig.WriteCurrentContextCR(qcr)
 	if err := applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
