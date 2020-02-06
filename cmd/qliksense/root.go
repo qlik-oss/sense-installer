@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,6 +35,13 @@ func initAndExecute() error {
 	qlikSenseHome, err = setUpPaths()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// create dirs and appropriate files for setting up contexts
+	if len(os.Args) == 1 {
+		qliksense.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
+		qliksense.SetUpQliksenseDefaultContext(qlikSenseHome)
+		return nil
 	}
 
 	if err = rootCmd(qliksense.New(qlikSenseHome)).Execute(); err != nil {
@@ -111,6 +119,18 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	configCmd.AddCommand(configViewCmd(p))
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+
+	// add the set-context config command as a sub-command to the app config command
+	configCmd.AddCommand(setContextConfigCmd(p))
+
+	// add the set profile/namespace/storageClassName/git-repository config command as a sub-command to the app config command
+	configCmd.AddCommand(setOtherConfigsCmd(p))
+
+	// add the set ### config command as a sub-command to the app config sub-command
+	configCmd.AddCommand(setConfigsCmd(p))
+
+	// add the set ### config command as a sub-command to the app config sub-command
+	configCmd.AddCommand(setSecretsCmd(p))
 
 	return cmd
 }
