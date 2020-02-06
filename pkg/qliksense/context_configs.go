@@ -143,7 +143,9 @@ func LogDebugMessage(strMessage string, args ...interface{}) {
 func SetSecrets(q *Qliksense, args []string) error {
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
-	qliksenseCR.Spec.Secrets = processConfigArgs(args, qliksenseCR.Spec.Secrets)
+
+	processConfigArgs(args, qliksenseCR.Spec, qliksenseCR.Spec.AddToSecrets)
+	LogDebugMessage("CR now: %v", qliksenseCR.Spec)
 
 	// write modified content into context.yaml
 	WriteToFile(&qliksenseCR, qliksenseContextsFile)
@@ -155,8 +157,9 @@ func SetSecrets(q *Qliksense, args []string) error {
 func SetConfigs(q *Qliksense, args []string) error {
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
-	qliksenseCR.Spec.Configs = processConfigArgs(args, qliksenseCR.Spec.Configs)
 
+	processConfigArgs(args, qliksenseCR.Spec, qliksenseCR.Spec.AddToConfigs)
+	LogDebugMessage("CR now: %v", qliksenseCR.Spec)
 	// write modified content into context.yaml
 	WriteToFile(&qliksenseCR, qliksenseContextsFile)
 
@@ -192,7 +195,7 @@ func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string) {
 	return qliksenseCR, qliksenseContextsFile
 }
 
-func processConfigArgs(args []string, configsMap map[string]config.NameValues) map[string]config.NameValues {
+func processConfigArgs(args []string, cr *config.CRSpec, updateFn func(string, string, string)) {
 	// prepare received args
 	// split args[0] into key and value
 	if len(args) == 0 {
@@ -203,44 +206,13 @@ func processConfigArgs(args []string, configsMap map[string]config.NameValues) m
 	for _, arg := range args {
 		result := re1.FindStringSubmatch(arg)
 		LogDebugMessage("finding matches...\n")
-
+		LogDebugMessage("Results: %s, %s, %s", result[1], result[2], result[3])
 		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
 		if len(result) != 4 {
 			log.Fatal("Please provide valid args for this command")
-			continue
 		}
-		if len(configsMap) == 0 {
-			configsMap = map[string]config.NameValues{}
-		}
-		track := false
-		for k1 := range configsMap {
-			if k1 == result[1] {
-				track = true
-				break
-			}
-		}
-		if !track {
-			configsMap[result[1]] = config.NameValues{}
-		}
-		nameValues := configsMap[result[1]]
-		nvTrack := false
-		for ind, nv := range nameValues {
-			if nv.Name == result[2] {
-				nv.Value = result[3]
-				nameValues[ind] = nv
-				nvTrack = true
-				break
-			}
-		}
-		if !nvTrack {
-			nameValues = append(nameValues, config.NameValue{
-				Name:  result[2],
-				Value: result[3],
-			})
-		}
-		configsMap[result[1]] = nameValues
+		updateFn(result[1], result[2], result[3])
 	}
-	return configsMap
 }
 
 // SetOtherConfigs - set profile/namespace/storageclassname/git.repository commands
