@@ -5,7 +5,13 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) InstallQK8s(version string) error {
+type InstallCommandOptions struct {
+	AcceptEULA   string
+	Namespace    string
+	StorageClass string
+}
+
+func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) error {
 
 	// step1: fetch 1.0.0 # pull down qliksense-k8s@1.0.0
 	// step2: operator view | kubectl apply -f # operator manifest (CRD)
@@ -30,6 +36,17 @@ func (q *Qliksense) InstallQK8s(version string) error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
+	if opts.AcceptEULA != "" {
+		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
+	}
+	if opts.StorageClass != "" {
+		qcr.Spec.StorageClassName = opts.StorageClass
+	}
+	if opts.Namespace != "" {
+		qcr.Spec.NameSpace = opts.Namespace
+	}
+
+	qConfig.WriteCurrentContextCR(qcr)
 	if err := applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
