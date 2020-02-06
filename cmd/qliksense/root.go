@@ -38,7 +38,6 @@ func initAndExecute() error {
 	}
 
 	// create dirs and appropriate files for setting up contexts
-
 	qliksense.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 	qliksense.SetUpQliksenseDefaultContext(qlikSenseHome)
 
