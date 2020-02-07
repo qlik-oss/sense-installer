@@ -25,7 +25,9 @@ const (
 	QliksenseDefaultProfile    = "docker-desktop"
 	QliksenseConfigFile        = "config.yaml"
 	QliksenseContextsDir       = "contexts"
-	DefaultQliksenseContext    = "qliksense-default"
+	DefaultQliksenseContext    = "qlik-default"
+	DefaultRotateKeys          = "yes"
+	MaxContextNameLength       = 17
 )
 
 // WriteToFile writes content into specified file
@@ -82,6 +84,8 @@ func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.Qlikse
 	}
 	qliksenseCR.Spec = &config.CRSpec{}
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
+	qliksenseCR.Spec.ReleaseName = contextName
+	qliksenseCR.Spec.RotateKeys = DefaultRotateKeys
 	return qliksenseCR
 }
 
@@ -243,8 +247,13 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 			LogDebugMessage("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
 			qliksenseCR.Spec.StorageClassName = argsString[1]
 			LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+		case "rotateKeys":
+			LogDebugMessage("Current rotateKeys: %s, Incoming rotateKeys: %s", qliksenseCR.Spec.RotateKeys, argsString[1])
+			rotateKeys := validateInput(argsString[1])
+			qliksenseCR.Spec.RotateKeys = rotateKeys
+			LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
 		default:
-			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName or git.repository arguments")
+			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName,rotateKeys or git.repository arguments")
 		}
 	} else {
 		log.Fatalf("No args were provided. Please provide args to configure the current context")
@@ -273,9 +282,15 @@ func SetUpQliksenseDefaultContext(qlikSenseHome string) {
 
 // SetUpQliksenseContext - to setup qliksense context
 func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext bool) {
+	// check the length of the context name entered by the user, it should not exceed 17 chars
+	if len(contextName) > MaxContextNameLength {
+		log.Fatal("Please enter a context-name with utmost 17 characters")
+	}
+
 	qliksenseConfigFile := filepath.Join(qlikSenseHome, QliksenseConfigFile)
 	var qliksenseConfig api.QliksenseConfig
 	configFileTrack := false
+
 	if !FileExists(qliksenseConfigFile) {
 		qliksenseConfig = AddBaseQliksenseConfigs(qliksenseConfig, contextName)
 	} else {
@@ -293,7 +308,7 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext b
 		}
 	}
 	LogDebugMessage("%s exists", qliksenseContextsDir1)
-	// creating contexts/qliksense-default.yaml file
+	// creating contexts/qlik-default.yaml file
 
 	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
 	var qliksenseCR api.QliksenseCR
@@ -333,4 +348,19 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext b
 	if !configFileTrack {
 		WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 	}
+}
+
+func validateInput(input string) string {
+	validInputs := []string{"yes", "no", "None"}
+	isValid := false
+	for _, elem := range validInputs {
+		if input == elem {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		log.Fatal("Please enter one of: yes, no or none")
+	}
+	return input
 }
