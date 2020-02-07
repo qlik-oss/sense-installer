@@ -2,6 +2,7 @@ package qliksense
 
 import (
 	"fmt"
+
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -54,7 +55,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	qcr.Spec.RotateKeys = "None"
 	qcr.Spec.ReleaseName = qcr.Metadata.Name
 	qConfig.WriteCurrentContextCR(qcr)
-	if err := applyConfigToK8s(qcr); err != nil {
+	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
