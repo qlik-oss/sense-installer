@@ -26,6 +26,7 @@ const (
 	QliksenseConfigFile        = "config.yaml"
 	QliksenseContextsDir       = "contexts"
 	DefaultQliksenseContext    = "qlik-default"
+	DefaultRotateKeys          = "yes"
 	MaxContextNameLength       = 17
 )
 
@@ -83,6 +84,8 @@ func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.Qlikse
 	}
 	qliksenseCR.Spec = &config.CRSpec{}
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
+	qliksenseCR.Spec.ReleaseName = contextName
+	qliksenseCR.Spec.RotateKeys = DefaultRotateKeys
 	return qliksenseCR
 }
 
@@ -244,8 +247,13 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 			LogDebugMessage("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
 			qliksenseCR.Spec.StorageClassName = argsString[1]
 			LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+		case "rotateKeys":
+			LogDebugMessage("Current rotateKeys: %s, Incoming rotateKeys: %s", qliksenseCR.Spec.RotateKeys, argsString[1])
+			rotateKeys := validateInput(argsString[1])
+			qliksenseCR.Spec.RotateKeys = rotateKeys
+			LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
 		default:
-			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName or git.repository arguments")
+			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName,rotateKeys or git.repository arguments")
 		}
 	} else {
 		log.Fatalf("No args were provided. Please provide args to configure the current context")
@@ -340,4 +348,19 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext b
 	if !configFileTrack {
 		WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 	}
+}
+
+func validateInput(input string) string {
+	validInputs := []string{"yes", "no", "none"}
+	isValid := false
+	for _, elem := range validInputs {
+		if input == elem {
+			isValid = true
+			break
+		}
+	}
+	if !isValid {
+		log.Fatal("Please enter one of: yes, no or none")
+	}
+	return input
 }
