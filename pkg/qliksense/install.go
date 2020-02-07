@@ -11,6 +11,7 @@ type InstallCommandOptions struct {
 	Namespace    string
 	StorageClass string
 	MongoDbUri   string
+	RotateKeys   string
 }
 
 func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) error {
@@ -50,10 +51,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.Namespace != "" {
 		qcr.Spec.NameSpace = opts.Namespace
 	}
-	// during install always rotate JWT keys
-	// ref: https://github.com/qlik-oss/k-apis/blob/68414dd6c000d4acb15c8cfb3a6b2c4cfa707510/pkg/cr/cr-main.go#L104
-	qcr.Spec.RotateKeys = "None"
-	qcr.Spec.ReleaseName = qcr.Metadata.Name
+	if opts.RotateKeys != "" {
+		qcr.Spec.RotateKeys = opts.RotateKeys
+	}
 	qConfig.WriteCurrentContextCR(qcr)
 	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
