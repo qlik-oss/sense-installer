@@ -274,6 +274,7 @@ func SetUpQliksenseDefaultContext(qlikSenseHome string) {
 
 // SetUpQliksenseContext - to setup qliksense context
 func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext bool) {
+<<<<<<< HEAD
 	// check the length of the context name entered by the user, it should not exceed 17 chars
 	if len(contextName) > MaxContextNameLength {
 		log.Fatal("Please enter a context-name with utmost 17 characters")
@@ -283,6 +284,11 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext b
 	var qliksenseConfig api.QliksenseConfig
 	configFileTrack := false
 
+=======
+	qliksenseConfigFile := filepath.Join(qlikSenseHome, QliksenseConfigFile)
+	var qliksenseConfig api.QliksenseConfig
+	configFileTrack := false
+>>>>>>> ms-3
 	if !FileExists(qliksenseConfigFile) {
 		qliksenseConfig = AddBaseQliksenseConfigs(qliksenseConfig, contextName)
 	} else {
