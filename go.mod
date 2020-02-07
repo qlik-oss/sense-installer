@@ -16,7 +16,7 @@ replace (
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
 	k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
-	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200129153315-09eb26c762c8
+	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9
 )
 
 require (
@@ -52,7 +52,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.4
+	github.com/qlik-oss/k-apis v0.0.5
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
