@@ -25,7 +25,8 @@ const (
 	QliksenseDefaultProfile    = "docker-desktop"
 	QliksenseConfigFile        = "config.yaml"
 	QliksenseContextsDir       = "contexts"
-	DefaultQliksenseContext    = "qliksense-default"
+	DefaultQliksenseContext    = "qlik-default"
+	MaxContextNameLength       = 17
 )
 
 // WriteToFile writes content into specified file
@@ -273,9 +274,15 @@ func SetUpQliksenseDefaultContext(qlikSenseHome string) {
 
 // SetUpQliksenseContext - to setup qliksense context
 func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext bool) {
+	// check the length of the context name entered by the user, it should not exceed 17 chars
+	if len(contextName) > MaxContextNameLength {
+		log.Fatal("Please enter a context-name with utmost 17 characters")
+	}
+
 	qliksenseConfigFile := filepath.Join(qlikSenseHome, QliksenseConfigFile)
 	var qliksenseConfig api.QliksenseConfig
 	configFileTrack := false
+
 	if !FileExists(qliksenseConfigFile) {
 		qliksenseConfig = AddBaseQliksenseConfigs(qliksenseConfig, contextName)
 	} else {
@@ -293,7 +300,7 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext b
 		}
 	}
 	LogDebugMessage("%s exists", qliksenseContextsDir1)
-	// creating contexts/qliksense-default.yaml file
+	// creating contexts/qlik-default.yaml file
 
 	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
 	var qliksenseCR api.QliksenseCR
