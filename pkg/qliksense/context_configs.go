@@ -225,10 +225,13 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
 
 	// modify appropriate fields
-	LogDebugMessage("Command: %s", args[0])
-	// split args[0] into key and value
-	if len(args) > 0 {
-		argsString := strings.Split(args[0], "=")
+	if len(args) == 0 {
+		log.Fatalf("No args were provided. Please provide args to configure the current context")
+	}
+
+	for _, arg := range args {
+		LogDebugMessage("Command: %s", arg)
+		argsString := strings.Split(arg, "=")
 		LogDebugMessage("Split string: %v", argsString)
 		switch argsString[0] {
 		case "profile":
@@ -255,8 +258,6 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 		default:
 			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName,rotateKeys or git.repository arguments")
 		}
-	} else {
-		log.Fatalf("No args were provided. Please provide args to configure the current context")
 	}
 	// write modified content into context.yaml
 	WriteToFile(&qliksenseCR, qliksenseContextsFile)
