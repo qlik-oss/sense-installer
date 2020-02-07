@@ -361,7 +361,7 @@ func validateInput(input string) string {
 		}
 	}
 	if !isValid {
-		log.Fatal("Please enter one of: yes, no or none")
+		log.Fatal("Please enter one of: yes, no or None")
 	}
 	return input
 }

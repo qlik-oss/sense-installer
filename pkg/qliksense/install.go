@@ -2,6 +2,7 @@ package qliksense
 
 import (
 	"fmt"
+
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -9,6 +10,8 @@ type InstallCommandOptions struct {
 	AcceptEULA   string
 	Namespace    string
 	StorageClass string
+	MongoDbUri   string
+	RotateKeys   string
 }
 
 func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) error {
@@ -39,15 +42,20 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.AcceptEULA != "" {
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}
+	if opts.MongoDbUri != "" {
+		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri)
+	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
 	}
 	if opts.Namespace != "" {
 		qcr.Spec.NameSpace = opts.Namespace
 	}
-
+	if opts.RotateKeys != "" {
+		qcr.Spec.RotateKeys = opts.RotateKeys
+	}
 	qConfig.WriteCurrentContextCR(qcr)
-	if err := applyConfigToK8s(qcr); err != nil {
+	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}

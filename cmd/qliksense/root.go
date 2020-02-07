@@ -41,7 +41,9 @@ func initAndExecute() error {
 	qliksense.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 	qliksense.SetUpQliksenseDefaultContext(qlikSenseHome)
 
-	if err = rootCmd(qliksense.New(qlikSenseHome)).Execute(); err != nil {
+	if qliksenseClient, err := qliksense.New(qlikSenseHome); err != nil {
+		return err
+	} else if err := rootCmd(qliksenseClient).Execute(); err != nil {
 		return err
 	}
 
@@ -63,7 +65,11 @@ func setUpPaths() (string, error) {
 		}
 		qlikSenseHome = filepath.Join(homeDir, qlikSenseDirVar)
 	}
-	os.Mkdir(qlikSenseHome, os.ModePerm)
+
+	if err := os.MkdirAll(qlikSenseHome, os.ModePerm); err != nil {
+		return "", err
+	}
+
 	return qlikSenseHome, nil
 }
 
