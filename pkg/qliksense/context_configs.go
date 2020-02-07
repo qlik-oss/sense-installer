@@ -33,7 +33,7 @@ func WriteToFile(content interface{}, targetFile string) {
 	if content == nil || targetFile == "" {
 		return
 	}
-	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0700)
+	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
 		LogDebugMessage("There was an error creating the file: %s, %v", targetFile, err)
 		log.Fatal(err)
