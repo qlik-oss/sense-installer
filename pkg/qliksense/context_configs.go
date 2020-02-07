@@ -202,7 +202,7 @@ func processConfigArgs(args []string, cr *config.CRSpec, updateFn func(string, s
 		log.Fatalf("No args were provided. Please provide args to configure the current context")
 	}
 
-	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*\w+"*)`)
+	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
 	for _, arg := range args {
 		result := re1.FindStringSubmatch(arg)
 		LogDebugMessage("finding matches...\n")
@@ -259,7 +259,7 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 func SetContextConfig(q *Qliksense, args []string) error {
 	if len(args) == 1 {
 		LogDebugMessage("The command received: %s", args)
-		SetUpQliksenseContext(q.QliksenseHome, args[0])
+		SetUpQliksenseContext(q.QliksenseHome, args[0], false)
 	} else {
 		log.Fatalf("Please provide a name to configure the context with.")
 	}
@@ -268,17 +268,21 @@ func SetContextConfig(q *Qliksense, args []string) error {
 
 // SetUpQliksenseDefaultContext - to setup dir structure for default qliksense context
 func SetUpQliksenseDefaultContext(qlikSenseHome string) {
-	SetUpQliksenseContext(qlikSenseHome, DefaultQliksenseContext)
+	SetUpQliksenseContext(qlikSenseHome, DefaultQliksenseContext, true)
 }
 
 // SetUpQliksenseContext - to setup qliksense context
-func SetUpQliksenseContext(qlikSenseHome, contextName string) {
+func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext bool) {
 	qliksenseConfigFile := filepath.Join(qlikSenseHome, QliksenseConfigFile)
 	var qliksenseConfig api.QliksenseConfig
+	configFileTrack := false
 	if !FileExists(qliksenseConfigFile) {
 		qliksenseConfig = AddBaseQliksenseConfigs(qliksenseConfig, contextName)
 	} else {
 		ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+		if isDefaultContext { // if config file exits but a default context is requested, we want to prevent writing to config file
+			configFileTrack = true
+		}
 	}
 	// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
 
@@ -326,5 +330,7 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string) {
 		})
 	}
 	qliksenseConfig.Spec.CurrentContext = contextName
-	WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+	if !configFileTrack {
+		WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+	}
 }
