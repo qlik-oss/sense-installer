@@ -2,9 +2,11 @@ package qliksense
 
 import (
 	"fmt"
-	"github.com/mitchellh/go-homedir"
+	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/mitchellh/go-homedir"
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -24,13 +26,18 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	return applyConfigToK8s(qcr)
+	return q.applyConfigToK8s(qcr)
 }
 
-func applyConfigToK8s(qcr *qapi.QliksenseCR) error {
+func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	// apply qliksense-init crd first
 	mroot := qcr.Spec.GetManifestsRoot()
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
+
+	if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
+		fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
+		return err
+	}
 
 	qInitByte, err := executeKustomizeBuild(qInitMsPath)
 	if err != nil {
