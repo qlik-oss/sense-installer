@@ -28,7 +28,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&opts.AcceptEULA, "acceptEULA", "a", "", "AcceptEULA for qliksense")
 	f.StringVarP(&opts.Namespace, "namespace", "n", "", "Namespace where to install the qliksense")
 	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
-	f.StringVarP(&opts.MongoDbUri, "mongoDbUri", "m", "", "mongoDbUri for qliksense (i.e. mongodb://qliksense-mongodb:27017/qliksense?ssl=false)")
+	f.StringVarP(&opts.MongoDbUri, "mongoDbUri", "m", "", "mongoDbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
 	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
 	return c
 }
