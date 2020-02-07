@@ -52,7 +52,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 	// during install always rotate JWT keys
 	// ref: https://github.com/qlik-oss/k-apis/blob/68414dd6c000d4acb15c8cfb3a6b2c4cfa707510/pkg/cr/cr-main.go#L104
-	qcr.Spec.RotateKeys = "None"
+	qcr.Spec.RotateKeys = "yes"
 	qcr.Spec.ReleaseName = qcr.Metadata.Name
 	qConfig.WriteCurrentContextCR(qcr)
 	if err := q.applyConfigToK8s(qcr); err != nil {

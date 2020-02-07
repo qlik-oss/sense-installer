@@ -911,6 +911,10 @@ github.com/qlik-oss/k-apis v0.0.4 h1:fNX1LsGbNZtR7X/0o/2HAnQkuEJs6JcnedHzacBcbfM
 github.com/qlik-oss/k-apis v0.0.4/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/k-apis v0.0.5 h1:CpiujicAo+clZqy7Pe3CDAqNhTx8cCC3qmzz3ovG7OU=
 github.com/qlik-oss/k-apis v0.0.5/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
+github.com/qlik-oss/k-apis v0.0.7 h1:IBp5U5S9GM889J34yKXEHWEQBA+2rv/dWil+YVGTAd4=
+github.com/qlik-oss/k-apis v0.0.7/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
+github.com/qlik-oss/k-apis v0.0.8 h1:8ZZefgFT+rI4PuE/sp3Wpc+d5LtZBKZuDb2G/YelTOs=
+github.com/qlik-oss/k-apis v0.0.8/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200129153315-09eb26c762c8 h1:WLVkArXf58T+3SHDvSddE8P6OjkeeUtGEgHk8LDdfeo=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200129153315-09eb26c762c8/go.mod h1:OCt7FTrRVHj4kmR2xLJJUIqu00BTr6GeF09hSmM17Kw=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9 h1:iqeqTS4zjp6rPEaxmFB7pemA2CMjOEN5dYSXZaQ82uw=
