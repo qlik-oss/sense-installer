@@ -351,7 +351,7 @@ func SetUpQliksenseContext(qlikSenseHome, contextName string, isDefaultContext b
 }
 
 func validateInput(input string) string {
-	validInputs := []string{"yes", "no", "none"}
+	validInputs := []string{"yes", "no", "None"}
 	isValid := false
 	for _, elem := range validInputs {
 		if input == elem {
