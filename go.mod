@@ -23,6 +23,7 @@ require (
 	cloud.google.com/go v0.52.0 // indirect
 	cloud.google.com/go/storage v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.0.3
+	github.com/Shopify/ejson v1.2.1
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
@@ -67,6 +68,7 @@ require (
 	gopkg.in/fatih/pool.v2 v2.0.0 // indirect
 	gopkg.in/gorethink/gorethink.v3 v3.0.5 // indirect
 	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
 	sigs.k8s.io/kustomize/api v0.3.2
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
 )
