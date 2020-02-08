@@ -1,10 +1,21 @@
 package qliksense
 
 import (
+	"bytes"
+	"encoding/base64"
+	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/Shopify/ejson"
+	"github.com/qlik-oss/k-apis/pkg/config"
+	"github.com/qlik-oss/k-apis/pkg/qust"
 
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 )
@@ -47,7 +58,7 @@ metadata:
 	}
 }
 
-func Test_executeKustomizeBuild_onQlikConfig_DISABLED(t *testing.T) {
+func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
@@ -65,7 +76,70 @@ func Test_executeKustomizeBuild_onQlikConfig_DISABLED(t *testing.T) {
 		t.Fatalf("unexpected error: %v\n", err)
 	}
 
-	if _, err := executeKustomizeBuild(path.Join(configPath, "manifests", "base")); err != nil {
+	cr := &config.CRSpec{
+		ManifestsRoot: configPath,
+	}
+
+	if err := os.Setenv("EJSON_KEYDIR", tmpDir); err != nil {
+		t.Fatalf("unexpected error setting EJSON_KEYDIR environment variable: %v\n", err)
+	}
+
+	if err := os.Unsetenv("EJSON_KEY"); err != nil {
+		t.Fatalf("unexpected error unsetting EJSON_KEY: %v\n", err)
+	}
+
+	generateKeys(cr, "won't-use")
+
+	yamlResources, err := executeKustomizeBuild(path.Join(configPath, "manifests", "base"))
+	if err != nil {
 		t.Fatalf("unexpected kustomize error: %v\n", err)
 	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(yamlResources))
+	var resource map[string]interface{}
+	keyIdBase64 := ""
+	for {
+		err := decoder.Decode(&resource)
+		if err != nil {
+			if err != io.EOF {
+				t.Fatalf("unexpected yaml decode error: %v\n", err)
+			}
+			break
+		}
+		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[string]interface{})["name"].(string), "-users-secrets-") {
+			keyIdBase64 = resource["data"].(map[string]interface{})["tokenAuthPrivateKeyId"].(string)
+			break
+		}
+	}
+
+	untransformedKeyId := `(( (ds "data").kid ))`
+	if keyIdBase64 == "" {
+		t.Fatalf("expected keyIdBase64 for users secret to be non empty:\n")
+	} else if keyId, err := base64.StdEncoding.DecodeString(keyIdBase64); err != nil {
+		t.Fatalf("unexpected base64 decode error: %v\n", err)
+	} else if string(keyId) == untransformedKeyId {
+		t.Fatalf("unexpected users keyId: %v\n", untransformedKeyId)
+	}
+}
+
+func generateKeys(cr *config.CRSpec, defaultKeyDir string) {
+	log.Println("rotating all keys")
+	keyDir := getEjsonKeyDir(defaultKeyDir)
+	if ejsonPublicKey, ejsonPrivateKey, err := ejson.GenerateKeypair(); err != nil {
+		log.Printf("error generating an ejson key pair: %v\n", err)
+	} else if err := qust.GenerateKeys(cr, ejsonPublicKey); err != nil {
+		log.Printf("error generating application keys: %v\n", err)
+	} else if err := os.MkdirAll(keyDir, os.ModePerm); err != nil {
+		log.Printf("error makeing sure private key storage directory: %v exists, error: %v\n", keyDir, err)
+	} else if err := ioutil.WriteFile(path.Join(keyDir, ejsonPublicKey), []byte(ejsonPrivateKey), os.ModePerm); err != nil {
+		log.Printf("error storing ejson private key: %v\n", err)
+	}
+}
+
+func getEjsonKeyDir(defaultKeyDir string) string {
+	ejsonKeyDir := os.Getenv("EJSON_KEYDIR")
+	if ejsonKeyDir == "" {
+		ejsonKeyDir = defaultKeyDir
+	}
+	return ejsonKeyDir
 }
