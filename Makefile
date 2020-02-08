@@ -56,7 +56,7 @@ $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 generate: get-crds packr2
 	go generate ./...
 
-HAS_PACKR2 := $(shell command -v packr2)
+HAS_PACKR2 := $(shell packr2)
 packr2:
 ifndef HAS_PACKR2
 	go get -u github.com/gobuffalo/packr/v2/packr2
@@ -69,11 +69,12 @@ clean: clean-packr
 clean-packr: packr2
 	cd pkg/qliksense && packr2 clean
 
-get-crds: 
-	git clone --depth=1 git@github.com:qlik-oss/qliksense-operator.git -b ms-3 /tmp/operator
+get-crds:
+	$(eval TMP := $(shell mktemp -d))
+	git clone git@github.com:qlik-oss/qliksense-operator.git -b ms-3 $(TMP)/operator
 	mkdir -p pkg/qliksense/crds/cr
 	mkdir -p pkg/qliksense/crds/crd
 	mkdir -p pkg/qliksense/crds/crd-deploy
-	cp /tmp/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
-	cp /tmp/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
-	cp /tmp/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
+	cp $(TMP)/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
+	cp $(TMP)/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
+	cp $(TMP)/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
