@@ -2,6 +2,7 @@ package qliksense
 
 import (
 	"fmt"
+	"path/filepath"
 	"io"
 	"os"
 	"strings"
@@ -32,7 +33,7 @@ func (q *Qliksense) getYamlFromPackrFile(packrFile string) string {
 func (q *Qliksense) getFileList(resourceType string) []string {
 	var resList []string
 	for _, v := range q.CrdBox.List() {
-		if strings.Contains(v, resourceType+"/") {
+		if strings.Contains(v, filepath.Join(resourceType, "")) {
 			resList = append(resList, []string{v}...)
 		}
 	}
