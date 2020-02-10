@@ -163,7 +163,6 @@ func SetConfigs(q *Qliksense, args []string) error {
 	qliksenseCR, qliksenseContextsFile := retrieveCurrentContextInfo(q)
 
 	processConfigArgs(args, qliksenseCR.Spec, qliksenseCR.Spec.AddToConfigs)
-	LogDebugMessage("CR now: %v", qliksenseCR.Spec)
 	// write modified content into context.yaml
 	WriteToFile(&qliksenseCR, qliksenseContextsFile)
 
@@ -173,7 +172,6 @@ func SetConfigs(q *Qliksense, args []string) error {
 func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-	LogDebugMessage("qliksenseConfigFile: %s", qliksenseConfigFile)
 
 	ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
 	currentContext := qliksenseConfig.Spec.CurrentContext
@@ -209,8 +207,6 @@ func processConfigArgs(args []string, cr *config.CRSpec, updateFn func(string, s
 	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
 	for _, arg := range args {
 		result := re1.FindStringSubmatch(arg)
-		LogDebugMessage("finding matches...\n")
-		LogDebugMessage("Results: %s, %s, %s", result[1], result[2], result[3])
 		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
 		if len(result) != 4 {
 			log.Fatal("Please provide valid args for this command")
@@ -230,28 +226,21 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 	}
 
 	for _, arg := range args {
-		LogDebugMessage("Command: %s", arg)
 		argsString := strings.Split(arg, "=")
-		LogDebugMessage("Split string: %v", argsString)
 		switch argsString[0] {
 		case "profile":
-			LogDebugMessage("Current profile: %s, Incoming profile: %s", qliksenseCR.Spec.Profile, argsString[1])
 			qliksenseCR.Spec.Profile = argsString[1]
 			LogDebugMessage("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
 		case "namespace":
-			LogDebugMessage("Current namespace: %s, Incoming namespace: %s", qliksenseCR.Spec.NameSpace, argsString[1])
 			qliksenseCR.Spec.NameSpace = argsString[1]
 			LogDebugMessage("Current namespace after modification: %s ", qliksenseCR.Spec.NameSpace)
 		case "git.repository":
-			LogDebugMessage("Current git.repository: %s, Incoming git.repository: %s", qliksenseCR.Spec.Git.Repository, argsString[1])
 			qliksenseCR.Spec.Git.Repository = argsString[1]
 			LogDebugMessage("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
 		case "storageClassName":
-			LogDebugMessage("Current StorageClassName: %s, Incoming StorageClassName: %s", qliksenseCR.Spec.StorageClassName, argsString[1])
 			qliksenseCR.Spec.StorageClassName = argsString[1]
 			LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
 		case "rotateKeys":
-			LogDebugMessage("Current rotateKeys: %s, Incoming rotateKeys: %s", qliksenseCR.Spec.RotateKeys, argsString[1])
 			rotateKeys := validateInput(argsString[1])
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
@@ -268,7 +257,6 @@ func SetOtherConfigs(q *Qliksense, args []string) error {
 // SetContextConfig - set the context for qliksense kubernetes resources to live in
 func SetContextConfig(q *Qliksense, args []string) error {
 	if len(args) == 1 {
-		LogDebugMessage("The command received: %s", args)
 		SetUpQliksenseContext(q.QliksenseHome, args[0], false)
 	} else {
 		log.Fatalf("Please provide a name to configure the context with.")
