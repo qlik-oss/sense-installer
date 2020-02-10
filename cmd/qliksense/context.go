@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -16,7 +15,6 @@ func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Sets the context in which the Kubernetes cluster and resources live in",
 		Example: `qliksense config set-context <context_name>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			log.Debug("In set Context Config Command")
 			return qliksense.SetContextConfig(q, args)
 		},
 	}
