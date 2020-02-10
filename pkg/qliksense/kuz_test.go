@@ -59,10 +59,6 @@ metadata:
 }
 
 func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping in short mode")
-	}
-
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
@@ -90,7 +86,7 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 
 	generateKeys(cr, "won't-use")
 
-	yamlResources, err := executeKustomizeBuild(path.Join(configPath, "manifests", "base"))
+	yamlResources, err := executeKustomizeBuild(path.Join(configPath, "manifests", "base", "resources", "users"))
 	if err != nil {
 		t.Fatalf("unexpected kustomize error: %v\n", err)
 	}
@@ -106,7 +102,7 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 			}
 			break
 		}
-		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[string]interface{})["name"].(string), "-users-secrets-") {
+		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[string]interface{})["name"].(string), "users-secrets-") {
 			keyIdBase64 = resource["data"].(map[string]interface{})["tokenAuthPrivateKeyId"].(string)
 			break
 		}

@@ -22,7 +22,6 @@ replace (
 require (
 	cloud.google.com/go v0.52.0 // indirect
 	cloud.google.com/go/storage v1.5.0 // indirect
-	github.com/Masterminds/semver/v3 v3.0.3
 	github.com/Shopify/ejson v1.2.1
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
@@ -54,7 +53,6 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/qlik-oss/k-apis v0.0.5
-	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect
