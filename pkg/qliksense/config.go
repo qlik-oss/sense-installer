@@ -34,6 +34,11 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	mroot := qcr.Spec.GetManifestsRoot()
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
 
+	if err := os.Unsetenv("EJSON_KEY"); err != nil {
+		fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
+		return err
+	}
+
 	if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
 		fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
 		return err
