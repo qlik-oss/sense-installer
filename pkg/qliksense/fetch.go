@@ -31,7 +31,7 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 
 	if repo, err := kapis_git.CloneRepository(destDir, QLIK_GIT_REPO, nil); err != nil {
 		return err
-	} else if err = kapis_git.Checkout(repo, version, fmt.Sprintf("%v-%v", version, uuid.New().String()), nil); err != nil {
+	} else if err = kapis_git.Checkout(repo, version, fmt.Sprintf("%v-by-operator-%v", version, uuid.New().String()), nil); err != nil {
 		return err
 	}
 	qcr.Spec.ManifestsRoot = qConfig.BuildCurrentManifestsRoot(version)
