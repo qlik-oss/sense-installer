@@ -4,14 +4,15 @@ PKG = github.com/qlik-oss/sense-installer
 MAKE_OPTS ?= --no-print-directory
 
 LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION) -X $(PKG)/pkg.Commit=$(COMMIT) -X "$(PKG)/pkg.CommitDate=$(COMMIT_DATE)"
-XBUILD = CGO_ENABLED=0 go build -a -tags netgo -ldflags '$(LDFLAGS)'
+XBUILD = CGO_ENABLED=0 go build -a -tags "$(BUILDTAGS)" -ldflags '$(LDFLAGS)'
 BINDIR = bin
 
 COMMIT ?= $(shell git rev-parse --short HEAD)
 COMMIT_DATE ?= $(shell git show --no-patch --no-notes --pretty='%cd' $(COMMIT) --date=iso)
 VERSION ?= $(shell git describe --tags 2> /dev/null || echo v0)
 PERMALINK ?= $(shell git describe --tags --exact-match &> /dev/null && echo latest || echo canary)
-BASEDIR=$(pwd)
+BUILDTAGS = netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+
 
 CLIENT_PLATFORM ?= $(shell go env GOOS)
 CLIENT_ARCH ?= $(shell go env GOARCH)
@@ -32,19 +33,50 @@ FILE_EXT=
 endif
 
 .PHONY: build
-build:
+build: clean generate
 	mkdir -p $(BINDIR)
-	go build -ldflags '$(LDFLAGS)' -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	$(MAKE) clean
 
-xbuild-all:
+.PHONY: test
+test:
+	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
+
+xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
     	$(foreach ARCH, $(SUPPORTED_ARCHES), \
             	$(MAKE) $(MAKE_OPTS) CLIENT_PLATFORM=$(OS) CLIENT_ARCH=$(ARCH) MIXIN=$(MIXIN) xbuild; \
     	))
-
+	$(MAKE) clean
 xbuild: $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 	mkdir -p $(dir $@)
 	GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
 	tar -C $(BINDIR)/$(VERSION)/ -cvf $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH).tar.gz $(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 
+
+generate: get-crds packr2
+	go generate ./...
+
+HAS_PACKR2 := $(shell packr2)
+packr2:
+ifndef HAS_PACKR2
+	go get -u github.com/gobuffalo/packr/v2/packr2
+endif
+
+clean: clean-packr
+	-rm -rf /tmp/operator
+	-rm -fr pkg/qliksense/crds
+
+clean-packr: packr2
+	cd pkg/qliksense && packr2 clean
+
+get-crds:
+	$(eval TMP := $(shell mktemp -d))
+	git clone git@github.com:qlik-oss/qliksense-operator.git -b ms-3 $(TMP)/operator
+	mkdir -p pkg/qliksense/crds/cr
+	mkdir -p pkg/qliksense/crds/crd
+	mkdir -p pkg/qliksense/crds/crd-deploy
+	cp $(TMP)/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
+	cp $(TMP)/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
+	cp $(TMP)/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
