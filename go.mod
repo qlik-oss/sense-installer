@@ -37,6 +37,7 @@ require (
 	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.3.3 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 

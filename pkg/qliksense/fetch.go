@@ -2,6 +2,8 @@ package qliksense
 
 import (
 	"fmt"
+
+	"github.com/google/uuid"
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
@@ -29,7 +31,7 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 
 	if repo, err := kapis_git.CloneRepository(destDir, QLIK_GIT_REPO, nil); err != nil {
 		return err
-	} else if err = kapis_git.Checkout(repo, version, version, nil); err != nil {
+	} else if err = kapis_git.Checkout(repo, version, fmt.Sprintf("%v-%v", version, uuid.New().String()), nil); err != nil {
 		return err
 	}
 	qcr.Spec.ManifestsRoot = qConfig.BuildCurrentManifestsRoot(version)
