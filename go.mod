@@ -3,19 +3,13 @@ module github.com/qlik-oss/sense-installer
 go 1.13
 
 replace (
-	github.com/Sirupsen/logrus v1.0.5 => github.com/sirupsen/logrus v1.0.5
-	github.com/Sirupsen/logrus v1.3.0 => github.com/Sirupsen/logrus v1.0.6
-	github.com/Sirupsen/logrus v1.4.0 => github.com/sirupsen/logrus v1.0.6
-	//	github.com/containerd/containerd v1.3.0-0.20190507210959-7c1e88399ec0 => github.com/containerd/containerd v1.3.2
-
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
-	//	github.com/jaguilar/vt100 => github.com/tonistiigi/vt100 v0.0.0-20190402012908-ad4c4a574305
-	//	golang.org/x/crypto v0.0.0-20190129210102-0709b304e793 => golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
 	k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
+
 	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9
 )
 
@@ -37,6 +31,9 @@ require (
 	github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7
 	github.com/docker/go v1.5.1-1 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
+	github.com/gobuffalo/envy v1.9.0 // indirect
+	github.com/gobuffalo/logger v1.0.3 // indirect
+	github.com/gobuffalo/packd v1.0.0 // indirect
 	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.3.3 // indirect
@@ -52,14 +49,16 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.5
+	github.com/qlik-oss/k-apis v0.0.8
+	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect
 	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
+	golang.org/x/crypto v0.0.0-20200210222208-86ce3cb69678 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
-	golang.org/x/tools v0.0.0-20200130002326-2f3ba24bd6e7 // indirect
+	golang.org/x/tools v0.0.0-20200211183705-e2a38c836335 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
