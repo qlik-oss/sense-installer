@@ -89,9 +89,14 @@ func (q *Qliksense) ConfigViewCR() error {
 
 func (q *Qliksense) getCurrentCRString() (string, error) {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	qcr, err := qConfig.GetCurrentCR()
+	return q.getCRString(qConfig.Spec.CurrentContext)
+}
+
+func (q *Qliksense) getCRString(contextName string) (string, error) {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCR(contextName)
 	if err != nil {
-		fmt.Println("cannot get the current-context cr", err)
+		fmt.Println("cannot get the context cr", err)
 		return "", err
 	}
 	out, err := yaml.Marshal(qcr)

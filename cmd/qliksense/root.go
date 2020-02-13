@@ -135,6 +135,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add the set ### config command as a sub-command to the app config sub-command
 	configCmd.AddCommand(setSecretsCmd(p))
 
+	// add uninstall command
+	cmd.AddCommand(uninstallCmd(p))
 	return cmd
 }
 

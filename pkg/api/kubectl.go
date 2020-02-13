@@ -8,6 +8,14 @@ import (
 )
 
 func KubectlApply(manifests string) error {
+	return kubectlOperation(manifests, "apply")
+}
+
+func KubectlDelete(manifests string) error {
+	return kubectlOperation(manifests, "delete")
+}
+
+func kubectlOperation(manifests string, oprName string) error {
 	tempYaml, err := ioutil.TempFile("", "")
 	if err != nil {
 		fmt.Println("cannot create file ", err)
@@ -15,7 +23,13 @@ func KubectlApply(manifests string) error {
 	}
 	tempYaml.WriteString(manifests)
 
-	cmd := exec.Command("kubectl", "apply", "-f", tempYaml.Name(), "--validate=false")
+	var cmd *exec.Cmd
+	if oprName == "apply" {
+		cmd = exec.Command("kubectl", oprName, "-f", tempYaml.Name(), "--validate=false")
+	} else {
+		cmd = exec.Command("kubectl", oprName, "-f", tempYaml.Name())
+	}
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
