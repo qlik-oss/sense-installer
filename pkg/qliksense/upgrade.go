@@ -22,18 +22,19 @@ func (q *Qliksense) UpgradeQK8s(opts *InstallCommandOptions) error {
 
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	fmt.Println(qConfig)
 
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
+	fmt.Println(qcr)
 	qConfig.WriteCurrentContextCR(qcr)
 	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
+
 	fmt.Println("Install operator CR into cluster")
 	r, err := q.getCurrentCRString()
 	if err != nil {
