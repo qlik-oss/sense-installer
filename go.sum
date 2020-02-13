@@ -243,6 +243,8 @@ github.com/dimchansky/utfbom v1.1.0/go.mod h1:rO41eb7gLfo8SF1jd9F8HplJm1Fewwi4mQ
 github.com/docker/cli v0.0.0-20190506213505-d88565df0c2d/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/cli v0.0.0-20191212191748-ebca1413117a h1:rgpgmLocRiSIM3zdtVgJcyvH7S2cSiIPtL7LvFY8K/0=
 github.com/docker/cli v0.0.0-20191212191748-ebca1413117a/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
+github.com/docker/cli v0.0.0-20200213164449-4538b15038e5 h1:sGf+EdRqyvqbptx1h4GLUI6LmwBGw0+3fUT6GCTDXVc=
+github.com/docker/cli v0.0.0-20200213164449-4538b15038e5/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
 github.com/docker/distribution v0.0.0-20170817175659-5f6282db7d65/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/distribution v2.7.1-0.20190205005809-0d3efadf0154+incompatible/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/distribution v2.7.1+incompatible h1:a5mlkVzth6W5A4fOsS3D2EO5BUmsJpcB+cRlLU7cSug=

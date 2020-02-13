@@ -26,7 +26,7 @@ require (
 	github.com/containerd/containerd v1.3.2 // indirect
 	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
 	github.com/containers/image/v5 v5.1.0
-	github.com/docker/cli v0.0.0-20191212191748-ebca1413117a
+	github.com/docker/cli v0.0.0-20200213164449-4538b15038e5
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7
 	github.com/docker/go v1.5.1-1 // indirect
