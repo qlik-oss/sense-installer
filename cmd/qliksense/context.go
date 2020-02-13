@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
@@ -55,16 +57,21 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 
 func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
-		cmd *cobra.Command
+		cmd    *cobra.Command
+		secret bool
 	)
 
 	cmd = &cobra.Command{
 		Use:     "set-secrets",
 		Short:   "set secrets configurations into the qliksense context",
-		Example: `qliksense config set-secrets <key>=<value> --secret`,
+		Example: `qliksense config set-secrets <key>=<value> --secret=true`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qliksense.SetSecrets(q, args)
+			fmt.Printf("Args received here %v\n", args)
+			fmt.Printf("Secret flag: %v\n", secret)
+			return qliksense.SetSecrets(q, args, secret)
 		},
 	}
+	f := cmd.Flags()
+	f.BoolVar(&secret, "secret", false, "Whether secrets should be encrypted")
 	return cmd
 }

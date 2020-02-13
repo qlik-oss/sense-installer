@@ -153,13 +153,16 @@ func LogDebugMessage(strMessage string, args ...interface{}) {
 }
 
 // SetSecrets - set-secrets <key>=<value> commands
-func SetSecrets(q *Qliksense, args []string) error {
+func SetSecrets(q *Qliksense, args []string, shouldEncrypt bool) error {
+	fmt.Printf("Args here in secrets: %v\n", args)
+	fmt.Printf("ShouldEncrypt: %v\n", shouldEncrypt)
+
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
 	if err != nil {
 		return err
 	}
-
+	// check if flag: secret=true/false is passed. If secret=false then continue, if true- call encryption()
 	processConfigArgs(args, qliksenseCR.Spec, qliksenseCR.Spec.AddToSecrets)
 
 	// write modified content into context.yaml
