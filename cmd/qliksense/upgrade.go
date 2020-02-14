@@ -6,14 +6,13 @@ import (
 )
 
 func upgradeCmd(q *qliksense.Qliksense) *cobra.Command {
-	opts := &qliksense.InstallCommandOptions{}
 	c := &cobra.Command{
 		Use:     "upgrade",
 		Short:   "upgrade qliksense release",
 		Long:    `upgrade qliksesne release`,
 		Example: `qliksense upgrade <version>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.UpgradeQK8s(opts)
+			return q.UpgradeQK8s()
 		},
 	}
 
