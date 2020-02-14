@@ -26,15 +26,16 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	return q.applyConfigToK8s(qcr)
+	return q.applyConfigToK8s(qcr, "")
 }
 
-func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
+func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 	// apply qliksense-init crd first
 	mroot := qcr.Spec.GetManifestsRoot()
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
 
 	if qcr.Spec.RotateKeys == "yes" {
+		fmt.Println(qcr.Spec.RotateKeys)
 		if err := os.Unsetenv("EJSON_KEY"); err != nil {
 			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
 			return err
@@ -44,14 +45,15 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 			return err
 		}
 	}
-
-	qInitByte, err := executeKustomizeBuild(qInitMsPath)
-	if err != nil {
-		fmt.Println("cannot generate crds for qliksense-init", err)
-		return err
-	}
-	if err = qapi.KubectlApply(string(qInitByte)); err != nil {
-		return err
+	if cmd == "install" {
+		qInitByte, err := executeKustomizeBuild(qInitMsPath)
+		if err != nil {
+			fmt.Println("cannot generate crds for qliksense-init", err)
+			return err
+		}
+		if err = qapi.KubectlApply(string(qInitByte)); err != nil {
+			return err
+		}
 	}
 
 	userHomeDir, err := homedir.Dir()
