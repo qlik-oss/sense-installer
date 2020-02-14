@@ -34,7 +34,6 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
 
 	if qcr.Spec.RotateKeys != "None" {
-		fmt.Println(qcr.Spec.RotateKeys)
 		if err := os.Unsetenv("EJSON_KEY"); err != nil {
 			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
 			return err
