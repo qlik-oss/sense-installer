@@ -28,9 +28,9 @@ func (q *Qliksense) UpgradeQK8s(opts *InstallCommandOptions) error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	fmt.Println(qcr)
+	qcr.Spec.RotateKeys = "No"
 	qConfig.WriteCurrentContextCR(qcr)
-	if err := q.applyConfigToK8s(qcr); err != nil {
+	if err := q.applyConfigToK8s(qcr, "upgrade"); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
