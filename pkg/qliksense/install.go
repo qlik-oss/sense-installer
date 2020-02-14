@@ -21,10 +21,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	// step3: config apply | kubectl apply -f # generates patches (if required) in configuration directory, applies manifest
 	// step4: config view | kubectl apply -f # generates Custom Resource manifest (CR)
 
-	// fetch the version
-	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	fetchAndUpdateCR(qConfig, version)
-
 	//TODO: may need to check if CRD already installed, but doing apply does not hurt for now
 	//install crd into cluster
 	fmt.Println("Installing operator CRD")
@@ -32,8 +28,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		fmt.Println("cannot do kubectl apply on opeartor CRD", err)
 		return err
 	}
-	// install generated manifests into cluster
-	fmt.Println("Installing generated manifests into cluster")
+
+	// fetch the version
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Println("cannot get the current-context cr", err)
@@ -55,11 +52,29 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
 	qConfig.WriteCurrentContextCR(qcr)
+
+	if qcr.Spec.Git.Repository != "" {
+		// fetching and applying manifest will be in the operator
+		return q.applyCR()
+	}
+	fetchAndUpdateCR(qConfig, version)
+	// install generated manifests into cluster
+	fmt.Println("Installing generated manifests into cluster")
+	qcr, err = qConfig.GetCurrentCR()
+	if err != nil {
+		fmt.Println("cannot get the current-context cr", err)
+		return err
+	}
+
 	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
 
+	return q.applyCR()
+}
+
+func (q *Qliksense) applyCR() error {
 	// install operator cr into cluster
 	//get the current context cr
 	fmt.Println("Install operator CR into cluster")
@@ -69,6 +84,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 	if err := qapi.KubectlApply(r); err != nil {
 		fmt.Println("cannot do kubectl apply on operator CR")
+		return err
 	}
 	return nil
 }

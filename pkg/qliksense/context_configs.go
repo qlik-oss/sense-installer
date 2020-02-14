@@ -29,6 +29,7 @@ const (
 	DefaultQliksenseContext    = "qlik-default"
 	DefaultRotateKeys          = "yes"
 	MaxContextNameLength       = 17
+	DefaultMongUrl             = "mongodb://" + DefaultQliksenseContext + "-mongodb:27017/qliksense?ssl=false"
 )
 
 // WriteToFile writes content into specified file
@@ -95,6 +96,7 @@ func AddCommonConfig(qliksenseCR api.QliksenseCR, contextName string) api.Qlikse
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
 	qliksenseCR.Spec.ReleaseName = contextName
 	qliksenseCR.Spec.RotateKeys = DefaultRotateKeys
+	qliksenseCR.Spec.AddToSecrets("qliksense", "mongoDbUri", DefaultMongUrl)
 	return qliksenseCR
 }
 

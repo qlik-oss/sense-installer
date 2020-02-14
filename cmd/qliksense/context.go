@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
@@ -31,6 +32,10 @@ func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "configure a key value pair into the current context",
 		Example: `qliksense config set <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				cmd.Help()
+				os.Exit(0)
+			}
 			return qliksense.SetOtherConfigs(q, args)
 		},
 	}
