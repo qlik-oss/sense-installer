@@ -10,7 +10,6 @@ import (
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -34,7 +33,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 	mroot := qcr.Spec.GetManifestsRoot()
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
 
-	if qcr.Spec.RotateKeys == "yes" {
+	if qcr.Spec.RotateKeys != "None" {
 		fmt.Println(qcr.Spec.RotateKeys)
 		if err := os.Unsetenv("EJSON_KEY"); err != nil {
 			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
@@ -96,10 +95,5 @@ func (q *Qliksense) getCurrentCRString() (string, error) {
 		fmt.Println("cannot get the current-context cr", err)
 		return "", err
 	}
-	out, err := yaml.Marshal(qcr)
-	if err != nil {
-		fmt.Println("cannot unmarshal cr ", err)
-		return "", err
-	}
-	return string(out), nil
+	return qcr.GetString()
 }

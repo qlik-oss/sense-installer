@@ -20,15 +20,14 @@ func (q *Qliksense) UpgradeQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	qcr.Spec.RotateKeys = "No"
-	qConfig.WriteCurrentContextCR(qcr)
+	qcr.Spec.RotateKeys = "None"
 	if err := q.applyConfigToK8s(qcr, "upgrade"); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
 
 	fmt.Println("Install operator CR into cluster")
-	r, err := q.getCurrentCRString()
+	r, err := qcr.GetString()
 	if err != nil {
 		return err
 	}
