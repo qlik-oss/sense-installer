@@ -6,15 +6,7 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-type upgradeCommandOptions struct {
-	AcceptEULA   string
-	Namespace    string
-	StorageClass string
-	MongoDbUri   string
-	RotateKeys   string
-}
-
-func (q *Qliksense) UpgradeQK8s(opts *InstallCommandOptions) error {
+func (q *Qliksense) UpgradeQK8s() error {
 
 	// step1: get CR
 	// step2: run kustomize

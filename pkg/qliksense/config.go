@@ -45,7 +45,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 			return err
 		}
 	}
-	if cmd == "install" {
+	if cmd != "upgrade" {
 		qInitByte, err := executeKustomizeBuild(qInitMsPath)
 		if err != nil {
 			fmt.Println("cannot generate crds for qliksense-init", err)
