@@ -132,6 +132,15 @@ func (qc *QliksenseConfig) WriteCurrentContextCR(cr *QliksenseCR) error {
 	return qc.WriteCR(cr, qc.Spec.CurrentContext)
 }
 
+func (qc *QliksenseConfig) IsContextExist(ctxName string) bool {
+	for _, ct := range qc.Spec.Contexts {
+		if ct.Name == ctxName {
+			return true
+		}
+	}
+	return false
+}
+
 func (cr *QliksenseCR) AddLabelToCr(key, value string) error {
 	if cr.Metadata.Labels == nil {
 		cr.Metadata.Labels = make(map[string]string)

@@ -34,14 +34,15 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	mroot := qcr.Spec.GetManifestsRoot()
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
 
-	if err := os.Unsetenv("EJSON_KEY"); err != nil {
-		fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
-		return err
-	}
-
-	if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
-		fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
-		return err
+	if qcr.Spec.RotateKeys == "yes" {
+		if err := os.Unsetenv("EJSON_KEY"); err != nil {
+			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
+			return err
+		}
+		if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
+			fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
+			return err
+		}
 	}
 
 	qInitByte, err := executeKustomizeBuild(qInitMsPath)
@@ -88,9 +89,14 @@ func (q *Qliksense) ConfigViewCR() error {
 
 func (q *Qliksense) getCurrentCRString() (string, error) {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	qcr, err := qConfig.GetCurrentCR()
+	return q.getCRString(qConfig.Spec.CurrentContext)
+}
+
+func (q *Qliksense) getCRString(contextName string) (string, error) {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCR(contextName)
 	if err != nil {
-		fmt.Println("cannot get the current-context cr", err)
+		fmt.Println("cannot get the context cr", err)
 		return "", err
 	}
 	out, err := yaml.Marshal(qcr)
