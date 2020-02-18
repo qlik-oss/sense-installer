@@ -222,10 +222,10 @@ func SetSecrets(q *Qliksense, args []string, isK8sSecret bool) error {
 
 		// encrypt value with RSA key pair
 		valueBytes := []byte(value)
-		cipherText, e2 := Encrypt(valueBytes, rsaPublicKey)
-		if e2 != nil {
-			return e2
-		}
+		cipherText, _ := Encrypt(valueBytes, rsaPublicKey)
+		// if e2 != nil {
+		// 	return e2
+		// }
 		LogDebugMessage("Returned cipher text: %s", b64.StdEncoding.EncodeToString(cipherText))
 
 		if isK8sSecret {
