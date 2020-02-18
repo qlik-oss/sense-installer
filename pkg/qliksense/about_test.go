@@ -428,11 +428,14 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				if qliksenseHome, err := ioutil.TempDir("", ""); err != nil {
 					t.Fatalf("error creating tmp qliksenseHome directory: %v\n", err)
 					return nil, "", "", ""
-				} else if err := SetUpQliksenseDefaultContext(qliksenseHome); err != nil {
-					t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
-					return nil, "", "", ""
 				} else {
-					return &Qliksense{QliksenseHome: qliksenseHome}, "https://github.com/test/HelloWorld", "", ""
+					q := &Qliksense{QliksenseHome: qliksenseHome}
+					if err := q.SetUpQliksenseDefaultContext(); err != nil {
+						t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
+						return nil, "", "", ""
+					} else {
+						return q, "https://github.com/test/HelloWorld", "", ""
+					}
 				}
 			},
 			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
@@ -471,11 +474,14 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				if qliksenseHome, err := ioutil.TempDir("", ""); err != nil {
 					t.Fatalf("error creating tmp qliksenseHome directory: %v\n", err)
 					return nil, "", "", ""
-				} else if err := SetUpQliksenseDefaultContext(qliksenseHome); err != nil {
-					t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
-					return nil, "", "", ""
 				} else {
-					return &Qliksense{QliksenseHome: qliksenseHome}, "https://github.com/test/HelloWorld", "", "foo"
+					q := &Qliksense{QliksenseHome: qliksenseHome}
+					if err := q.SetUpQliksenseDefaultContext(); err != nil {
+						t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
+						return nil, "", "", ""
+					} else {
+						return q, "https://github.com/test/HelloWorld", "", "foo"
+					}
 				}
 			},
 			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
@@ -514,12 +520,12 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				if qliksenseHome, err := ioutil.TempDir("", ""); err != nil {
 					t.Fatalf("error creating tmp qliksenseHome directory: %v\n", err)
 					return nil, "", "", ""
-				} else if err := SetUpQliksenseDefaultContext(qliksenseHome); err != nil {
-					t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
-					return nil, "", "", ""
 				} else {
 					q := &Qliksense{QliksenseHome: qliksenseHome}
-					if err := q.FetchQK8s("master"); err != nil {
+					if err := q.SetUpQliksenseDefaultContext(); err != nil {
+						t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
+						return nil, "", "", ""
+					} else if err := q.FetchQK8s("master"); err != nil {
 						t.Fatalf("error fetching master config to the tmp dir: %v\n", err)
 						return nil, "", "", ""
 					} else {
