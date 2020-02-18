@@ -6,12 +6,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	b64 "encoding/base64"
 
-	"github.com/qlik-oss/k-apis/pkg/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -85,16 +83,22 @@ func (q *Qliksense) SetSecrets(args []string, isK8sSecret bool) error {
 	if e1 != nil {
 		return e1
 	}
-	processingFunc := func(arg1, key, value string) {
+
+	resultArgs, err := api.ProcessConfigArgs(args)
+	if err != nil {
+		return err
+	}
+
+	for _, ra := range resultArgs {
 		// Metadata name in qliksense CR is the name of the current context
 		api.LogDebugMessage("Trying to retreive current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
 
 		// encrypt value with RSA key pair
-		valueBytes := []byte(value)
-		cipherText, _ := api.Encrypt(valueBytes, rsaPublicKey)
-		// if e2 != nil {
-		// 	return e2
-		// }
+		valueBytes := []byte(ra.Value)
+		cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
+		if e2 != nil {
+			return e2
+		}
 		api.LogDebugMessage("Returned cipher text: %s", b64.StdEncoding.EncodeToString(cipherText))
 
 		if isK8sSecret {
@@ -104,9 +108,9 @@ func (q *Qliksense) SetSecrets(args []string, isK8sSecret bool) error {
 		// TODO: Extend AddToSecrets to support adding k8s key ref. (OR) create a separate method to support that
 		// store the encrypted value in the file (OR)
 		// TODO: k8s secret name in the file
-		qliksenseCR.Spec.AddToSecrets(arg1, key, string(cipherText))
+		qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, string(cipherText))
 	}
-	processConfigArgs(args, isK8sSecret, qliksenseCR.Spec, processingFunc)
+
 	// write modified content into context.yaml
 	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
 
@@ -121,7 +125,13 @@ func (q *Qliksense) SetConfigs(args []string) error {
 		return err
 	}
 
-	processConfigArgs(args, false, qliksenseCR.Spec, qliksenseCR.Spec.AddToConfigs)
+	resultArgs, err := api.ProcessConfigArgs(args)
+	if err != nil {
+		return err
+	}
+	for _, ra := range resultArgs {
+		qliksenseCR.Spec.AddToConfigs(ra.SvcName, ra.Key, ra.Value)
+	}
 	// write modified content into context.yaml
 	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
 
@@ -159,30 +169,6 @@ func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string, error) {
 
 	api.LogDebugMessage("Read context file: %s, Read QliksenseCR: %v", qliksenseContextsFile, qliksenseCR)
 	return qliksenseCR, qliksenseContextsFile, nil
-}
-
-func processConfigArgs(args []string, shouldEncrypt bool, cr *config.CRSpec, updateFn func(string, string, string)) error {
-	// prepare received args
-	// split args[0] into key and value
-	if len(args) == 0 {
-		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
-		log.Println(err)
-		return err
-	}
-
-	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
-	for _, arg := range args {
-		log.Printf("Arg here: %s", arg)
-		result := re1.FindStringSubmatch(arg)
-		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
-		if len(result) != 4 {
-			err := fmt.Errorf("Please provide valid args for this command")
-			log.Println(err)
-			return err
-		}
-		updateFn(result[1], result[2], result[3])
-	}
-	return nil
 }
 
 // SetOtherConfigs - set profile/namespace/storageclassname/git.repository commands

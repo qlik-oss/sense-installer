@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 )
 
 func checkExists(filename string, isFile bool) os.FileInfo {
@@ -55,4 +56,33 @@ func ReadKeys(keyFile string) ([]byte, error) {
 		LogDebugMessage("Read key as byte[]: %+v", keybyteArray)
 	}
 	return keybyteArray, nil
+}
+
+// ProcessConfigArgs processes args and returns an service, key, value slice
+func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
+	// prepare received args
+	// split args[0] into key and value
+	if len(args) == 0 {
+		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
+		log.Println(err)
+		return nil, err
+	}
+	resultSvcKV := make([]*ServiceKeyValue, len(args))
+	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
+	for i, arg := range args {
+		log.Printf("Arg here: %s", arg)
+		result := re1.FindStringSubmatch(arg)
+		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
+		if len(result) != 4 {
+			err := fmt.Errorf("Please provide valid args for this command")
+			log.Println(err)
+			return nil, err
+		}
+		resultSvcKV[i] = &ServiceKeyValue{
+			SvcName: result[1],
+			Key:     result[2],
+			Value:   result[3],
+		}
+	}
+	return resultSvcKV, nil
 }

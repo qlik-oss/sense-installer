@@ -39,3 +39,10 @@ type Metadata struct {
 	Name   string            `json:"name,omitempty" yaml:"name,omitempty"`
 	Labels map[string]string `json:"labels,omitempty" yaml:"labels,omitempty"`
 }
+
+// ServiceKeyValue holds the combination of service, key and value
+type ServiceKeyValue struct {
+	SvcName string
+	Key     string
+	Value   string
+}
