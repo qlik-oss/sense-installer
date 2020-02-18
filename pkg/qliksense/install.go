@@ -55,7 +55,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
 	qConfig.WriteCurrentContextCR(qcr)
-	if err := q.applyConfigToK8s(qcr); err != nil {
+	if err := q.applyConfigToK8s(qcr, "install"); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
