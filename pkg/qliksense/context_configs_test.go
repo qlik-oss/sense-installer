@@ -16,7 +16,7 @@ var (
 func setup() func() {
 	// create tests dir
 	if err := os.Mkdir(testDir, 0777); err != nil {
-		fmt.Printf("\nError occurred: %v", err)
+		log.Printf("\nError occurred: %v", err)
 	}
 	config :=
 		`

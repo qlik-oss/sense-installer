@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/base64"
 	"log"
+	"os"
 	"testing"
 )
 
@@ -18,9 +19,9 @@ func Test_generateRSAEncryptionKeys(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// if err := generateRSAEncryptionKeys(); (err != nil) != tt.wantErr {
-			// 	t.Errorf("generateRSAEncryptionKeys() error = %v, wantErr %v", err, tt.wantErr)
-			// }
+			if err := GenerateAndStoreSecretKeypair(os.TempDir()); (err != nil) != tt.wantErr {
+				t.Errorf("generateRSAEncryptionKeys() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

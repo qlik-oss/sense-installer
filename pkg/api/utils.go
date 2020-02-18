@@ -45,7 +45,7 @@ func LogDebugMessage(strMessage string, args ...interface{}) {
 	}
 }
 
-// ReadKeys - reads key file from disk
+// ReadKeys reads key file from disk
 func ReadKeys(keyFile string) ([]byte, error) {
 	keybyteArray, err := ioutil.ReadFile(keyFile)
 	if err != nil {
