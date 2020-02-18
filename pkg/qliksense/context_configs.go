@@ -201,6 +201,7 @@ func SetSecrets(q *Qliksense, args []string, isK8sSecret bool) error {
 	}
 
 	var rsaPublicKey *rsa.PublicKey
+	var e1 error
 
 	// Read Public Key
 	publicKeybytes, err2 := readKeys(publicKeyFilePath)
@@ -211,14 +212,20 @@ func SetSecrets(q *Qliksense, args []string, isK8sSecret bool) error {
 	// LogDebugMessage("PublicKey: %+v", publicKeybytes)
 
 	// convert []byte into RSA public key object
-	rsaPublicKey = BytesToPublicKey(publicKeybytes)
+	rsaPublicKey, e1 = DecodePublicKey(publicKeybytes)
+	if e1 != nil {
+		return e1
+	}
 	processingFunc := func(arg1, key, value string) {
 		// Metadata name in qliksense CR is the name of the current context
 		LogDebugMessage("Trying to retreive current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
 
-		// TODO: encrypt value with RSA key pair
+		// encrypt value with RSA key pair
 		valueBytes := []byte(value)
-		cipherText := EncryptWithPublicKey(valueBytes, rsaPublicKey)
+		cipherText, e2 := Encrypt(valueBytes, rsaPublicKey)
+		if e2 != nil {
+			return e2
+		}
 		LogDebugMessage("Returned cipher text: %s", b64.StdEncoding.EncodeToString(cipherText))
 
 		if isK8sSecret {
@@ -226,7 +233,8 @@ func SetSecrets(q *Qliksense, args []string, isK8sSecret bool) error {
 			LogDebugMessage("Need to create a Kubernetes secret")
 		}
 		// TODO: Extend AddToSecrets to support adding k8s key ref. (OR) create a separate method to support that
-		// TODO: store the encrypted value (OR) k8s secret name in the file
+		// store the encrypted value in the file (OR)
+		// TODO: k8s secret name in the file
 		qliksenseCR.Spec.AddToSecrets(arg1, key, string(cipherText))
 	}
 	processConfigArgs(args, isK8sSecret, qliksenseCR.Spec, processingFunc)
