@@ -2,10 +2,13 @@ package qliksense
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
 	"testing"
+
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 func Test_About_getImageList(t *testing.T) {
@@ -260,13 +263,13 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 	var testCases = []struct {
 		name    string
-		setup   func(t *testing.T) (gitUrl, gitRef, profileEntered string)
-		verify  func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error)
-		cleanup func(configDir string) error
+		setup   func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string)
+		verify  func(q *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error)
+		cleanup func(q *Qliksense, configDir string) error
 	}{
 		{
 			name: "config in current directory and default profile",
-			setup: func(t *testing.T) (gitUrl, gitRef, profileEntered string) {
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
 				currentDirectory, err := os.Getwd()
 				if err != nil {
 					t.Fatalf("error obtaining current directory: %v\n", err)
@@ -277,9 +280,9 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				if err != nil {
 					t.Fatalf("error making path: %v, err: %v\n", defaultProfilePath, err)
 				}
-				return "no-clone-for-you", "", ""
+				return &Qliksense{}, "no-clone-for-you", "", ""
 			},
-			verify: func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
 				currentDirectory, err := os.Getwd()
 				if err != nil {
 					return false, "", err
@@ -299,7 +302,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 				return true, "", nil
 			},
-			cleanup: func(configDir string) error {
+			cleanup: func(_ *Qliksense, configDir string) error {
 				if currentDirectory, err := os.Getwd(); err != nil {
 					return err
 				} else if err := os.RemoveAll(path.Join(currentDirectory, "manifests")); err != nil {
@@ -310,7 +313,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 		},
 		{
 			name: "config in current directory and profile specified",
-			setup: func(t *testing.T) (gitUrl, gitRef, profileEntered string) {
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
 				currentDirectory, err := os.Getwd()
 				if err != nil {
 					t.Fatalf("error obtaining current directory: %v\n", err)
@@ -322,9 +325,9 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				if err != nil {
 					t.Fatalf("error making path: %v, err: %v\n", defaultProfilePath, err)
 				}
-				return "no-clone-for-you", "", profileEntered
+				return &Qliksense{}, "no-clone-for-you", "", profileEntered
 			},
-			verify: func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
 				currentDirectory, err := os.Getwd()
 				if err != nil {
 					return false, "", err
@@ -344,7 +347,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 				return true, "", nil
 			},
-			cleanup: func(configDir string) error {
+			cleanup: func(_ *Qliksense, configDir string) error {
 				if currentDirectory, err := os.Getwd(); err != nil {
 					return err
 				} else if err := os.RemoveAll(path.Join(currentDirectory, "manifests")); err != nil {
@@ -355,10 +358,10 @@ func Test_About_getConfigDirectory(t *testing.T) {
 		},
 		{
 			name: "config downloaded from git based on specific git ref and default profile used",
-			setup: func(t *testing.T) (gitUrl, gitRef, profileEntered string) {
-				return "https://github.com/test/HelloWorld", "asd", ""
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
+				return &Qliksense{}, "https://github.com/test/HelloWorld", "asd", ""
 			},
-			verify: func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
 				ok, reason = verifyAsdBranch(configDir)
 				if !ok {
 					return ok, reason, nil
@@ -374,7 +377,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 				return true, "", nil
 			},
-			cleanup: func(configDir string) error {
+			cleanup: func(_ *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
 
 				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
@@ -388,10 +391,10 @@ func Test_About_getConfigDirectory(t *testing.T) {
 		},
 		{
 			name: "config downloaded from git based on specific git ref and profile specified",
-			setup: func(t *testing.T) (gitUrl, gitRef, profileEntered string) {
-				return "https://github.com/test/HelloWorld", "asd", "foo"
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
+				return &Qliksense{}, "https://github.com/test/HelloWorld", "asd", "foo"
 			},
-			verify: func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
 				ok, reason = verifyAsdBranch(configDir)
 				if !ok {
 					return ok, reason, nil
@@ -407,7 +410,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 				return true, "", nil
 			},
-			cleanup: func(configDir string) error {
+			cleanup: func(_ *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
 
 				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
@@ -421,10 +424,18 @@ func Test_About_getConfigDirectory(t *testing.T) {
 		},
 		{
 			name: "config downloaded from git from master branch and default profile used",
-			setup: func(t *testing.T) (gitUrl, gitRef, profileEntered string) {
-				return "https://github.com/test/HelloWorld", "", ""
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
+				if qliksenseHome, err := ioutil.TempDir("", ""); err != nil {
+					t.Fatalf("error creating tmp qliksenseHome directory: %v\n", err)
+					return nil, "", "", ""
+				} else if err := SetUpQliksenseDefaultContext(qliksenseHome); err != nil {
+					t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
+					return nil, "", "", ""
+				} else {
+					return &Qliksense{QliksenseHome: qliksenseHome}, "https://github.com/test/HelloWorld", "", ""
+				}
 			},
-			verify: func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
 				ok, reason = verifyMasterBranch(configDir)
 				if !ok {
 					return ok, reason, nil
@@ -440,24 +451,34 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 				return true, "", nil
 			},
-			cleanup: func(configDir string) error {
+			cleanup: func(q *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
-
 				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
 					tmpTmpDir := path.Dir(configDir)
 					if err := os.RemoveAll(tmpTmpDir); err != nil {
 						return err
 					}
 				}
+				if err := os.RemoveAll(q.QliksenseHome); err != nil {
+					return err
+				}
 				return nil
 			},
 		},
 		{
 			name: "config downloaded from git from master branch and profile specified",
-			setup: func(t *testing.T) (gitUrl, gitRef, profileEntered string) {
-				return "https://github.com/test/HelloWorld", "", "foo"
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
+				if qliksenseHome, err := ioutil.TempDir("", ""); err != nil {
+					t.Fatalf("error creating tmp qliksenseHome directory: %v\n", err)
+					return nil, "", "", ""
+				} else if err := SetUpQliksenseDefaultContext(qliksenseHome); err != nil {
+					t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
+					return nil, "", "", ""
+				} else {
+					return &Qliksense{QliksenseHome: qliksenseHome}, "https://github.com/test/HelloWorld", "", "foo"
+				}
 			},
-			verify: func(configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+			verify: func(_ *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
 				ok, reason = verifyMasterBranch(configDir)
 				if !ok {
 					return ok, reason, nil
@@ -473,14 +494,60 @@ func Test_About_getConfigDirectory(t *testing.T) {
 
 				return true, "", nil
 			},
-			cleanup: func(configDir string) error {
+			cleanup: func(q *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
-
 				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
 					tmpTmpDir := path.Dir(configDir)
 					if err := os.RemoveAll(tmpTmpDir); err != nil {
 						return err
 					}
+				}
+				if err := os.RemoveAll(q.QliksenseHome); err != nil {
+					return err
+				}
+				return nil
+			},
+		},
+		{
+			name: "config loaded from current context",
+			setup: func(t *testing.T) (q *Qliksense, gitUrl, gitRef, profileEntered string) {
+				if qliksenseHome, err := ioutil.TempDir("", ""); err != nil {
+					t.Fatalf("error creating tmp qliksenseHome directory: %v\n", err)
+					return nil, "", "", ""
+				} else if err := SetUpQliksenseDefaultContext(qliksenseHome); err != nil {
+					t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
+					return nil, "", "", ""
+				} else {
+					q := &Qliksense{QliksenseHome: qliksenseHome}
+					if err := q.FetchQK8s("master"); err != nil {
+						t.Fatalf("error fetching master config to the tmp dir: %v\n", err)
+						return nil, "", "", ""
+					} else {
+						return q, "no-git-clone-for-you", "", ""
+					}
+				}
+			},
+			verify: func(q *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {
+				qConfig := qapi.NewQConfig(q.QliksenseHome)
+				expectedConfigDir := qConfig.BuildRepoPath("master")
+
+				if configDir != expectedConfigDir {
+					return false, fmt.Sprintf("expected configDir to be %v", expectedConfigDir), nil
+				}
+
+				if isTemporary {
+					return false, "expected isTemporary to be false", nil
+				}
+
+				if profile != "docker-desktop" {
+					return false, fmt.Sprintf("expected profile to be: docker-desktop, but it was: %v", profile), nil
+				}
+
+				return true, "", nil
+			},
+			cleanup: func(q *Qliksense, configDir string) error {
+				if err := os.RemoveAll(q.QliksenseHome); err != nil {
+					return err
 				}
 				return nil
 			},
@@ -488,16 +555,17 @@ func Test_About_getConfigDirectory(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			configDirectory, isTemporary, profile, err := getConfigDirectory(testCase.setup(t))
+			q, gitUrl, gitRef, profileEntered := testCase.setup(t)
+			configDirectory, isTemporary, profile, err := q.getConfigDirectory(gitUrl, gitRef, profileEntered)
 			if err != nil {
 				t.Fatalf("unexpected error: %v\n", err)
 			}
 
-			if ok, reason, err := testCase.verify(configDirectory, isTemporary, profile); err != nil {
+			if ok, reason, err := testCase.verify(q, configDirectory, isTemporary, profile); err != nil {
 				t.Fatalf("unexpected verification error: %v\n", err)
 			} else if !ok {
 				t.Fatalf("verification failed: %v\n", reason)
-			} else if err := testCase.cleanup(configDirectory); err != nil {
+			} else if err := testCase.cleanup(q, configDirectory); err != nil {
 				t.Fatalf("unexpected cleanup error: %v\n", err)
 			}
 		})

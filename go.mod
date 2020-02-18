@@ -56,11 +56,11 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect
 	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
-	golang.org/x/crypto v0.0.0-20200210222208-86ce3cb69678 // indirect
+	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
-	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
-	golang.org/x/tools v0.0.0-20200213181106-9f716520f454 // indirect
+	golang.org/x/sys v0.0.0-20200217220822-9197077df867 // indirect
+	golang.org/x/tools v0.0.0-20200218205902-f8e42dc47720 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
