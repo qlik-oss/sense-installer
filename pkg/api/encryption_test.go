@@ -1,4 +1,4 @@
-package qliksense
+package api
 
 import (
 	"encoding/base64"

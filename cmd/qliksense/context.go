@@ -17,7 +17,7 @@ func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Sets the context in which the Kubernetes cluster and resources live in",
 		Example: `qliksense config set-context <context_name>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qliksense.SetContextConfig(q, args)
+			return q.SetContextConfig(args)
 		},
 	}
 	return cmd
@@ -33,7 +33,7 @@ func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "configure a key value pair into the current context",
 		Example: `qliksense config set <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qliksense.SetOtherConfigs(q, args)
+			return q.SetOtherConfigs(args)
 		},
 	}
 	return cmd
@@ -49,7 +49,7 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "set configurations into the qliksense context",
 		Example: `qliksense config set-configs <key>=<value>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qliksense.SetConfigs(q, args)
+			return q.SetConfigs(args)
 		},
 	}
 	return cmd
@@ -68,7 +68,7 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Printf("Args received here %v\n", args)
 			fmt.Printf("Secret flag: %v\n", secret)
-			return qliksense.SetSecrets(q, args, secret)
+			return q.SetSecrets(args, secret)
 		},
 	}
 	f := cmd.Flags()

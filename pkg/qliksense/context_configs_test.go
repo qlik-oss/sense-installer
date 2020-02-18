@@ -6,96 +6,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
-
-	"github.com/qlik-oss/k-apis/pkg/config"
-	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 var (
 	testDir = "./tests"
 )
-
-func TestAddCommonConfig(t *testing.T) {
-	type args struct {
-		qliksenseCR api.QliksenseCR
-		contextName string
-	}
-	tests := []struct {
-		name string
-		args args
-		want api.QliksenseCR
-	}{
-		{
-			name: "valid case",
-			args: args{
-				qliksenseCR: api.QliksenseCR{},
-				contextName: "myqliksense",
-			},
-			want: api.QliksenseCR{
-				CommonConfig: api.CommonConfig{
-					ApiVersion: QliksenseContextApiVersion,
-					Kind:       QliksenseContextKind,
-					Metadata: &api.Metadata{
-						Name: "myqliksense",
-					},
-				},
-				Spec: &config.CRSpec{
-					Profile:     QliksenseDefaultProfile,
-					ReleaseName: "myqliksense",
-					RotateKeys:  DefaultRotateKeys,
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := AddCommonConfig(tt.args.qliksenseCR, tt.args.contextName); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("AddCommonConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestAddBaseQliksenseConfigs(t *testing.T) {
-	type args struct {
-		qliksenseConfig         api.QliksenseConfig
-		defaultQliksenseContext string
-	}
-	tests := []struct {
-		name string
-		args args
-		want api.QliksenseConfig
-	}{
-		{
-			name: "valid case",
-			args: args{
-				qliksenseConfig:         api.QliksenseConfig{},
-				defaultQliksenseContext: "qlik-default",
-			},
-			want: api.QliksenseConfig{
-				CommonConfig: api.CommonConfig{
-					ApiVersion: QliksenseConfigApiVersion,
-					Kind:       QliksenseConfigKind,
-					Metadata: &api.Metadata{
-						Name: QliksenseMetadataName,
-					},
-				},
-				Spec: &api.ContextSpec{
-					CurrentContext: "qlik-default",
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := AddBaseQliksenseConfigs(tt.args.qliksenseConfig, tt.args.defaultQliksenseContext); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("AddBaseQliksenseConfigs() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func setup() func() {
 	// create tests dir
@@ -192,9 +108,15 @@ func TestSetUpQliksenseContext(t *testing.T) {
 	}
 	tearDown := setup()
 	defer tearDown()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SetUpQliksenseContext(tt.args.qlikSenseHome, tt.args.contextName, tt.args.isDefaultContext); (err != nil) != tt.wantErr {
+			q, err := New(tt.args.qlikSenseHome)
+			if err != nil {
+				t.Errorf("unable to create a qliksense instance")
+				return
+			}
+			if err := q.SetUpQliksenseContext(tt.args.contextName, tt.args.isDefaultContext); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -222,7 +144,12 @@ func TestSetUpQliksenseDefaultContext(t *testing.T) {
 	defer tearDown()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SetUpQliksenseDefaultContext(tt.args.qlikSenseHome); (err != nil) != tt.wantErr {
+			q, err := New(tt.args.qlikSenseHome)
+			if err != nil {
+				t.Errorf("unable to create a qliksense instance")
+				return
+			}
+			if err := q.SetUpQliksenseDefaultContext(); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseDefaultContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -254,7 +181,7 @@ func TestSetOtherConfigs(t *testing.T) {
 	defer tearDown()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SetOtherConfigs(tt.args.q, tt.args.args); (err != nil) != tt.wantErr {
+			if err := tt.args.q.SetOtherConfigs(tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("SetOtherConfigs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -286,7 +213,7 @@ func TestSetConfigs(t *testing.T) {
 	defer tearDown()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := SetConfigs(tt.args.q, tt.args.args); (err != nil) != tt.wantErr {
+			if err := tt.args.q.SetConfigs(tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("SetConfigs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

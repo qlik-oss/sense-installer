@@ -1,4 +1,4 @@
-package qliksense
+package api
 
 import (
 	"crypto/rand"
@@ -8,13 +8,30 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"path/filepath"
 )
 
 const (
 	RSA_KEY_LENGTH = 4096
 	privateKeyPath = "privKey"
 	publicKeyPath  = "pubKey"
+
+	QliksensePublicKey  = "qliksensePub"
+	QliksensePrivateKey = "qliksensePriv"
 )
+
+// GenerateAndStoreSecretKeypair generates and stores key pairs
+func GenerateAndStoreSecretKeypair(secretsPath string) error {
+	LogDebugMessage("%s exists", secretsPath)
+	// creating contexts/qlik-default/secrets/qliksensePub and contexts/qlik-default/secrets/qliksensePriv files
+	publicKeyFilePath := filepath.Join(secretsPath, QliksensePublicKey)
+	privateKeyFilePath := filepath.Join(secretsPath, QliksensePrivateKey)
+	LogDebugMessage("Generating public-private key pair.....")
+	GenerateRSAEncryptionKeys(publicKeyFilePath, privateKeyFilePath)
+	LogDebugMessage("Generated public-private key pairs")
+
+	return nil
+}
 
 // GenerateRSAEncryptionKeys is used to generate a new public-private key pair
 func GenerateRSAEncryptionKeys(publicKeyFilePath, privateKeyFilePath string) error {
