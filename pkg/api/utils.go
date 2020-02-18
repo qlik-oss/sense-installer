@@ -70,7 +70,7 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
 	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
 	for i, arg := range args {
-		log.Printf("Arg here: %s", arg)
+		LogDebugMessage("Arg received: %s", arg)
 		result := re1.FindStringSubmatch(arg)
 		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
 		if len(result) != 4 {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
 	"gopkg.in/yaml.v2"
@@ -52,18 +51,12 @@ func (qliksenseConfig *QliksenseConfig) AddBaseQliksenseConfigs(defaultQliksense
 	}
 }
 
-// WriteToFile (QliksenseCR, QliksenseConfig) writes content into specified file
+// WriteToFile (content, targetFile) writes content into specified file
 func WriteToFile(content interface{}, targetFile string) error {
 	if content == nil || targetFile == "" {
 		return nil
 	}
-	file, err := os.OpenFile(targetFile, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		err = fmt.Errorf("There was an error creating the file: %s, %v", targetFile, err)
-		log.Println(err)
-		return err
-	}
-	defer file.Close()
+
 	x, err := yaml.Marshal(content)
 	if err != nil {
 		err = fmt.Errorf("An error occurred during marshalling CR: %v", err)
@@ -71,10 +64,8 @@ func WriteToFile(content interface{}, targetFile string) error {
 		return err
 	}
 
-	// truncating the file before we write new content
-	file.Truncate(0)
-	file.Seek(0, 0)
-	_, err = file.Write(x)
+	// Writing content
+	err = ioutil.WriteFile(targetFile, x, 0644)
 	if err != nil {
 		log.Println(err)
 		return err
@@ -83,7 +74,7 @@ func WriteToFile(content interface{}, targetFile string) error {
 	return nil
 }
 
-// ReadFromFile (QliksenseCR, QliksenseConfig) reads content from specified sourcefile
+// ReadFromFile (content, targetFile) reads content from specified sourcefile
 func ReadFromFile(content interface{}, sourceFile string) error {
 	if content == nil || sourceFile == "" {
 		return nil
