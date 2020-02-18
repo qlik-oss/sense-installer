@@ -68,6 +68,6 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 		},
 	}
 	f := cmd.Flags()
-	f.BoolVar(&secret, "secret", false, "Whether secrets should be encrypted")
+	f.BoolVar(&secret, "secret", false, "Whether secrets should be encrypted as a Kubernetes Secret resource")
 	return cmd
 }
