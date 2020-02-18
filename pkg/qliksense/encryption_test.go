@@ -96,14 +96,30 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 `)
 	origStr := "Value1234"
 
-	pubKey := BytesToPublicKey(publicKeyBytes)
-	privKey := BytesToPrivateKey(privKeyBytes)
-	encData := EncryptWithPublicKey([]byte(origStr), pubKey)
+	pubKey, err := DecodeToPublicKey(publicKeyBytes)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	privKey, err := DecodeToPrivateKey(privKeyBytes)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
+	encData, err := Encrypt([]byte(origStr), pubKey)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 
 	encDataStr := base64.StdEncoding.EncodeToString(encData)
 	log.Printf("encrypted data: %s\n", encDataStr)
 	dec, _ := base64.StdEncoding.DecodeString(encDataStr)
-	data := DecryptWithPrivateKey(dec, privKey)
+	data, err := Decrypt(dec, privKey)
+	if err != nil {
+		t.Error(err)
+		t.FailNow()
+	}
 	if string(data) != origStr {
 		t.Error("original string and decrypted string don't match")
 		t.FailNow()

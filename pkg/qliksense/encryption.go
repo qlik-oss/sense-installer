@@ -103,8 +103,8 @@ func EncodePublicKey(pub *rsa.PublicKey) ([]byte, error) {
 	return pubBytes, nil
 }
 
-// DecodePrivateKey bytes to private key
-func DecodePrivateKey(priv []byte) (*rsa.PrivateKey, error) {
+// DecodeToPrivateKey bytes to private key
+func DecodeToPrivateKey(priv []byte) (*rsa.PrivateKey, error) {
 	block, _ := pem.Decode(priv)
 	enc := x509.IsEncryptedPEMBlock(block)
 	b := block.Bytes
@@ -125,8 +125,8 @@ func DecodePrivateKey(priv []byte) (*rsa.PrivateKey, error) {
 	return key, nil
 }
 
-// DecodePublicKey bytes to public key
-func DecodePublicKey(pub []byte) (*rsa.PublicKey, error) {
+// DecodeToPublicKey bytes to public key
+func DecodeToPublicKey(pub []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pub)
 	enc := x509.IsEncryptedPEMBlock(block)
 	b := block.Bytes

@@ -212,7 +212,7 @@ func SetSecrets(q *Qliksense, args []string, isK8sSecret bool) error {
 	// LogDebugMessage("PublicKey: %+v", publicKeybytes)
 
 	// convert []byte into RSA public key object
-	rsaPublicKey, e1 = DecodePublicKey(publicKeybytes)
+	rsaPublicKey, e1 = DecodeToPublicKey(publicKeybytes)
 	if e1 != nil {
 		return e1
 	}

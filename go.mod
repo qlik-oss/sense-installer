@@ -59,7 +59,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
-	golang.org/x/sys v0.0.0-20200212091648-12a6c2dcc1e4 // indirect
+	golang.org/x/sys v0.0.0-20200217220822-9197077df867 // indirect
 	golang.org/x/tools v0.0.0-20200216192241-b320d3a0f5a2 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
