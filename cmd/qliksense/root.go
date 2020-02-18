@@ -11,6 +11,7 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 
 	"github.com/spf13/cobra"
@@ -38,12 +39,14 @@ func initAndExecute() error {
 	}
 
 	// create dirs and appropriate files for setting up contexts
-	qliksense.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
-	qliksense.SetUpQliksenseDefaultContext(qlikSenseHome)
+	api.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 
-	if qliksenseClient, err := qliksense.New(qlikSenseHome); err != nil {
+	qliksenseClient, err := qliksense.New(qlikSenseHome)
+	if err != nil {
 		return err
-	} else if err := rootCmd(qliksenseClient).Execute(); err != nil {
+	}
+	qliksenseClient.SetUpQliksenseDefaultContext()
+	if err := rootCmd(qliksenseClient).Execute(); err != nil {
 		return err
 	}
 
