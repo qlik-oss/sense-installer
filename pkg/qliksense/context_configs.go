@@ -7,10 +7,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"text/tabwriter"
 
 	b64 "encoding/base64"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
+	"github.com/ttacon/chalk"
 )
 
 const (
@@ -226,6 +228,26 @@ func (q *Qliksense) SetContextConfig(args []string) error {
 		err := fmt.Errorf("Please provide a name to configure the context with")
 		log.Println(err)
 		return err
+	}
+	return nil
+}
+
+func (q *Qliksense) ListContextConfigs() error {
+	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
+	var qliksenseConfig api.QliksenseConfig
+	api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	w := tabwriter.NewWriter(os.Stdout, 5, 8, 0, '\t', 0)
+	fmt.Fprintln(w, chalk.Underline.TextStyle("Context Name"), "\t", chalk.Underline.TextStyle("CR File Location"))
+	w.Flush()
+	if len(qliksenseConfig.Spec.Contexts) > 0 {
+		for _, cont := range qliksenseConfig.Spec.Contexts {
+			fmt.Fprintln(w, cont.Name, "\t", cont.CrFile, "\t")
+		}
+		w.Flush()
+		fmt.Println("")
+		fmt.Println(chalk.Bold.TextStyle("Current Context : "), qliksenseConfig.Spec.CurrentContext)
+	} else {
+		fmt.Println("No Contexts Available")
 	}
 	return nil
 }
