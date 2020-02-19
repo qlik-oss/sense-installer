@@ -59,8 +59,8 @@ require (
 	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
-	golang.org/x/sys v0.0.0-20200217220822-9197077df867 // indirect
-	golang.org/x/tools v0.0.0-20200218205902-f8e42dc47720 // indirect
+	golang.org/x/sys v0.0.0-20200219091948-cb0a6d8edb6c // indirect
+	golang.org/x/tools v0.0.0-20200219054238-753a1d49df85 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
