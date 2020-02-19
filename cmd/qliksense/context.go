@@ -21,6 +21,22 @@ func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 	return cmd
 }
 
+func listContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
+	var (
+		cmd *cobra.Command
+	)
+
+	cmd = &cobra.Command{
+		Use:     "list-contexts",
+		Short:   "retrieves the contexts and lists them",
+		Example: `qliksense config list-contexts`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ListContextConfigs()
+		},
+	}
+	return cmd
+}
+
 func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command

@@ -230,6 +230,21 @@ func (q *Qliksense) SetContextConfig(args []string) error {
 	return nil
 }
 
+func (q *Qliksense) ListContextConfigs() error {
+	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
+	var qliksenseConfig api.QliksenseConfig
+	api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	if len(qliksenseConfig.Spec.Contexts) > 0 {
+		for _, cont := range qliksenseConfig.Spec.Contexts {
+			fmt.Println("Context Name : ", cont.Name, " CR File Location: ", cont.CrFile)
+		}
+		fmt.Println("Current Context : ", qliksenseConfig.Spec.CurrentContext)
+	} else {
+		fmt.Println("No Contexts Available")
+	}
+	return nil
+}
+
 // SetUpQliksenseDefaultContext - to setup dir structure for default qliksense context
 func (q *Qliksense) SetUpQliksenseDefaultContext() error {
 	return q.SetUpQliksenseContext(DefaultQliksenseContext, true)
