@@ -119,7 +119,7 @@ func (q *Qliksense) getConfigDirectory(gitUrl, gitRef, profileEntered string) (d
 	}
 
 	var profileFromCurrentContext string
-	exists, dir, profileFromCurrentContext, err = q.ConfigExistsInCurrentContext()
+	exists, dir, profileFromCurrentContext, err = q.configExistsInCurrentContext()
 	if err != nil {
 		return "", false, "", err
 	} else if exists {
@@ -169,7 +169,7 @@ func configExistsInCurrentDirectory(profile string) (exists bool, currentDirecto
 	return exists, currentDirectory, err
 }
 
-func (q *Qliksense) ConfigExistsInCurrentContext() (exists bool, directory string, profile string, err error) {
+func (q *Qliksense) configExistsInCurrentContext() (exists bool, directory string, profile string, err error) {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if currentCr, err := qConfig.GetCurrentCR(); err != nil {
 		return false, "", "", err

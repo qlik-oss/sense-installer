@@ -141,12 +141,19 @@ func (qc *QliksenseConfig) IsContextExist(ctxName string) bool {
 	return false
 }
 
-func (cr *QliksenseCR) AddLabelToCr(key, value string) error {
+func (cr *QliksenseCR) AddLabelToCr(key, value string) {
 	if cr.Metadata.Labels == nil {
 		cr.Metadata.Labels = make(map[string]string)
 	}
 	cr.Metadata.Labels[key] = value
-	return nil
+}
+
+func (cr *QliksenseCR) GetLabelFromCr(key string) string {
+	val := ""
+	if cr.Metadata.Labels != nil {
+		val = cr.Metadata.Labels[key]
+	}
+	return val
 }
 
 func (cr *QliksenseCR) GetString() (string, error) {
