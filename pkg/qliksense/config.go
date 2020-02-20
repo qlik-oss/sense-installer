@@ -29,20 +29,9 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 }
 
 func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
-	// apply qliksense-init crd first
-	mroot := qcr.Spec.GetManifestsRoot()
+	//mroot := qcr.Spec.GetManifestsRoot()
+	/* // Qliksense-Init CRD will be installed outside opeartor
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
-
-	if qcr.Spec.RotateKeys != "None" {
-		if err := os.Unsetenv("EJSON_KEY"); err != nil {
-			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
-			return err
-		}
-		if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
-			fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
-			return err
-		}
-	}
 	if cmd != "upgrade" {
 		qInitByte, err := executeKustomizeBuild(qInitMsPath)
 		if err != nil {
@@ -53,7 +42,17 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 			return err
 		}
 	}
-
+	*/
+	if qcr.Spec.RotateKeys != "None" {
+		if err := os.Unsetenv("EJSON_KEY"); err != nil {
+			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
+			return err
+		}
+		if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
+			fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
+			return err
+		}
+	}
 	userHomeDir, err := homedir.Dir()
 	if err != nil {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
@@ -63,7 +62,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 	// generate patches
 	cr.GeneratePatches(qcr.Spec, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
-	profilePath := filepath.Join(qcr.Spec.ManifestsRoot, qcr.Spec.Profile)
+	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
 	mByte, err := executeKustomizeBuild(profilePath)
 	if err != nil {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
