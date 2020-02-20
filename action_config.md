@@ -21,11 +21,11 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: /Users/fqg/.qliksense/contexts/qlik-default/qlik-default.yaml
+    crFile: /Users/fff/.qliksense/contexts/qlik-default/qlik-default.yaml
   - name: myqliksense
-    crFile: /Users/fqg/.qliksense/contexts/myqliksense/myqliksense.yaml
+    crFile: /Users/fff/.qliksense/contexts/myqliksense/myqliksense.yaml
   - name: hello
-    crFile: /Users/fqg/.qliksense/contexts/hello/hello.yaml
+    crFile: /Users/fff/.qliksense/contexts/hello/hello.yaml
   currentContext: hello
 ```
 
