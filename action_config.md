@@ -10,7 +10,7 @@ it will support following commands:
 - `qliksense config set-configs` - set configurations into the qliksense context
 - `qliksense config set-context` - sets the context in which the Kubernetes cluster and resources live in
 - `qliksense config set-secrets` - set secrets configurations into the qliksense context
-- `qliksense config set-secrets` - view the qliksense operator CR
+- `qliksense config view` - view the qliksense operator CR
 
 the global file that abstracts all the contexts is `config.yaml`, located at:  `~/.qliksense/config.yaml`:
 ```yaml
