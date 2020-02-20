@@ -52,9 +52,10 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/qlik-oss/k-apis v0.0.8
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	github.com/theupdateframework/notary v0.6.1 // indirect
+	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
 	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
 	golang.org/x/crypto v0.0.0-20200214034016-1d94cc7ab1c6 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
