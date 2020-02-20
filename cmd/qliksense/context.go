@@ -87,3 +87,20 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.BoolVar(&secret, "secret", false, "Whether secrets should be encrypted as a Kubernetes Secret resource")
 	return cmd
 }
+
+
+func deleteContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
+	var (
+		cmd *cobra.Command
+	)
+
+	cmd = &cobra.Command{
+		Use:     "delete-context",
+		Short:   "deletes a specific context locally (not in-cluster)",
+		Example: `qliksense config delete-contexts <context_name>`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.DeleteContextConfig(args)
+		},
+	}
+	return cmd
+}
