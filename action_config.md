@@ -1,6 +1,6 @@
 # qliksense config
 
-About action will display inside information regarding [qliksense-k8](https://github.com/qlik-oss/qliksense-k8s) release.
+Config action will perform operations on configurations and contexts regarding the [qliksense-k8](https://github.com/qlik-oss/qliksense-k8s) release.
 
 it will support following commands:
 
