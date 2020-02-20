@@ -10,7 +10,6 @@ import (
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -26,15 +25,25 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	return q.applyConfigToK8s(qcr)
+	return q.applyConfigToK8s(qcr, "")
 }
 
-func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
-	// apply qliksense-init crd first
-	mroot := qcr.Spec.GetManifestsRoot()
+func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
+	//mroot := qcr.Spec.GetManifestsRoot()
+	/* // Qliksense-Init CRD will be installed outside opeartor
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
-
-	if qcr.Spec.RotateKeys == "yes" {
+	if cmd != "upgrade" {
+		qInitByte, err := executeKustomizeBuild(qInitMsPath)
+		if err != nil {
+			fmt.Println("cannot generate crds for qliksense-init", err)
+			return err
+		}
+		if err = qapi.KubectlApply(string(qInitByte)); err != nil {
+			return err
+		}
+	}
+	*/
+	if qcr.Spec.RotateKeys != "None" {
 		if err := os.Unsetenv("EJSON_KEY"); err != nil {
 			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
 			return err
@@ -44,16 +53,6 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 			return err
 		}
 	}
-
-	qInitByte, err := executeKustomizeBuild(qInitMsPath)
-	if err != nil {
-		fmt.Println("cannot generate crds for qliksense-init", err)
-		return err
-	}
-	if err = qapi.KubectlApply(string(qInitByte)); err != nil {
-		return err
-	}
-
 	userHomeDir, err := homedir.Dir()
 	if err != nil {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
@@ -63,7 +62,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	// generate patches
 	cr.GeneratePatches(qcr.Spec, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
-	profilePath := filepath.Join(qcr.Spec.ManifestsRoot, qcr.Spec.Profile)
+	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
 	mByte, err := executeKustomizeBuild(profilePath)
 	if err != nil {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
@@ -99,10 +98,5 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 		fmt.Println("cannot get the context cr", err)
 		return "", err
 	}
-	out, err := yaml.Marshal(qcr)
-	if err != nil {
-		fmt.Println("cannot unmarshal cr ", err)
-		return "", err
-	}
-	return string(out), nil
+	return qcr.GetString()
 }

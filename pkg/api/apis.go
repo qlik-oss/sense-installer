@@ -111,7 +111,7 @@ func (qc *QliksenseConfig) BuildRepoPathForContext(contextName, version string) 
 }
 
 func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
-	return filepath.Join(qc.BuildRepoPath(version), "manifests")
+	return qc.BuildRepoPath(version)
 }
 
 func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
@@ -147,4 +147,13 @@ func (cr *QliksenseCR) AddLabelToCr(key, value string) error {
 	}
 	cr.Metadata.Labels[key] = value
 	return nil
+}
+
+func (cr *QliksenseCR) GetString() (string, error) {
+	out, err := yaml.Marshal(cr)
+	if err != nil {
+		fmt.Println("cannot unmarshal cr ", err)
+		return "", err
+	}
+	return string(out), nil
 }

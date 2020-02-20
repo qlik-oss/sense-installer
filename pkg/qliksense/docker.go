@@ -29,7 +29,7 @@ import (
 )
 
 // PullImages ...
-func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
+func (q *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 	var (
 		image, versionFile, imagesDir, homeDir string
 		err                                    error
@@ -38,7 +38,7 @@ func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 	println("getting images list...")
 
 	// TODO: get getref and profile from config/cr for About function call
-	if versionOut, err = p.About(gitRef, profile); err != nil {
+	if versionOut, err = q.About(gitRef, profile); err != nil {
 		return err
 	}
 
@@ -61,7 +61,7 @@ func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 		}
 	}
 	for _, image = range versionOut.Images {
-		if _, err = p.PullImage(image, engine); err != nil {
+		if _, err = q.PullImage(image, engine); err != nil {
 			fmt.Print(err)
 		}
 		println("---")
@@ -71,14 +71,14 @@ func (p *Qliksense) PullImages(gitRef, profile string, engine bool) error {
 }
 
 // PullImage ...
-func (p *Qliksense) PullImage(imageName string, engine bool) (map[string]string, error) {
+func (q *Qliksense) PullImage(imageName string, engine bool) (map[string]string, error) {
 	if engine {
-		return p.pullDockerImage(imageName)
+		return q.pullDockerImage(imageName)
 	}
-	return p.pullImage(imageName)
+	return q.pullImage(imageName)
 }
 
-func (p *Qliksense) commandTimeoutContext(commandTimeout time.Duration) (context.Context, context.CancelFunc) {
+func (q *Qliksense) commandTimeoutContext(commandTimeout time.Duration) (context.Context, context.CancelFunc) {
 	ctx := context.Background()
 	var cancel context.CancelFunc = func() {}
 	if commandTimeout > 0 {
@@ -87,7 +87,7 @@ func (p *Qliksense) commandTimeoutContext(commandTimeout time.Duration) (context
 	return ctx, cancel
 }
 
-func (p *Qliksense) pullImage(imageName string) (map[string]string, error) {
+func (q *Qliksense) pullImage(imageName string) (map[string]string, error) {
 	var (
 		ctx                         context.Context
 		cancel                      context.CancelFunc
@@ -98,7 +98,7 @@ func (p *Qliksense) pullImage(imageName string) (map[string]string, error) {
 		err                         error
 		policyContext               *signature.PolicyContext
 	)
-	ctx, cancel = p.commandTimeoutContext(0)
+	ctx, cancel = q.commandTimeoutContext(0)
 	defer cancel()
 
 	if srcRef, err = alltransports.ParseImageName("docker://" + imageName); err != nil {
@@ -141,7 +141,7 @@ func (p *Qliksense) pullImage(imageName string) (map[string]string, error) {
 	})
 	return nil, err
 }
-func (p *Qliksense) pullDockerImage(imageName string) (map[string]string, error) {
+func (q *Qliksense) pullDockerImage(imageName string) (map[string]string, error) {
 	var (
 		cli          *command.DockerCli
 		dockerOutput io.Writer
@@ -156,7 +156,7 @@ func (p *Qliksense) pullDockerImage(imageName string) (map[string]string, error)
 		termFd       uintptr
 		err          error
 	)
-	ctx, cancel = p.commandTimeoutContext(0)
+	ctx, cancel = q.commandTimeoutContext(0)
 	defer cancel()
 
 	if cli, err = command.NewDockerCli(); err != nil {
@@ -208,7 +208,7 @@ func (p *Qliksense) pullDockerImage(imageName string) (map[string]string, error)
 }
 
 //TagAndPushImages ...
-func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
+func (q *Qliksense) TagAndPushImages(registry string, engine bool) error {
 	var (
 		image       string
 		err         error
@@ -221,7 +221,7 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 	}
 
 	for _, image = range images.Images {
-		if err = p.TagAndPush(image, registry, engine); err != nil {
+		if err = q.TagAndPush(image, registry, engine); err != nil {
 			fmt.Print(err)
 		}
 		println("---")
@@ -230,7 +230,7 @@ func (p *Qliksense) TagAndPushImages(registry string, engine bool) error {
 	return nil
 }
 
-func (p *Qliksense) directoryExists(path string) (exists bool, err error) {
+func (q *Qliksense) directoryExists(path string) (exists bool, err error) {
 	if info, err := os.Stat(path); err != nil && os.IsNotExist(err) {
 		exists = false
 		err = nil
@@ -246,14 +246,14 @@ func (p *Qliksense) directoryExists(path string) (exists bool, err error) {
 }
 
 //TagAndPush ...
-func (p *Qliksense) TagAndPush(image string, registryName string, engine bool) error {
+func (q *Qliksense) TagAndPush(image string, registryName string, engine bool) error {
 	if engine {
-		return p.tagAndDockerPush(image, registryName)
+		return q.tagAndDockerPush(image, registryName)
 	}
-	return p.tagAndPush(image, registryName)
+	return q.tagAndPush(image, registryName)
 }
 
-func (p *Qliksense) tagAndPush(image string, registryName string) error {
+func (q *Qliksense) tagAndPush(image string, registryName string) error {
 	var (
 		ctx                               context.Context
 		cancel                            context.CancelFunc
@@ -265,7 +265,7 @@ func (p *Qliksense) tagAndPush(image string, registryName string) error {
 		policyContext                     *signature.PolicyContext
 		srcExists                         bool
 	)
-	ctx, cancel = p.commandTimeoutContext(0)
+	ctx, cancel = q.commandTimeoutContext(0)
 	defer cancel()
 
 	segments = strings.Split(image, "/")
@@ -278,11 +278,11 @@ func (p *Qliksense) tagAndPush(image string, registryName string) error {
 		return err
 	}
 	srcDir = filepath.Join(homeDir, ".qliksense", "images", nameTag[0], nameTag[1])
-	if srcExists, err = p.directoryExists(srcDir); err != nil {
+	if srcExists, err = q.directoryExists(srcDir); err != nil {
 		return err
 	}
 	if !srcExists {
-		if _, err = p.PullImage(image, false); err != nil {
+		if _, err = q.PullImage(image, false); err != nil {
 			return err
 		}
 	}
@@ -323,7 +323,7 @@ func (p *Qliksense) tagAndPush(image string, registryName string) error {
 }
 
 // PullImage ...
-func (p *Qliksense) tagAndDockerPush(image string, registryName string) error {
+func (q *Qliksense) tagAndDockerPush(image string, registryName string) error {
 	var (
 		cli              *command.DockerCli
 		dockerOutput     io.Writer
@@ -344,7 +344,7 @@ func (p *Qliksense) tagAndDockerPush(image string, registryName string) error {
 		err              error
 	)
 	// TODO: Create a real cli config context
-	ctx, cancel = p.commandTimeoutContext(0)
+	ctx, cancel = q.commandTimeoutContext(0)
 	defer cancel()
 	if cli, err = command.NewDockerCli(); err != nil {
 		return err

@@ -11,6 +11,7 @@ import (
 	"sort"
 
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"gopkg.in/yaml.v2"
 )
 
@@ -61,8 +62,8 @@ const (
 	defaultGitUrl  = "https://github.com/qlik-oss/qliksense-k8s"
 )
 
-func (p *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
-	configDirectory, isTemporary, profile, err := getConfigDirectory(defaultGitUrl, gitRef, profile)
+func (q *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
+	configDirectory, isTemporary, profile, err := q.getConfigDirectory(defaultGitUrl, gitRef, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -70,6 +71,10 @@ func (p *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
 		defer os.RemoveAll(configDirectory)
 	}
 
+	return q.AboutDir(configDirectory, profile)
+}
+
+func (q *Qliksense) AboutDir(configDirectory, profile string) (*VersionOutput, error) {
 	chartVersion, err := getChartVersion(filepath.Join(configDirectory, "transformers", "qseokversion.yaml"), "qliksense")
 	if err != nil {
 		return nil, err
@@ -91,7 +96,7 @@ func (p *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
 	}, nil
 }
 
-func getConfigDirectory(gitUrl, gitRef, profileEntered string) (dir string, isTemporary bool, profile string, err error) {
+func (q *Qliksense) getConfigDirectory(gitUrl, gitRef, profileEntered string) (dir string, isTemporary bool, profile string, err error) {
 	profile = profileEntered
 	if profile == "" {
 		profile = defaultProfile
@@ -113,13 +118,13 @@ func getConfigDirectory(gitUrl, gitRef, profileEntered string) (dir string, isTe
 		return dir, false, profile, nil
 	}
 
-	var profileFromCR string
-	exists, dir, profileFromCR, err = configExistsInCR()
+	var profileFromCurrentContext string
+	exists, dir, profileFromCurrentContext, err = q.ConfigExistsInCurrentContext()
 	if err != nil {
 		return "", false, "", err
 	} else if exists {
 		if profileEntered == "" {
-			profile = profileFromCR
+			profile = profileFromCurrentContext
 		}
 		return dir, false, profile, nil
 	}
@@ -164,8 +169,15 @@ func configExistsInCurrentDirectory(profile string) (exists bool, currentDirecto
 	return exists, currentDirectory, err
 }
 
-func configExistsInCR() (exists bool, directory string, profile string, err error) {
-	return exists, directory, profile, err
+func (q *Qliksense) ConfigExistsInCurrentContext() (exists bool, directory string, profile string, err error) {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if currentCr, err := qConfig.GetCurrentCR(); err != nil {
+		return false, "", "", err
+	} else if currentCr.Spec.ManifestsRoot == "" {
+		return false, "", "", nil
+	} else {
+		return true, currentCr.Spec.GetManifestsRoot(), currentCr.Spec.Profile, nil
+	}
 }
 
 func getImageList(yamlContent []byte) ([]string, error) {

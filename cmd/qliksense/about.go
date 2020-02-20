@@ -3,10 +3,11 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-	"strings"
 )
 
 type aboutCommandOptions struct {
@@ -44,7 +45,7 @@ qliksense about --profile=test
 				return err
 			} else if out, err := yaml.Marshal(vout); err != nil {
 				return err
-			} else if _, err := fmt.Println(out); err != nil {
+			} else if _, err := fmt.Println(string(out)); err != nil {
 				return err
 			}
 			return nil
