@@ -176,7 +176,7 @@ func (q *Qliksense) ConfigExistsInCurrentContext() (exists bool, directory strin
 	} else if currentCr.Spec.ManifestsRoot == "" {
 		return false, "", "", nil
 	} else {
-		return true, currentCr.Spec.GetManifestsRoot(), currentCr.Spec.GetProfileDir(), nil
+		return true, currentCr.Spec.GetManifestsRoot(), currentCr.Spec.Profile, nil
 	}
 }
 
