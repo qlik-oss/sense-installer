@@ -3,6 +3,7 @@ package qliksense
 import (
 	"fmt"
 
+	"errors"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -23,22 +24,29 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	fetchAndUpdateCR(qConfig, version)
 
-	//TODO: may need to check if CRD already installed, but doing apply does not hurt for now
-	//install crd into cluster
-	fmt.Println("Installing operator CRD")
-	if err := qapi.KubectlApply(q.GetCRDString()); err != nil {
-		fmt.Println("cannot do kubectl apply on opeartor CRD", err)
-		return err
+	if version != "" { // no need to fetch manifest root already set by some other way
+		fetchAndUpdateCR(qConfig, version)
 	}
+	/*
+		//TODO: CRD will be installed outside of operator
+		//install crd into cluster
+		fmt.Println("Installing operator CRD")
+		if err := qapi.KubectlApply(q.GetCRDString()); err != nil {
+			fmt.Println("cannot do kubectl apply on opeartor CRD", err)
+			return err
+		}
+	*/
 	// install generated manifests into cluster
 	fmt.Println("Installing generated manifests into cluster")
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
+	} else if qcr.Spec.GetManifestsRoot() == "" {
+		return errors.New("cannot get the manifest root. Use qliksense fetch <version> or qliksense set manifestsRoot")
 	}
+
 	if opts.AcceptEULA != "" {
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}

@@ -111,7 +111,7 @@ func (qc *QliksenseConfig) BuildRepoPathForContext(contextName, version string) 
 }
 
 func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
-	return filepath.Join(qc.BuildRepoPath(version), "manifests")
+	return qc.BuildRepoPath(version)
 }
 
 func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
