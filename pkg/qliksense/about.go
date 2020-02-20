@@ -2,7 +2,6 @@ package qliksense
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -176,10 +175,8 @@ func (q *Qliksense) ConfigExistsInCurrentContext() (exists bool, directory strin
 		return false, "", "", err
 	} else if currentCr.Spec.ManifestsRoot == "" {
 		return false, "", "", nil
-	} else if path.Base(currentCr.Spec.ManifestsRoot) != "manifests" {
-		return false, "", "", errors.New("currentCr.Spec.ManifestsRoot path should terminate with manifests/")
 	} else {
-		return true, path.Join(currentCr.Spec.ManifestsRoot, "../"), currentCr.Spec.Profile, nil
+		return true, currentCr.Spec.GetManifestsRoot(), currentCr.Spec.GetProfileDir(), nil
 	}
 }
 
