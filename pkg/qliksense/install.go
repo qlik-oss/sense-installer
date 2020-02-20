@@ -25,7 +25,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 
-
 	/*
 		//TODO: CRD will be installed outside of operator
 		//install crd into cluster
@@ -78,7 +77,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 
 	if err := q.applyConfigToK8s(qcr); err != nil {
-	if err := q.applyConfigToK8s(qcr, "install"); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
