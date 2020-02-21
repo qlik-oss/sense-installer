@@ -80,7 +80,7 @@ func (q *Qliksense) AboutDir(configDirectory, profile string) (*VersionOutput, e
 		return nil, err
 	}
 
-	kuzManifest, err := executeKustomizeBuild(filepath.Join(configDirectory, "manifests", profile))
+	kuzManifest, err := executeKustomizeBuildWithStdoutProgress(filepath.Join(configDirectory, "manifests", profile))
 	if err != nil {
 		return nil, err
 	}
