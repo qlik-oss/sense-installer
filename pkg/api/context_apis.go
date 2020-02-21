@@ -51,6 +51,25 @@ func (qliksenseConfig *QliksenseConfig) AddBaseQliksenseConfigs(defaultQliksense
 	}
 }
 
+func (qliksenseConfig *QliksenseConfig) SwitchCurrentCRToVersionAndProfile(version, profile string) error {
+	if qcr, err := qliksenseConfig.GetCurrentCR(); err != nil {
+		return err
+	} else {
+		versionManifestRoot := qliksenseConfig.BuildCurrentManifestsRoot(version)
+		if (qcr.Spec.ManifestsRoot != versionManifestRoot) || (profile != "" && qcr.Spec.Profile != profile) || (qcr.GetLabelFromCr("version") != version) {
+			qcr.Spec.ManifestsRoot = versionManifestRoot
+			if profile != "" {
+				qcr.Spec.Profile = profile
+			}
+			qcr.AddLabelToCr("version", version)
+			if err := qliksenseConfig.WriteCurrentContextCR(qcr); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // WriteToFile (content, targetFile) writes content into specified file
 func WriteToFile(content interface{}, targetFile string) error {
 	if content == nil || targetFile == "" {

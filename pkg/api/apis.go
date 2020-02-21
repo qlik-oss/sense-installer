@@ -164,3 +164,14 @@ func (cr *QliksenseCR) GetString() (string, error) {
 	}
 	return string(out), nil
 }
+
+func (cr *QliksenseCR) GetImageRegistry() string {
+	for _, nameValues := range cr.Spec.Configs {
+		for _, nameValue := range nameValues {
+			if nameValue.Name == "imageRegistry" {
+				return nameValue.Value
+			}
+		}
+	}
+	return ""
+}
