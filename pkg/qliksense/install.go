@@ -25,8 +25,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 
-	if version != "" { // no need to fetch manifest root already set by some other way
-		fetchAndUpdateCR(qConfig, version)
+	if version != "" {
+		if err := fetchAndUpdateCR(qConfig, version); err != nil { // no need to fetch manifest root already set by some other way
+			return err
+		}
 	}
 	/*
 		//TODO: CRD will be installed outside of operator
