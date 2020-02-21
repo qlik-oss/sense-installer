@@ -105,6 +105,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// For qliksense overrides/commands
 
 	cmd.AddCommand(pullQliksenseImages(p))
+	cmd.AddCommand(pushQliksenseImages(p))
 	cmd.AddCommand(about(p))
 	// add version command
 	cmd.AddCommand(versionCmd)
