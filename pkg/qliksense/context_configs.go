@@ -17,18 +17,18 @@ const (
 	// Below are some constants to support qliksense context setup
 	QliksenseConfigHome        = "/.qliksense"
 	QliksenseConfigContextHome = "/.qliksense/contexts"
-
-	QliksenseConfigFile     = "config.yaml"
-	QliksenseContextsDir    = "contexts"
-	DefaultQliksenseContext = "qlik-default"
-	MaxContextNameLength    = 17
-	QliksenseSecretsDir     = "secrets"
+	QliksenseConfigFile        = "config.yaml"
+	QliksenseContextsDir       = "contexts"
+	DefaultQliksenseContext    = "qlik-default"
+	MaxContextNameLength       = 17
+	QliksenseSecretsDir        = "secrets"
+	secretKind                 = "Secret"
 )
 
 // SetSecrets - set-secrets <key>=<value> commands
-func (q *Qliksense) SetSecrets(args []string, isK8sSecret bool) error {
+func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	api.LogDebugMessage("Args received: %v\n", args)
-	api.LogDebugMessage("isK8sSecret: %v\n", isK8sSecret)
+	api.LogDebugMessage("isSecretSet: %v\n", isSecretSet)
 
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
@@ -99,16 +99,38 @@ func (q *Qliksense) SetSecrets(args []string, isK8sSecret bool) error {
 		if e2 != nil {
 			return e2
 		}
-		api.LogDebugMessage("Returned cipher text: %s", b64.StdEncoding.EncodeToString(cipherText))
+		base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
+		api.LogDebugMessage("Returned cipher text: %s", base64EncodedSecret)
 
-		if isK8sSecret {
-			// TODO: store the key value in k8s as secret
-			api.LogDebugMessage("Need to create a Kubernetes secret")
+		if isSecretSet {
+			// construct the K8s Secret struct
+			// write the key and encrypted value in it
+			secretName := qliksenseCR.Metadata.Name + "-" + secretKind + "-" + string(api.GenerateUUID())
+			api.LogDebugMessage("Secret name here: %s", secretName)
+			// TODO: try to retrieve data section from the map, if map already exists, append to the datamap, DO NOT overwrite it
+			dataMap := map[string][]byte{
+				ra.Key: []byte(base64EncodedSecret)}
+			api.LogDebugMessage("datamap here: %+v", dataMap)
+
+			secret := api.ConstructK8sSecretStructure(secretName, qliksenseCR.Spec.NameSpace, dataMap)
+
+			api.LogDebugMessage("\n\n*************** Secret here: %+v\n\n", secret)
+
+			// TO-DO: store it in /.qliksense/contexts/<current-context>/<secret-name>.yaml
+
+			currentContextPath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name)
+			api.LogDebugMessage("Current context: %s", currentContextPath)
+			secretFileName := filepath.Join(currentContextPath, secretName+".yaml")
+			api.LogDebugMessage("Secret File name here: %s", secretFileName)
+
+			api.WriteToFile(secret, secretFileName)
+			api.LogDebugMessage("Created a Kubernetes secret")
+			// TODO: write into CR the keyref of the secret
 		}
 		// TODO: Extend AddToSecrets to support adding k8s key ref. (OR) create a separate method to support that
 		// store the encrypted value in the file (OR)
 		// TODO: k8s secret name in the file
-		qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, string(cipherText))
+		qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret)
 	}
 
 	// write modified content into context.yaml

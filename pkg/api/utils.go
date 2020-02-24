@@ -6,6 +6,15 @@ import (
 	"log"
 	"os"
 	"regexp"
+
+	"github.com/google/uuid"
+	v1 "k8s.io/api/core/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	secretAPIVersion = "v1"
+	secretKind       = "Secret"
 )
 
 func checkExists(filename string, isFile bool) os.FileInfo {
@@ -85,4 +94,28 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		}
 	}
 	return resultSvcKV, nil
+}
+
+// GenerateUUID generates a random number
+func GenerateUUID() string {
+	id := uuid.New()
+	fmt.Println(id.String())
+	return id.String()
+}
+
+// ConstructK8sSecretStructure constructs a K8s Secret struct
+func ConstructK8sSecretStructure(secretName, namespace string, dataMap map[string][]byte) v1.Secret {
+	secret := v1.Secret{
+		TypeMeta: metaV1.TypeMeta{
+			APIVersion: secretAPIVersion,
+			Kind:       secretKind,
+		},
+		ObjectMeta: metaV1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+		},
+		Type: v1.SecretTypeOpaque,
+		Data: dataMap,
+	}
+	return secret
 }
