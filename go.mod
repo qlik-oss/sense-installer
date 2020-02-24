@@ -50,11 +50,7 @@ require (
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-<<<<<<< HEAD
 	golang.org/x/tools v0.0.0-20200224181240-023911ca70b2 // indirect
-=======
-	golang.org/x/tools v0.0.0-20200221224223-e1da425f72fd // indirect
->>>>>>> ms-3
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
