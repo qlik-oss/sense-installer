@@ -37,5 +37,8 @@ func executeKustomizeBuildWithStdoutProgress(path string) (kuzManifest []byte, e
 	result, err := api.ExecuteTaskWithBlinkingStdoutFeedback(func() (interface{}, error) {
 		return executeKustomizeBuild(path)
 	}, "...")
-	return result.([]byte), err
+	if err != nil {
+		return nil, err
+	}
+	return result.([]byte), nil
 }
