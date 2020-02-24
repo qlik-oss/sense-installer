@@ -112,7 +112,10 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add operator command
 	cmd.AddCommand(operatorCmd)
-	operatorCmd.AddCommand(operatorViewCmd(p))
+	//operatorCmd.AddCommand(operatorViewCmd(p))
+	operatorCmd.AddCommand(operatorCrdCmd(p))
+	operatorCmd.AddCommand(operatorControllerCmd(p))
+
 	//add fetch command
 	cmd.AddCommand(fetchCmd(p))
 

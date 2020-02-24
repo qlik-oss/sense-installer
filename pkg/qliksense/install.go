@@ -47,6 +47,14 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 	qConfig.WriteCurrentContextCR(qcr)
 
+	//CRD will be installed outside of operator
+	//install operator controller into the namespace
+	fmt.Println("Installing operator controller")
+	if err := qapi.KubectlApply(q.GetOperatorControllerString(), qcr.Spec.NameSpace); err != nil {
+		fmt.Println("cannot do kubectl apply on opeartor controller", err)
+		return err
+	}
+
 	if qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
 		return q.applyCR(qcr.Spec.NameSpace)
@@ -64,13 +72,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	} else if qcr.Spec.GetManifestsRoot() == "" {
 		return errors.New("cannot get the manifest root. Use qliksense fetch <version> or qliksense set manifestsRoot")
 	}
-	//TODO: CRD will be installed outside of operator
-	//install operator controller into the namespace
-	fmt.Println("Installing operator controller")
-	if err := qapi.KubectlApply(q.GetOperatorControllerString(), qcr.Spec.NameSpace); err != nil {
-		fmt.Println("cannot do kubectl apply on opeartor controller", err)
-		return err
-	}
+
 	// install generated manifests into cluster
 	fmt.Println("Installing generated manifests into cluster")
 	if err := q.applyConfigToK8s(qcr); err != nil {

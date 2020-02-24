@@ -13,6 +13,11 @@ func (q *Qliksense) ViewOperator() error {
 	return nil
 }
 
+func (q *Qliksense) ViewOperatorController() error {
+	io.WriteString(os.Stdout, q.GetOperatorControllerString())
+	return nil
+}
+
 // this will return crd,deployment,role, rolebinding,serviceaccount for operator
 func (q *Qliksense) GetOperatorCRDString() string {
 	result := ""

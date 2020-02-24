@@ -11,6 +11,7 @@ var operatorCmd = &cobra.Command{
 	Long:  `Configuration for operator`,
 }
 
+/*
 func operatorViewCmd(q *qliksense.Qliksense) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "view",
@@ -18,6 +19,31 @@ func operatorViewCmd(q *qliksense.Qliksense) *cobra.Command {
 		Long:  `View CRD for operator`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.ViewOperator()
+		},
+	}
+	return c
+}
+*/
+
+func operatorCrdCmd(q *qliksense.Qliksense) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "crd",
+		Short: "View CRD for operator",
+		Long:  `View CRD for operator`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ViewOperator()
+		},
+	}
+	return c
+}
+
+func operatorControllerCmd(q *qliksense.Qliksense) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "controller",
+		Short: "View manifests for operator controller",
+		Long:  `View manifests for operator controller`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ViewOperatorController()
 		},
 	}
 	return c
