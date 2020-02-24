@@ -253,6 +253,46 @@ func (q *Qliksense) ListContextConfigs() error {
 	return nil
 }
 
+func (q *Qliksense) DeleteContextConfig(args []string) error {
+	if len(args) == 1 {
+		fmt.Println(args)
+		qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
+		var qliksenseConfig api.QliksenseConfig
+		api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+		switch args[0] {
+		case qliksenseConfig.Spec.CurrentContext:
+			log.Println("Error: Cannot delete current context -", qliksenseConfig.Spec.CurrentContext)
+			fmt.Println("Please switch contexts to be able to delete this context.")
+		default:
+			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
+			qliksenseContextFile := filepath.Join(qliksenseContextsDir1, args[0])
+			fmt.Println(qliksenseContextFile)
+			if err := os.RemoveAll(qliksenseContextFile); err != nil {
+				err = fmt.Errorf("Not able to delete %s dir: %v", qliksenseContextsDir1, err)
+				log.Println(err)
+				return err
+			} else {
+				count := 0
+				if len(qliksenseConfig.Spec.Contexts) > 0 {
+					for _, ctx := range qliksenseConfig.Spec.Contexts {
+						count = count + 1
+						if ctx.Name == args[0] {
+							qliksenseConfig.Spec.Contexts = append(qliksenseConfig.Spec.Contexts[:count], qliksenseConfig.Spec.Contexts[count+1])
+							break
+						}
+					}
+				}
+				api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+			}
+		}
+	} else {
+		err := fmt.Errorf("Please provide a context as an arguement to delete")
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
 // SetUpQliksenseDefaultContext - to setup dir structure for default qliksense context
 func (q *Qliksense) SetUpQliksenseDefaultContext() error {
 	return q.SetUpQliksenseContext(DefaultQliksenseContext, true)
