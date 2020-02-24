@@ -25,10 +25,10 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	return q.applyConfigToK8s(qcr, "")
+	return q.applyConfigToK8s(qcr)
 }
 
-func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
+func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	//mroot := qcr.Spec.GetManifestsRoot()
 	/* // Qliksense-Init CRD will be installed outside opeartor
 	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
@@ -68,7 +68,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR, cmd string) error {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
 		return err
 	}
-	if err = qapi.KubectlApply(string(mByte)); err != nil {
+	if err = qapi.KubectlApply(string(mByte), qcr.Spec.NameSpace); err != nil {
 		return err
 	}
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
@@ -10,9 +9,6 @@ var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "do operations on/around CR",
 	Long:  `do operations on/around CR`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Use like: config view or config apply")
-	},
 }
 
 func configApplyCmd(q *qliksense.Qliksense) *cobra.Command {
