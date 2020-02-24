@@ -9,7 +9,7 @@ import (
 )
 
 func (q *Qliksense) ViewOperator() error {
-	io.WriteString(os.Stdout, q.GetOperatorControllerString())
+	io.WriteString(os.Stdout, q.GetOperatorCRDString())
 	return nil
 }
 
