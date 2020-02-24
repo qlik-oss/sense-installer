@@ -22,7 +22,7 @@ func (q *Qliksense) ViewCrds(opts *CrdCommandOptions) error {
 	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
 		return err
 	} else if opts.All {
-		fmt.Printf("%s\n%s", q.GetOperatorControllerString(), engineCRD)
+		fmt.Printf("%s\n%s", q.GetOperatorCRDString(), engineCRD)
 	} else {
 		fmt.Printf("%s", engineCRD)
 	}
