@@ -1,10 +1,10 @@
 package qliksense
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"time"
+
+	"github.com/qlik-oss/sense-installer/pkg/api"
 
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/konfig"
@@ -34,31 +34,8 @@ func executeKustomizeBuild(directory string) ([]byte, error) {
 }
 
 func executeKustomizeBuildWithStdoutProgress(path string) (kuzManifest []byte, err error) {
-	kuzManifestDone := make(chan bool)
-	go func() {
-		kuzManifest, err = executeKustomizeBuild(path)
-		kuzManifestDone <- true
-	}()
-	progressOnTicker := time.NewTicker(500 * time.Millisecond)
-	progressOffTicker := time.NewTicker(1000 * time.Millisecond)
-	printProgress := func(on bool) {
-		if on {
-			fmt.Print("...\r")
-		} else {
-			fmt.Print("   \r")
-		}
-	}
-	for {
-		select {
-		case <-kuzManifestDone:
-			progressOnTicker.Stop()
-			progressOffTicker.Stop()
-			printProgress(false)
-			return kuzManifest, err
-		case <-progressOnTicker.C:
-			printProgress(true)
-		case <-progressOffTicker.C:
-			printProgress(false)
-		}
-	}
+	result, err := api.ExecuteTaskWithBlinkingStdoutFeedback(func() (interface{}, error) {
+		return executeKustomizeBuild(path)
+	}, "...")
+	return result.([]byte), err
 }
