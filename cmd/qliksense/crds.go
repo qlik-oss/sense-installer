@@ -12,31 +12,31 @@ var crdsCmd = &cobra.Command{
 }
 
 func crdsViewCmd(q *qliksense.Qliksense) *cobra.Command {
+	opts := &qliksense.CrdCommandOptions{}
 	c := &cobra.Command{
 		Use:   "view",
-		Short: "View CRDs for qliksense application. use view all to see opearator crd as well ",
-		Long:  `View CRDs for qliksense application. use view all to see opearator crd as well`,
+		Short: "View CRDs for qliksense application. use view --all to see opearator crd as well ",
+		Long:  `View CRDs for qliksense application. use view --all to see opearator crd as well`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
-				return q.ViewCrds(args[0])
-			}
-			return q.ViewCrds("")
+			return q.ViewCrds(opts)
 		},
 	}
+	f := c.Flags()
+	f.BoolVarP(&opts.All, "all", "a", false, "Include All CRDs")
 	return c
 }
 
 func crdsInstallCmd(q *qliksense.Qliksense) *cobra.Command {
+	opts := &qliksense.CrdCommandOptions{}
 	c := &cobra.Command{
 		Use:   "install",
-		Short: "Install CRDs fro Qliksense application. Use install all to include operator crd",
-		Long:  `Install CRDs fro Qliksense application. Use install all to include operator crd`,
+		Short: "Install CRDs fro Qliksense application. Use install --all to include operator crd",
+		Long:  `Install CRDs fro Qliksense application. Use install --all to include operator crd`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) > 0 {
-				return q.InstallCrds(args[0])
-			}
-			return q.InstallCrds("")
+			return q.InstallCrds(opts)
 		},
 	}
+	f := c.Flags()
+	f.BoolVarP(&opts.All, "all", "a", false, "Include All CRDs")
 	return c
 }

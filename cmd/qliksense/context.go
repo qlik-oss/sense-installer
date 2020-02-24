@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {

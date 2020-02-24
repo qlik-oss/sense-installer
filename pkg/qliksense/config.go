@@ -68,7 +68,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
 		return err
 	}
-	if err = qapi.KubectlApply(string(mByte)); err != nil {
+	if err = qapi.KubectlApply(string(mByte), qcr.Spec.NameSpace); err != nil {
 		return err
 	}
 

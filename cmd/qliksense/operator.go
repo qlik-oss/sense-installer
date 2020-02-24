@@ -20,8 +20,8 @@ func operatorViewCmd(q *qliksense.Qliksense) *cobra.Command {
 		Use:   "view",
 		Short: "View Configuration for operator",
 		Long:  `View Configuration for operator`,
-		Run: func(cmd *cobra.Command, args []string) {
-			q.ViewOperatorCrd()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ViewOperator()
 		},
 	}
 	return c

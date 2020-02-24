@@ -7,7 +7,11 @@ import (
 	"path/filepath"
 )
 
-func (q *Qliksense) ViewCrds(all string) error {
+type CrdCommandOptions struct {
+	All bool
+}
+
+func (q *Qliksense) ViewCrds(opts *CrdCommandOptions) error {
 	//io.WriteString(os.Stdout, q.GetCRDString())
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()
@@ -17,15 +21,15 @@ func (q *Qliksense) ViewCrds(all string) error {
 	}
 	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
 		return err
-	} else if all == "all" {
-		fmt.Printf("%s\n%s", q.GetOperatorCRDString(), engineCRD)
+	} else if opts.All {
+		fmt.Printf("%s\n%s", q.GetOperatorControllerString(), engineCRD)
 	} else {
 		fmt.Printf("%s", engineCRD)
 	}
 	return nil
 }
 
-func (q *Qliksense) InstallCrds(all string) error {
+func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 	// install qliksense-init crd
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()
@@ -36,11 +40,11 @@ func (q *Qliksense) InstallCrds(all string) error {
 
 	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
 		return err
-	} else if err = qapi.KubectlApply(engineCRD); err != nil {
+	} else if err = qapi.KubectlApply(engineCRD, qcr.Spec.NameSpace); err != nil {
 		return err
 	}
-	if all == "all" { // install opeartor crd
-		if err := qapi.KubectlApply(q.GetOperatorCRDString()); err != nil {
+	if opts.All { // install opeartor crd
+		if err := qapi.KubectlApply(q.GetOperatorCRDString(), qcr.Spec.NameSpace); err != nil {
 			fmt.Println("cannot do kubectl apply on opeartor CRD", err)
 			return err
 		}
