@@ -2,231 +2,184 @@ package qliksense
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	imageTypes "github.com/containers/image/v5/types"
-	"github.com/docker/cli/cli/command"
-	cliflags "github.com/docker/cli/cli/flags"
-	"github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/pkg/jsonmessage"
-	"github.com/docker/docker/pkg/term"
-	"github.com/docker/docker/registry"
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/pkg/errors"
-
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"golang.org/x/net/context"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
+)
+
+type imageNameParts struct {
+	name string
+	tag  string
+}
+
+const (
+	imagesDirName           = "images"
+	imageIndexDirName       = "index"
+	imageSharedBlobsDirName = "blobs"
 )
 
 // PullImages ...
-func (q *Qliksense) PullImages(gitRef, profile string, engine bool) error {
-	var (
-		image, versionFile, imagesDir, homeDir string
-		err                                    error
-		versionOut                             *VersionOutput
-	)
-	println("getting images list...")
+func (q *Qliksense) PullImagesForCurrentCR() error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCurrentCR()
+	if err != nil {
+		return err
+	}
+	version := qcr.GetLabelFromCr("version")
+	profile := qcr.Spec.Profile
+	repoDir := qcr.Spec.ManifestsRoot
 
-	// TODO: get getref and profile from config/cr for About function call
-	if versionOut, err = q.About(gitRef, profile); err != nil {
+	imagesDir, err := q.setupImagesDir()
+	if err != nil {
 		return err
 	}
 
-	if homeDir, err = homedir.Dir(); err != nil {
+	versionOut, stored, err := q.readOrGenerateVersionOutput(imagesDir, version, repoDir, profile)
+	if err != nil {
 		return err
 	}
-	imagesDir = filepath.Join(homeDir, ".qliksense", "images")
-	os.MkdirAll(imagesDir, os.ModePerm)
-	versionFile = filepath.Join(imagesDir, versionOut.QliksenseVersion)
 
-	if _, err = os.Stat(versionFile); err != nil {
-		if os.IsNotExist(err) {
-			if yamlVersion, err := yaml.Marshal(versionOut); err != nil {
-				return err
-			} else if err = ioutil.WriteFile(versionFile, yamlVersion, os.ModePerm); err != nil {
-				return err
-			}
-		} else {
-			return errors.Errorf("Unable to determine About file %v exists", versionFile)
+	for _, image := range versionOut.Images {
+		if err := q.pullImage(image, imagesDir); err != nil {
+			fmt.Printf("%v\n", err)
+			return err
 		}
-	}
-	for _, image = range versionOut.Images {
-		if _, err = q.PullImage(image, engine); err != nil {
-			fmt.Print(err)
-		}
-		println("---")
+		fmt.Print("---\n")
 	}
 
+	if version != "" && !stored {
+		if err := q.writeVersionOutput(versionOut, imagesDir, version); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-// PullImage ...
-func (q *Qliksense) PullImage(imageName string, engine bool) (map[string]string, error) {
-	if engine {
-		return q.pullDockerImage(imageName)
+func (q *Qliksense) pullImage(image, imagesDir string) error {
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%v", image))
+	if err != nil {
+		return err
 	}
-	return q.pullImage(imageName)
-}
-
-func (q *Qliksense) commandTimeoutContext(commandTimeout time.Duration) (context.Context, context.CancelFunc) {
-	ctx := context.Background()
-	var cancel context.CancelFunc = func() {}
-	if commandTimeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, commandTimeout)
-	}
-	return ctx, cancel
-}
-
-func (q *Qliksense) pullImage(imageName string) (map[string]string, error) {
-	var (
-		ctx                         context.Context
-		cancel                      context.CancelFunc
-		srcRef, destRef             imageTypes.ImageReference
-		blobDir, targetDir, homeDir string
-		segments                    []string
-		nameTag                     []string
-		err                         error
-		policyContext               *signature.PolicyContext
-	)
-	ctx, cancel = q.commandTimeoutContext(0)
-	defer cancel()
-
-	if srcRef, err = alltransports.ParseImageName("docker://" + imageName); err != nil {
-		return nil, err
-	}
-	segments = strings.Split(imageName, "/")
-	nameTag = strings.Split(segments[len(segments)-1], ":")
-	if len(nameTag) < 2 {
-		nameTag = append(nameTag, "latest")
-	}
-	if homeDir, err = homedir.Dir(); err != nil {
-		return nil, err
-	}
-	targetDir = filepath.Join(homeDir, ".qliksense", "images", nameTag[0], nameTag[1])
-
-	fmt.Printf("==> Pulling image %v:%v", nameTag[0], nameTag[1])
-	fmt.Println()
-	os.MkdirAll(targetDir, os.ModePerm)
-	blobDir = filepath.Join(homeDir, ".qliksense", "blobs")
-	os.MkdirAll(blobDir, os.ModePerm)
-
-	if destRef, err = alltransports.ParseImageName("oci:" + targetDir); err != nil {
-		return nil, err
+	nameTag := q.getImageNameParts(image)
+	targetDir := filepath.Join(imagesDir, imageIndexDirName, nameTag.name, nameTag.tag)
+	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+		return err
 	}
 
-	if policyContext, err = signature.NewPolicyContext(&signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}); err != nil {
-		return nil, err
+	fmt.Printf("==> Pulling image %v:%v\n", nameTag.name, nameTag.tag)
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("oci:%v", targetDir))
+	if err != nil {
+		return err
+	}
+
+	policyContext, err := signature.NewPolicyContext(&signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}})
+	if err != nil {
+		return err
 	}
 	defer policyContext.Destroy()
 
-	_, err = copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
+	if _, err := copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,
 		SourceCtx: &imageTypes.SystemContext{
 			ArchitectureChoice: "amd64",
 			OSChoice:           "linux",
 		},
 		DestinationCtx: &imageTypes.SystemContext{
-			OCISharedBlobDirPath: blobDir,
+			OCISharedBlobDirPath: filepath.Join(imagesDir, imageSharedBlobsDirName),
 		},
-	})
-	return nil, err
+	}); err != nil {
+		return err
+	}
+	return nil
 }
-func (q *Qliksense) pullDockerImage(imageName string) (map[string]string, error) {
-	var (
-		cli          *command.DockerCli
-		dockerOutput io.Writer
-		response     io.ReadCloser
-		pullOptions  types.ImagePullOptions
-		ctx          context.Context
-		cancel       context.CancelFunc
-		ref          reference.Named
-		repoInfo     *registry.RepositoryInfo
-		authConfig   types.AuthConfig
-		encodedAuth  string
-		termFd       uintptr
-		err          error
-	)
-	ctx, cancel = q.commandTimeoutContext(0)
-	defer cancel()
 
-	if cli, err = command.NewDockerCli(); err != nil {
-		return nil, err
-	}
-
-	if err = cli.Initialize(cliflags.NewClientOptions()); err != nil {
-		return nil, err
-	}
-
-	if ref, err = reference.ParseNormalizedNamed(imageName); err != nil {
-		return nil, err
-	}
-	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-		return nil, err
-	}
-
-	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
-	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-		return nil, err
-	}
-
-	pullOptions = types.ImagePullOptions{
-		RegistryAuth: encodedAuth,
-	}
-
-	if response, err = cli.Client().ImagePull(ctx, imageName, pullOptions); err != nil {
-		return nil, err
-	}
-	defer response.Close()
-
-	dockerOutput = ioutil.Discard
-	// if b.IsVerbose() {
-	// 	dockerOutput = b.Out
-	// }
-	dockerOutput = os.Stdout
-	termFd, _ = term.GetFdInfo(dockerOutput)
-	// Setting this to false here because Moby os.Exit(1) all over the place and this fails on WSL (only)
-	// when Term is true.
-	isTerm := false
-	if err = jsonmessage.DisplayJSONMessagesStream(response, dockerOutput, termFd, isTerm, nil); err != nil {
-		return nil, err
-	}
-	inspectData, _, err := cli.Client().ImageInspectWithRaw(ctx, imageName)
+// TagAndPushImages ...
+func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return inspectData.ContainerConfig.Labels, nil
-}
+	version := qcr.GetLabelFromCr("version")
+	profile := qcr.Spec.Profile
+	repoDir := qcr.Spec.ManifestsRoot
 
-//TagAndPushImages ...
-func (q *Qliksense) TagAndPushImages(registry string, engine bool) error {
-	var (
-		image       string
-		err         error
-		yamlVersion string
-		images      VersionOutput
-	)
-
-	if err = yaml.Unmarshal([]byte(yamlVersion), &images); err != nil {
+	imagesDir, err := q.setupImagesDir()
+	if err != nil {
 		return err
 	}
 
-	for _, image = range images.Images {
-		if err = q.TagAndPush(image, registry, engine); err != nil {
-			fmt.Print(err)
-		}
-		println("---")
+	versionOut, stored, err := q.readOrGenerateVersionOutput(imagesDir, version, repoDir, profile)
+	if err != nil {
+		return err
 	}
 
+	for _, image := range versionOut.Images {
+		if err = q.pushImage(image, imagesDir, registry); err != nil {
+			fmt.Printf("%v\n", err)
+			return err
+		}
+		fmt.Print("---\n")
+	}
+
+	if version != "" && !stored {
+		if err := q.writeVersionOutput(versionOut, imagesDir, version); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (q *Qliksense) pushImage(image, imagesDir, registryName string) error {
+	imageNameParts := q.getImageNameParts(image)
+	srcDir := filepath.Join(imagesDir, imageIndexDirName, imageNameParts.name, imageNameParts.tag)
+	if exists, err := q.directoryExists(srcDir); err != nil {
+		return err
+	} else if !exists {
+		if err := q.pullImage(image, imagesDir); err != nil {
+			return err
+		}
+	}
+	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("oci:%v", srcDir))
+	if err != nil {
+		return err
+	}
+
+	newImage := fmt.Sprintf("%v/%v:%v", registryName, imageNameParts.name, imageNameParts.tag)
+	fmt.Printf("==> Pushing image: %v\n", newImage)
+
+	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%v", newImage))
+	if err != nil {
+		return err
+	}
+
+	policyContext, err := signature.NewPolicyContext(&signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}})
+	if err != nil {
+		return err
+	}
+	defer policyContext.Destroy()
+
+	if _, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
+		ReportWriter: os.Stdout,
+		SourceCtx: &imageTypes.SystemContext{
+			OCISharedBlobDirPath: filepath.Join(imagesDir, imageSharedBlobsDirName),
+		},
+		DestinationCtx: &imageTypes.SystemContext{
+			DockerInsecureSkipTLSVerify: imageTypes.OptionalBoolTrue,
+		},
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -245,166 +198,65 @@ func (q *Qliksense) directoryExists(path string) (exists bool, err error) {
 	return exists, err
 }
 
-//TagAndPush ...
-func (q *Qliksense) TagAndPush(image string, registryName string, engine bool) error {
-	if engine {
-		return q.tagAndDockerPush(image, registryName)
-	}
-	return q.tagAndPush(image, registryName)
-}
-
-func (q *Qliksense) tagAndPush(image string, registryName string) error {
-	var (
-		ctx                               context.Context
-		cancel                            context.CancelFunc
-		srcRef, destRef                   imageTypes.ImageReference
-		blobDir, srcDir, homeDir, newName string
-		segments                          []string
-		nameTag                           []string
-		err                               error
-		policyContext                     *signature.PolicyContext
-		srcExists                         bool
-	)
-	ctx, cancel = q.commandTimeoutContext(0)
-	defer cancel()
-
-	segments = strings.Split(image, "/")
-	nameTag = strings.Split(segments[len(segments)-1], ":")
-
+func (q *Qliksense) getImageNameParts(image string) imageNameParts {
+	segments := strings.Split(image, "/")
+	nameTag := strings.Split(segments[len(segments)-1], ":")
 	if len(nameTag) < 2 {
 		nameTag = append(nameTag, "latest")
 	}
-	if homeDir, err = homedir.Dir(); err != nil {
-		return err
+	return imageNameParts{
+		name: nameTag[0],
+		tag:  nameTag[1],
 	}
-	srcDir = filepath.Join(homeDir, ".qliksense", "images", nameTag[0], nameTag[1])
-	if srcExists, err = q.directoryExists(srcDir); err != nil {
-		return err
-	}
-	if !srcExists {
-		if _, err = q.PullImage(image, false); err != nil {
-			return err
-		}
-	}
-	if srcRef, err = alltransports.ParseImageName("oci:" + srcDir); err != nil {
-		return err
-	}
-
-	if segments[0] == "docker.io" {
-		image = strings.Join(segments[1:], "/")
-	}
-	newName = "//" + registryName + "/" + segments[len(segments)-1]
-
-	fmt.Printf("==> Tag and push image to %v", newName)
-	fmt.Println()
-
-	if destRef, err = alltransports.ParseImageName("docker:" + newName); err != nil {
-		return err
-	}
-
-	if policyContext, err = signature.NewPolicyContext(&signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}); err != nil {
-		return err
-	}
-	defer policyContext.Destroy()
-
-	blobDir = filepath.Join(homeDir, ".qliksense", "blobs")
-	os.MkdirAll(blobDir, os.ModePerm)
-
-	_, err = copy.Image(ctx, policyContext, destRef, srcRef, &copy.Options{
-		ReportWriter: os.Stdout,
-		SourceCtx: &imageTypes.SystemContext{
-			OCISharedBlobDirPath: blobDir,
-		},
-		DestinationCtx: &imageTypes.SystemContext{
-			DockerDaemonInsecureSkipTLSVerify: true,
-		},
-	})
-	return err
 }
 
-// PullImage ...
-func (q *Qliksense) tagAndDockerPush(image string, registryName string) error {
-	var (
-		cli              *command.DockerCli
-		dockerOutput     io.Writer
-		response         io.ReadCloser
-		pushOptions      types.ImagePushOptions
-		ctx              context.Context
-		cancel           context.CancelFunc
-		newName          string
-		segments         []string
-		imageList        []types.ImageSummary
-		imageListOptions types.ImageListOptions
-		filterArgs       filters.Args
-		ref              reference.Named
-		repoInfo         *registry.RepositoryInfo
-		authConfig       types.AuthConfig
-		encodedAuth      string
-		termFd           uintptr
-		err              error
-	)
-	// TODO: Create a real cli config context
-	ctx, cancel = q.commandTimeoutContext(0)
-	defer cancel()
-	if cli, err = command.NewDockerCli(); err != nil {
-		return err
-	}
-	if err = cli.Initialize(cliflags.NewClientOptions()); err != nil {
-		return err
-	}
-	segments = strings.Split(image, "/")
-	if segments[0] == "docker.io" {
-		image = strings.Join(segments[1:], "/")
-	}
-	newName = registryName + "/" + segments[len(segments)-1]
+func (q *Qliksense) setupImagesDir() (string, error) {
+	imagesDir := filepath.Join(q.QliksenseHome, imagesDirName)
 
-	filterArgs = filters.NewArgs()
-	filterArgs.Add("reference", image)
-	imageListOptions = types.ImageListOptions{
-		Filters: filterArgs,
-	}
-	if imageList, err = cli.Client().ImageList(ctx, imageListOptions); err != nil {
-		return err
-	}
-	if imageList == nil || len(imageList) <= 0 {
-		fmt.Printf("Use `qliksense pull`, to pull %v for an air gap push", newName)
-		return nil
+	imageIndexDir := filepath.Join(imagesDir, imageIndexDirName)
+	if err := os.MkdirAll(imageIndexDir, os.ModePerm); err != nil {
+		return "", err
 	}
 
-	if err = cli.Client().ImageTag(ctx, image, newName); err != nil {
-		return err
+	sharedBlobsDir := filepath.Join(imagesDir, imageSharedBlobsDirName)
+	if err := os.MkdirAll(sharedBlobsDir, os.ModePerm); err != nil {
+		return "", err
 	}
 
-	if ref, err = reference.ParseNormalizedNamed(image); err != nil {
-		return err
-	}
-	if repoInfo, err = registry.ParseRepositoryInfo(ref); err != nil {
-		return err
-	}
-	authConfig = command.ResolveAuthConfig(ctx, cli, repoInfo.Index)
-	if encodedAuth, err = command.EncodeAuthToBase64(authConfig); err != nil {
-		return err
-	}
-	pushOptions = types.ImagePushOptions{
-		All:          true,
-		RegistryAuth: encodedAuth,
-	}
+	return imagesDir, nil
+}
 
-	if response, err = cli.Client().ImagePush(ctx, newName, pushOptions); err != nil {
-		return err
+func (q *Qliksense) readOrGenerateVersionOutput(imagesDir, version, repoDir, profile string) (versionOut *VersionOutput, stored bool, err error) {
+	if version != "" {
+		versionOut, err = q.readVersionOutput(imagesDir, version)
+		if versionOut != nil {
+			stored = true
+		}
 	}
-	defer response.Close()
+	if versionOut == nil {
+		if versionOut, err = q.AboutDir(repoDir, profile); err != nil {
+			return nil, false, err
+		}
+	}
+	return versionOut, stored, nil
+}
 
-	dockerOutput = ioutil.Discard
-	// if b.IsVerbose() {
-	// 	dockerOutput = b.Out
-	// }
-	dockerOutput = os.Stdout
-	termFd, _ = term.GetFdInfo(dockerOutput)
-	// Setting this to false here because Moby os.Exit(1) all over the place and this fails on WSL (only)
-	// when Term is true.
-	isTerm := false
-	if err = jsonmessage.DisplayJSONMessagesStream(response, dockerOutput, termFd, isTerm, nil); err != nil {
+func (q *Qliksense) readVersionOutput(imagesDir, version string) (*VersionOutput, error) {
+	var versionOut VersionOutput
+	versionFile := filepath.Join(imagesDir, version)
+	if versionOutBytes, err := ioutil.ReadFile(versionFile); err != nil {
+		return nil, err
+	} else if err = yaml.Unmarshal(versionOutBytes, &versionOut); err != nil {
+		return nil, err
+	}
+	return &versionOut, nil
+}
+
+func (q *Qliksense) writeVersionOutput(versionOut *VersionOutput, imagesDir, version string) error {
+	versionFile := filepath.Join(imagesDir, version)
+	if versionOutBytes, err := yaml.Marshal(versionOut); err != nil {
+		return err
+	} else if err = ioutil.WriteFile(versionFile, versionOutBytes, os.ModePerm); err != nil {
 		return err
 	}
 	return nil
