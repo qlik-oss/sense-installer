@@ -261,18 +261,18 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 		out := ansi.NewColorableStdout()
 		switch args[0] {
 		case qliksenseConfig.Spec.CurrentContext:
-			fmt.Fprintln(out, "Error: Cannot delete current context -", chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext))
-			fmt.Println("Please switch contexts to be able to delete this context.")
+			fmt.Fprintln(out, chalk.Red.Color("Error: Cannot delete current context -"), chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext))
+			fmt.Fprintln(out, chalk.Yellow.Color("Please switch contexts to be able to delete this context."))
 		default:
 			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
 			qliksenseContextFile := filepath.Join(qliksenseContextsDir1, args[0])
-			fmt.Println(qliksenseContextFile)
 			if err := os.RemoveAll(qliksenseContextFile); err != nil {
 				err = fmt.Errorf("Not able to delete %s dir: %v", qliksenseContextsDir1, err)
 				log.Println(err)
 				return err
 			} else {
-				if len(qliksenseConfig.Spec.Contexts) > 0 {
+				currentLength := len(qliksenseConfig.Spec.Contexts)
+				if currentLength > 0 {
 					temp := qliksenseConfig.Spec.Contexts
 					qliksenseConfig.Spec.Contexts = nil
 					for _, ctx := range temp {
@@ -283,13 +283,19 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 							})
 						}
 					}
+					newLength := len(qliksenseConfig.Spec.Contexts)
+					if currentLength != newLength {
+						api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+						fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
+						fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
+					} else {
+						fmt.Fprintln(out, chalk.Red.Color("Error: Context not found"))
+					}
 				}
-				api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
-				fmt.Fprintln(out, "Successfully deleted context: ", chalk.Bold.TextStyle(args[0]))
 			}
 		}
 	} else {
-		err := fmt.Errorf("Please provide a context as an arguement to delete")
+		err := fmt.Errorf("Please provide a context as an argument to delete")
 		log.Println(err)
 		return err
 	}
