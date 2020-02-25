@@ -149,7 +149,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
-	fmt.Println(cmd.Args)
 	return cmd
 }
 

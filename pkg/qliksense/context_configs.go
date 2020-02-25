@@ -255,13 +255,13 @@ func (q *Qliksense) ListContextConfigs() error {
 
 func (q *Qliksense) DeleteContextConfig(args []string) error {
 	if len(args) == 1 {
-		fmt.Println(args)
 		qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
 		var qliksenseConfig api.QliksenseConfig
 		api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+		out := ansi.NewColorableStdout()
 		switch args[0] {
 		case qliksenseConfig.Spec.CurrentContext:
-			log.Println("Error: Cannot delete current context -", qliksenseConfig.Spec.CurrentContext)
+			fmt.Fprintln(out, "Error: Cannot delete current context -", chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext))
 			fmt.Println("Please switch contexts to be able to delete this context.")
 		default:
 			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
@@ -272,17 +272,20 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 				log.Println(err)
 				return err
 			} else {
-				count := 0
 				if len(qliksenseConfig.Spec.Contexts) > 0 {
-					for _, ctx := range qliksenseConfig.Spec.Contexts {
-						count = count + 1
-						if ctx.Name == args[0] {
-							qliksenseConfig.Spec.Contexts = append(qliksenseConfig.Spec.Contexts[:count], qliksenseConfig.Spec.Contexts[count+1])
-							break
+					temp := qliksenseConfig.Spec.Contexts
+					qliksenseConfig.Spec.Contexts = nil
+					for _, ctx := range temp {
+						if ctx.Name != args[0] {
+							qliksenseConfig.Spec.Contexts = append(qliksenseConfig.Spec.Contexts, api.Context{
+								Name:   ctx.Name,
+								CrFile: ctx.CrFile,
+							})
 						}
 					}
 				}
 				api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+				fmt.Fprintln(out, "Successfully deleted context: ", chalk.Bold.TextStyle(args[0]))
 			}
 		}
 	} else {
