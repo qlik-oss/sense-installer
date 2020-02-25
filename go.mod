@@ -45,7 +45,6 @@ require (
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
-	github.com/xenolf/lego v0.3.2-0.20160613233155-a9d8cec0e656
 	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2

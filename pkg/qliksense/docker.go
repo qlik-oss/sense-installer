@@ -38,7 +38,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	profile := qcr.Spec.Profile
 	repoDir := qcr.Spec.ManifestsRoot
 
-	imagesDir, err := q.setupImagesDir()
+	imagesDir, err := setupImagesDir(q.QliksenseHome)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	}
 
 	for _, image := range versionOut.Images {
-		if err := q.pullImage(image, imagesDir); err != nil {
+		if err := pullImage(image, imagesDir, true); err != nil {
 			fmt.Printf("%v\n", err)
 			return err
 		}
@@ -64,18 +64,17 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	return nil
 }
 
-func (q *Qliksense) pullImage(image, imagesDir string) error {
+func pullImage(image, imagesDir string, tlsOn bool) error {
 	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%v", image))
 	if err != nil {
 		return err
 	}
-	nameTag := q.getImageNameParts(image)
+	nameTag := getImageNameParts(image)
 	targetDir := filepath.Join(imagesDir, imageIndexDirName, nameTag.name, nameTag.tag)
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		return err
 	}
 
-	fmt.Printf("==> Pulling image %v:%v\n", nameTag.name, nameTag.tag)
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("oci:%v", targetDir))
 	if err != nil {
 		return err
@@ -87,12 +86,17 @@ func (q *Qliksense) pullImage(image, imagesDir string) error {
 	}
 	defer policyContext.Destroy()
 
+	fmt.Printf("==> Pulling image from %v\n", srcRef.StringWithinTransport())
+	sourceCtx := &imageTypes.SystemContext{
+		ArchitectureChoice: "amd64",
+		OSChoice:           "linux",
+	}
+	if !tlsOn {
+		sourceCtx.DockerInsecureSkipTLSVerify = imageTypes.OptionalBoolTrue
+	}
 	if _, err := copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,
-		SourceCtx: &imageTypes.SystemContext{
-			ArchitectureChoice: "amd64",
-			OSChoice:           "linux",
-		},
+		SourceCtx:    sourceCtx,
 		DestinationCtx: &imageTypes.SystemContext{
 			OCISharedBlobDirPath: filepath.Join(imagesDir, imageSharedBlobsDirName),
 		},
@@ -113,7 +117,7 @@ func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
 	profile := qcr.Spec.Profile
 	repoDir := qcr.Spec.ManifestsRoot
 
-	imagesDir, err := q.setupImagesDir()
+	imagesDir, err := setupImagesDir(q.QliksenseHome)
 	if err != nil {
 		return err
 	}
@@ -124,7 +128,7 @@ func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
 	}
 
 	for _, image := range versionOut.Images {
-		if err = q.pushImage(image, imagesDir, registry); err != nil {
+		if err = pushImage(image, imagesDir, registry); err != nil {
 			fmt.Printf("%v\n", err)
 			return err
 		}
@@ -140,13 +144,13 @@ func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
 	return nil
 }
 
-func (q *Qliksense) pushImage(image, imagesDir, registryName string) error {
-	imageNameParts := q.getImageNameParts(image)
+func pushImage(image, imagesDir, registryName string) error {
+	imageNameParts := getImageNameParts(image)
 	srcDir := filepath.Join(imagesDir, imageIndexDirName, imageNameParts.name, imageNameParts.tag)
-	if exists, err := q.directoryExists(srcDir); err != nil {
+	if exists, err := directoryExists(srcDir); err != nil {
 		return err
 	} else if !exists {
-		if err := q.pullImage(image, imagesDir); err != nil {
+		if err := pullImage(image, imagesDir, true); err != nil {
 			return err
 		}
 	}
@@ -156,8 +160,6 @@ func (q *Qliksense) pushImage(image, imagesDir, registryName string) error {
 	}
 
 	newImage := fmt.Sprintf("%v/%v:%v", registryName, imageNameParts.name, imageNameParts.tag)
-	fmt.Printf("==> Pushing image: %v\n", newImage)
-
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%v", newImage))
 	if err != nil {
 		return err
@@ -169,6 +171,7 @@ func (q *Qliksense) pushImage(image, imagesDir, registryName string) error {
 	}
 	defer policyContext.Destroy()
 
+	fmt.Printf("==> Pushing image to: %v\n", destRef.StringWithinTransport())
 	if _, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,
 		SourceCtx: &imageTypes.SystemContext{
@@ -183,7 +186,7 @@ func (q *Qliksense) pushImage(image, imagesDir, registryName string) error {
 	return nil
 }
 
-func (q *Qliksense) directoryExists(path string) (exists bool, err error) {
+func directoryExists(path string) (exists bool, err error) {
 	if info, err := os.Stat(path); err != nil && os.IsNotExist(err) {
 		exists = false
 		err = nil
@@ -198,7 +201,7 @@ func (q *Qliksense) directoryExists(path string) (exists bool, err error) {
 	return exists, err
 }
 
-func (q *Qliksense) getImageNameParts(image string) imageNameParts {
+func getImageNameParts(image string) imageNameParts {
 	segments := strings.Split(image, "/")
 	nameTag := strings.Split(segments[len(segments)-1], ":")
 	if len(nameTag) < 2 {
@@ -210,8 +213,8 @@ func (q *Qliksense) getImageNameParts(image string) imageNameParts {
 	}
 }
 
-func (q *Qliksense) setupImagesDir() (string, error) {
-	imagesDir := filepath.Join(q.QliksenseHome, imagesDirName)
+func setupImagesDir(qliksenseHome string) (string, error) {
+	imagesDir := filepath.Join(qliksenseHome, imagesDirName)
 
 	imageIndexDir := filepath.Join(imagesDir, imageIndexDirName)
 	if err := os.MkdirAll(imageIndexDir, os.ModePerm); err != nil {
