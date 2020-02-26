@@ -10,6 +10,7 @@ import (
 
 	b64 "encoding/base64"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -30,7 +31,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	api.LogDebugMessage("Args received: %v\n", args)
 	api.LogDebugMessage("isSecretSet: %v\n", isSecretSet)
 
-	// retieve current context from config.yaml
+	// retrieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
 	if err != nil {
 		return err
@@ -76,7 +77,6 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		api.LogDebugMessage("Not able to read public key")
 		return err2
 	}
-	// api.LogDebugMessage("PublicKey: %+v", publicKeybytes)
 
 	// convert []byte into RSA public key object
 	rsaPublicKey, e1 = api.DecodeToPublicKey(publicKeybytes)
@@ -88,7 +88,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	if err != nil {
 		return err
 	}
-
+	secretName := ""
 	for _, ra := range resultArgs {
 		// Metadata name in qliksense CR is the name of the current context
 		api.LogDebugMessage("Trying to retreive current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
@@ -105,35 +105,35 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		if isSecretSet {
 			// construct the K8s Secret struct
 			// write the key and encrypted value in it
-			secretName := qliksenseCR.Metadata.Name + "-" + secretKind + "-" + string(api.GenerateUUID())
-			api.LogDebugMessage("Secret name here: %s", secretName)
+			secretName = qliksenseCR.Metadata.Name + "-" + secretKind + "-" + string(api.GenerateUUID())
+			api.LogDebugMessage("Computed secret name: %s", secretName)
 			// TODO: try to retrieve data section from the map, if map already exists, append to the datamap, DO NOT overwrite it
-			dataMap := map[string][]byte{
-				ra.Key: []byte(base64EncodedSecret)}
-			api.LogDebugMessage("datamap here: %+v", dataMap)
+			dataMap := map[string]string{
+				ra.Key: base64EncodedSecret}
+			k8sSecret := &config.K8sSecret{}
+			k8sSecret.ConstructK8sSecretStructure(secretName, dataMap)
 
-			secret := api.ConstructK8sSecretStructure(secretName, qliksenseCR.Spec.NameSpace, dataMap)
-
-			api.LogDebugMessage("\n\n*************** Secret here: %+v\n\n", secret)
+			api.LogDebugMessage("\n\n*************** Secret here: %+v\n\n", k8sSecret.Data)
 
 			// TO-DO: store it in /.qliksense/contexts/<current-context>/<secret-name>.yaml
-
 			currentContextPath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name)
 			api.LogDebugMessage("Current context: %s", currentContextPath)
 			secretFileName := filepath.Join(currentContextPath, secretName+".yaml")
 			api.LogDebugMessage("Secret File name here: %s", secretFileName)
 
-			api.WriteToFile(secret, secretFileName)
+			// Write secret to file
+			api.WriteToFile(&k8sSecret, secretFileName)
 			api.LogDebugMessage("Created a Kubernetes secret")
-			// TODO: write into CR the keyref of the secret
+
+			// Prepare args to update CR in the next step
+			base64EncodedSecret = ""
 		}
-		// TODO: Extend AddToSecrets to support adding k8s key ref. (OR) create a separate method to support that
-		// store the encrypted value in the file (OR)
-		// TODO: k8s secret name in the file
-		qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret)
+
+		// write into CR the keyref of the secret
+		qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret, secretName, isSecretSet)
 	}
 
-	// write modified content into context.yaml
+	// write modified content into context-yaml
 	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
 
 	return nil

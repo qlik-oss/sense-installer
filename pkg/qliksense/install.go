@@ -43,7 +43,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}
 	if opts.MongoDbUri != "" {
-		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri)
+		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "", false)
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
