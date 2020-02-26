@@ -8,7 +8,6 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
 )
 
 type k8sDockerConfigJsonMapType struct {
@@ -67,22 +66,12 @@ func (d *DockerConfigJsonSecret) ToYaml() ([]byte, error) {
 		},
 	}
 
-	//need this to remove the unnecessary metadata.creationTimestamp field:
-	k8sSecretYamlMap := map[string]interface{}{}
-	if k8sSecretYamlBytes, err := yaml.Marshal(k8sSecret); err != nil {
-		return nil, err
-	} else if err := yaml.Unmarshal(k8sSecretYamlBytes, &k8sSecretYamlMap); err != nil {
-		return nil, err
-	} else {
-		delete(k8sSecretYamlMap["metadata"].(map[string]interface{}), "creationTimestamp")
-		return yaml.Marshal(k8sSecretYamlMap)
-	}
+	return K8sSecretToYaml(k8sSecret)
 }
 
 func (d *DockerConfigJsonSecret) FromYaml(secretBytes []byte) error {
-	k8sSecret := v1.Secret{}
 	k8sDockerConfigJsonMap := k8sDockerConfigJsonMapType{}
-	if err := yaml.UnmarshalStrict(secretBytes, &k8sSecret); err != nil {
+	if k8sSecret, err := K8sSecretFromYaml(secretBytes); err != nil {
 		return err
 	} else if k8sSecret.TypeMeta.Kind != "Secret" {
 		return errors.New("not a Secret kind")
