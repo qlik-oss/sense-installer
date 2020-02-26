@@ -1,4 +1,4 @@
-# Qlik Sense installation and operations CLI
+# (WIP) Qlik Sense installation and operations CLI
 
 - [Qlik Sense installation and operations CLI](#qlik-sense-installation-and-operations-cli)
   - [About](#about)
@@ -18,149 +18,89 @@
   
 ## About
 
-The Qlik Sense installer CLI (sense-installer) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s).
+The Qlik Sense installer CLI (qliksense) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s).
 
-This is a technology preview that uses [porter](https://porter.sh) to execute "actions" (operations) and bundle versions of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository.
+This is a technology preview that uses qlik modified [kustomize](https://github.com/qlik-oss/kustomize) to kubernetes manifests of the versions of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository.
 
-These bundles are posted to [docker hub](https://hub.docker.com/) at the following location: [qliksense-cnab-bundle](https://hub.docker.com/r/qlik/qliksense-cnab-bundle/tags).
-
-For each version of a qliksense sense edge build there should be a corresponding release current posted on docker hub. ex. `qlik/qliksense-cnab-bundle:v1.21.23-edge` for `v1.21.23` edge release of qliksense. The latest version posted will also be labelled as `latest`
+For each version of a qliksense sense edge build there should be a corresponding release in [qliksense-k8s] repository under [releases](https://github.com/qlik-oss/qliksense-k8s/releases)
 
 ### Future Direction
 
-- Porter is currently used as a core technology for the CLI. In the future Porter will be moved "up the stack" to allow the CLI to perform the current and expanded operations independently and encapsulate core functionality currently provided by Porter and other dependent tooling.
 - More operations:
   - Expanded preflight checks
   - backup/restore operations
+  - fully support airgap installation of QSEoK
+  - restore unwanted deletion of kubernetes resoureces
 
 ## Getting Started
 
 ### Requirements
 
-- Docker Client connected to a docker engine into which images can built, pulled and pushed.
+- `kubectl` need to be installed and configured properly so that `kubectl` can connect to the kubernetes cluser. The `qliksense` CLI uses `kubectl` under the hood to perform operations on cluster
   - (Docker Desktop setup tested for these instructions)
   
 ### Download
 
-- Download the appropriate executable for your platform from the [releases page](https://github.com/qlik-oss/sense-installer/releases).
-- To allow the CLI to download and initialize dependencies (including porter and it's associated mixins), simply execute `qliksense` with no arguments
-  - `qliksense`
+- Download the appropriate executable for your platform from the [releases page](https://github.com/qlik-oss/sense-installer/releases) and rename it to `qliksense`. All the examplease down below uses `qliksense`.
   
-#### Porter CLI
-- *Optional*: If wanting to use porter CLI directly, two environment variables will need to be set so as not to conflict with an existing porter installation:
-  - _Bash_
-    ```shell
-    bash# export PORTER_HOME="$HOME\.qliksense"
-    bash# export PATH="$HOME\.qliksense;$PATH"
-    ```
+### TL;DR
 
-  - _PowerShell_
-    ```shell
-    PS> $Env:PORTER_HOME="$Env:USERPROFILE\.qliksense"
-    PS> $Env:PATH="$Env:USERPROFILE\.qliksense;$Env:PATH"
-    ```
+- execute `qliksense fetch v0.0.2` to download the version `v0.0.2` from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases).
+- execute `qliksense crds install --all` to install CRDs for QSEoK and qliksense operator into the kubernetes cluster.
+- execute `qliksense install v0.0.2 --acceptEULA="yes"` to install QSEoK into a namespace in the kubernetes cluster where `kubectl` is pointing to.
 
-### Generate Credentials from published bundle
 
-- Ensure connectivity to the target cluster create a kubeconfig credential for a target bundle. 
-  - generating a file as follows, replace `<credential_name>` with a name of your choosing.
-    - _Bash_
-      ```shell
-      bash# CREDENTIAL_NAME=<credential_name>
-      bash# cat <<EOF > $HOME/.qliksense/credentials/$CREDENTIAL_NAME.yaml
-      name: $CREDENTIAL_NAME
-      credentials:
-      - name: kubeconfig
-        source:
-          path: $HOME/.kube/config
-      EOF
-      ```
-    - _PowerShell_
-      ```shell
-      PS> $CREDENTIAL_NAME="<credential_name>"
-      PS> Add-Content -Value @"
-      name: $CREDENTIAL_NAME
-      credentials:
-      - name: kubeconfig
-        source:
-          path: $Env:USERPROFILE\.kube\config
-      "@ -Path $Env:USERPROFILE\.qliksense\credentials\$CREDENTIAL_NAME".yaml"
-      ```
-  - credentials can also be created using the [porter](https://porter.sh) CLI *(the correct environmental variable need to have been set up as shown in [Porter CLI](#porter-cli) above)*
-    - `porter cred generate <credential_name> --tag qlik/qliksense-cnab-bundle:v1.21.23-edge`, replace `<credential_name>` with a name of your choosing.
-    - Select `file path` and specify full path to a kube config file ex. _Bash_: `/home/user/.kube/config` or _PowerShell_ `C:\Users\user\.kube\config`
+## How qliksense CLI works
 
-### Qlik Sense version and image list
+`qliksense` CLI workes in two modes
+- with a git repo fork/clone of [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s)
+- without git repo
 
-It is possible verify the version of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository bundled into the `qlik/qliksense-cnab-bundle` image and retreive the list of images included in that release. (This operation can take a minute or so)<https://github.com/qlik-oss/kustomize/issues/13> as the entire manifests needs to be rendered:
+### Without git repo
 
-- `qliksense about --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
+In this mode `qliksense` CLI download the specified version from [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) and put it into `~/.qliksense/contexts/<context-name>/qlik-k8s`. The `qliksense` cli creates a default qliksense context (different from kubectl context) named `qlik-default` which will be the prefix for all kubernetes resources created by the cli under this context latter on. New context and configuration can be created by the CLI
 
-### Optional: Pulling images in manifest locally, "air gap"
+```console
+$ qliksense config
+do operations on/around CR
 
-If the `dockerRegistry` parameter is specified as the private docker registry to be used by the kubernetes cluster hosting qliksense, it is possible to pull images to the local docker engine for an eventual push during a `qliksense install` or `qliksense upgrade`
+Usage:
+  qliksense config [command]
 
-- `qliksense pull --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
+Available Commands:
+  apply         generate the patchs and apply manifests to k8s
+  list-contexts retrieves the contexts and lists them
+  set           configure a key value pair into the current context
+  set-configs   set configurations into the qliksense context
+  set-context   Sets the context in which the Kubernetes cluster and resources live in
+  set-secrets   set secrets configurations into the qliksense context
+  view          view the qliksense operator CR
 
-### Running Preflight checks
+Flags:
+  -h, --help   help for config
 
-You can run preflight checks to ensure that the cluster is in a healthy state before installing Qliksense.
-
-- `qliksense preflight -c <credential_name> --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
-
-The above command runs the checks in the default namespace. If you want to specify the namespace to run preflight checks on:
-
-- `qliksense preflight --param namespace=<value> -c <credential_name> --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
-
-### Installation
-
-- Install the bundle : `qliksense install --param acceptEULA=yes -c <credential_name> --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
-
-#### Supported Parameters during install
-
-| Name        | Descriptions           | Default  |
-| ------------- |:-------------:| -----:|
-| profile      | select a profile i.e docker-desktop, aws-eks, gke | docker-desktop |
-| acceptEULA      | yes | has to be yes |
-| namespace      | any kubernetes namespace      |   default |
-| dockerRegistry      | A private docker image regitry for pods    |   not specified (public) |
-| rotateKeys | regenerate application PKI keys on upgrade (yes/no)      |    no |
-| mongoDbUri | the mongodb URI to use      |    URI of development mongodb |
-| scName | storage class name      |    none |
-
-#### How To Add Identity Provider Config
-
-Since idp configs are usually multiline configs it is not conventional to pass to porter during install as a `param`. Rather put the configs in a file and refer to that file during `porter install` command. For example to add `keycloak` IDP create file named `idpconfigs.txt` and put
-
-```shell
-idpConfigs=[{"discoveryUrl":"http://keycloak-insecure:8089/keycloak/realms/master22/.well-known/openid-configuration","clientId":"edge-auth","clientSecret":"e15b5075-9399-4b20-a95e-023022aa4aed","realm":"master","hostname":"elastic.example","claimsMapping":{"sub":["sub","client_id"],"name":["name","given_name","family_name","preferred_username"]}}]
-
+Use "qliksense config [command] --help" for more information about a command.
 ```
 
-Then pass that file during install command like this
+The qliksense cli create a CR for the qliksense operator and all the config operations are peformed to edit the CR. So when `qliksense install` or `qliksense config apply` both generate patches in local file system (i.e `~/.qliksense/contexts/<context-name>/qlik-k8s`) and install those manifests into the cluster and ask `qliksene operator` to take the ownership of those resource so that when `qliksenes uninstall` is performed the operator can delete all those kubernetes resources for the current context.
 
-```shell
-qliksense install --param acceptEULA=yes -c  <credential_name> --param-file idpconfigs.txt --tag qlik/qliksense-cnab-bundle:<qliksense_version>`
+### With a git repo
+
+User has to create fork or clone of [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) and push it to their own git server. When user perform `qliksense install` or `qliksene config apply` the qliksense operator does these tasks
+
+- downloads the corresponding version of manifests from the user's git repo.
+- generate kustomize patches
+- install kubernetes resoruces 
+- push those generated patches into a new branch in the provided git repo. so that user user can merge those patches into their master branch. 
+- spinup a cornjob to monitor master branch. If user modifies anything in the master branch those changes will be applied into the cluster. This is a light weight `git-ops` model
+
+This is how repo info is provided into the CR
+
+```console
+qliksense config set git.repository="https://github.com/my-org/qliksense-k8s"
+
+qliksense config set git.accessToken=blablalaala
 ```
 
-## Packaging a Custom bundle
+## Air gaped
 
-If files need to be added to the [qliksense-k8s repository](https://github.com/qlik-oss/qliksense-k8s) in order to perform advanced configuration outside the scope of the what the operator provides, a custom bundle needs to be built.
-
-Packaging of Qlik Sense on Kubernetes is done through a [Porter](https://porter.sh/) definition in the [Qlik Sense on Kubernetes configuration repository](https://github.com/qlik-oss/qliksense-k8s/blob/master/porter.yaml), the resulting bundle published on DockerHub as a [Cloud Natvie Application Bundle](https://cnab.io/) called [qliksense-cnab-bundle](https://hub.docker.com/r/qlik/qliksense-cnab-bundle)
-
-To start, clone [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) and modify the repo as desired, once finished make sure to be in the `qliksense-k8s` directory from which the porter bundle can be built:
-
-```shell
-git clone git@github.com:qlik-oss/qliksense-k8s.git
-
-cd qliksense-k8s
-
-qliksense build
-```
-
-Once built, all of the `porter` command that were used with `--tag` can be now be used without this flag provided that porter is executed with the `qliksense-k8s` directory. `porter` will automatically use the qliksense-k8s (and the porter.yaml) in the current directory.
-
-## List of Commands
-
-- [qliksense about](action_about.md)
