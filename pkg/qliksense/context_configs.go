@@ -113,9 +113,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 			k8sSecret := &config.K8sSecret{}
 			k8sSecret.ConstructK8sSecretStructure(secretName, dataMap)
 
-			api.LogDebugMessage("\n\n*************** Secret here: %+v\n\n", k8sSecret.Data)
-
-			// TO-DO: store it in /.qliksense/contexts/<current-context>/<secret-name>.yaml
+			// store it in /.qliksense/contexts/<current-context>/<secret-name>.yaml
 			currentContextPath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name)
 			api.LogDebugMessage("Current context: %s", currentContextPath)
 			secretFileName := filepath.Join(currentContextPath, secretName+".yaml")

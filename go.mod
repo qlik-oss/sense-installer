@@ -50,7 +50,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.9-0.20200226015843-bf76ff93f5b6
+	github.com/qlik-oss/k-apis v0.0.9
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
