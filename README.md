@@ -6,6 +6,11 @@
   - [Getting Started](#getting-started)
     - [Requirements](#requirements)
     - [Download](#download)
+    - [TL;DR](#TL;DR)
+    - [How qliksense CLI works](#how-qliksense-cli-works)
+      - [Witout Git Repo](#Without-git-repo)
+      - [With Git Repo](#With-a-git-repo)
+    - [Air Gapped](#air-gaped)
   
 ## About
 
