@@ -6,19 +6,14 @@
   - [Getting Started](#getting-started)
     - [Requirements](#requirements)
     - [Download](#download)
-      - [Porter CLI](#porter-cli)
-    - [Generate Credentials from published bundle](#generate-credentials-from-published-bundle)
-    - [Qlik Sense version and image list](#qliksense-version-and-image-list)
-    - [Optional: Pulling images in manifest locally, "air gap"](#optional-pulling-images-in-manifest-locally-%22air-gap%22)
-    - [Running Preflight checks](#running-preflight-checks)
-    - [Installation](#installation)
-      - [Supported Parameters during install](#supported-parameters-during-install)
-      - [How To Add Identity Provider Config](#how-to-add-identity-provider-config)
-  - [Packaging a Custom bundle](#packaging-a-custom-bundle)
   
 ## About
 
-The Qlik Sense installer CLI (qliksense) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s).
+The Qlik Sense installer CLI (qliksense) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s). This cli faciliates to do
+
+- installation of QSEoK
+- installation of qliksense operator to manage QSEoK
+- air gapped installation of QSEoK
 
 This is a technology preview that uses qlik modified [kustomize](https://github.com/qlik-oss/kustomize) to kubernetes manifests of the versions of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository.
 
