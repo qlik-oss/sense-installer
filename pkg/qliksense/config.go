@@ -25,6 +25,11 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
+
+	if qcr.Spec.Git.Repository != "" {
+		// fetching and applying manifest will be in the operator controller
+		return q.applyCR(qcr.Spec.NameSpace)
+	}
 	return q.applyConfigToK8s(qcr)
 }
 
