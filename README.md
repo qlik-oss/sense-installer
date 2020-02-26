@@ -60,7 +60,7 @@ $qliksense crds install --all
 - execute  to install QSEoK into a namespace in the kubernetes cluster where `kubectl` is pointing to.
 
 ```shell
-$qliksense install v0.0.2 --acceptEULA="yes"
+$qliksense install --acceptEULA="yes"
 ```
 
 ## How qliksense CLI works
