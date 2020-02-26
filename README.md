@@ -45,14 +45,28 @@ For each version of a qliksense sense edge build there should be a corresponding
   
 ### TL;DR
 
-- execute `qliksense fetch v0.0.2` to download the version `v0.0.2` from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases).
-- execute `qliksense crds install --all` to install CRDs for QSEoK and qliksense operator into the kubernetes cluster.
-- execute `qliksense install v0.0.2 --acceptEULA="yes"` to install QSEoK into a namespace in the kubernetes cluster where `kubectl` is pointing to.
+- To download the version `v0.0.2` from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases).
 
+```shell
+$qliksense fetch v0.0.2
+```
+
+- To install CRDs for QSEoK and qliksense operator into the kubernetes cluster.
+
+```shell
+$qliksense crds install --all
+```
+
+- execute  to install QSEoK into a namespace in the kubernetes cluster where `kubectl` is pointing to.
+
+```shell
+$qliksense install v0.0.2 --acceptEULA="yes"
+```
 
 ## How qliksense CLI works
 
-`qliksense` CLI workes in two modes
+`qliksense` cli workes in two modes
+
 - with a git repo fork/clone of [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s)
 - without git repo
 
@@ -103,4 +117,3 @@ qliksense config set git.accessToken=blablalaala
 ```
 
 ## Air gaped
-
