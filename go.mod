@@ -49,12 +49,15 @@ require (
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-	golang.org/x/tools v0.0.0-20200225022059-a0ec867d517c // indirect
+	golang.org/x/tools v0.0.0-20200225230052-807dcd883420 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
 	sigs.k8s.io/kustomize/api v0.3.2
+	sigs.k8s.io/yaml v1.1.0
 )
 
 exclude github.com/Azure/go-autorest v12.0.0+incompatible
