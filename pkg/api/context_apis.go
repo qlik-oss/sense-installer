@@ -35,7 +35,7 @@ func (qliksenseCR *QliksenseCR) AddCommonConfig(contextName string) {
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
 	qliksenseCR.Spec.ReleaseName = contextName
 	qliksenseCR.Spec.RotateKeys = DefaultRotateKeys
-	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongoDbUriKey, DefaultMongoDbUri)
+	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongoDbUriKey, DefaultMongoDbUri, "", false)
 }
 
 // AddBaseQliksenseConfigs adds configs into config.yaml
