@@ -261,6 +261,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 		case "storageClassName":
 			qliksenseCR.Spec.StorageClassName = argsString[1]
 			api.LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+		case "manifestsRoot":
+			qliksenseCR.Spec.ManifestsRoot = argsString[1]
 		case "rotateKeys":
 			rotateKeys, err := validateInput(argsString[1])
 			if err != nil {

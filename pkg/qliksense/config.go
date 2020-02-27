@@ -38,20 +38,6 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 }
 
 func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
-	//mroot := qcr.Spec.GetManifestsRoot()
-	/* // Qliksense-Init CRD will be installed outside opeartor
-	qInitMsPath := filepath.Join(mroot, Q_INIT_CRD_PATH)
-	if cmd != "upgrade" {
-		qInitByte, err := executeKustomizeBuild(qInitMsPath)
-		if err != nil {
-			fmt.Println("cannot generate crds for qliksense-init", err)
-			return err
-		}
-		if err = qapi.KubectlApply(string(qInitByte)); err != nil {
-			return err
-		}
-	}
-	*/
 	if qcr.Spec.RotateKeys != "None" {
 		if err := os.Unsetenv("EJSON_KEY"); err != nil {
 			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
@@ -67,7 +53,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
 		return err
 	}
-
+	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	// generate patches
 	cr.GeneratePatches(qcr.Spec, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
