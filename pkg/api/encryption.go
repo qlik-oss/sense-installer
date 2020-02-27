@@ -64,7 +64,6 @@ func writeContentToFile(keyData []byte, fileName string) error {
 		log.Printf("error writing to file (%s): %v", fileName, err)
 		return err
 	}
-	// LogDebugMessage("Key saved: %s", fileName)
 	return nil
 }
 

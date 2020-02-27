@@ -104,12 +104,10 @@ func ReadFromFile(content interface{}, sourceFile string) error {
 	contents, err := ioutil.ReadFile(sourceFile)
 	if err != nil {
 		err = fmt.Errorf("There was an error reading from file: %s, %v", sourceFile, err)
-		log.Println(err)
 		return err
 	}
 	if err := yaml.Unmarshal(contents, content); err != nil {
 		err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-		log.Println(err)
 		return err
 	}
 	return nil

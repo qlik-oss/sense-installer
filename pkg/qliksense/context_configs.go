@@ -196,7 +196,10 @@ func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string, error) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
 
-	api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
+		log.Println(err)
+		return api.QliksenseCR{}, "", err
+	}
 	currentContext := qliksenseConfig.Spec.CurrentContext
 	api.LogDebugMessage("Current-context from config.yaml: %s", currentContext)
 	if currentContext == "" {
@@ -219,7 +222,10 @@ func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string, error) {
 		log.Println(err)
 		return api.QliksenseCR{}, "", err
 	}
-	api.ReadFromFile(&qliksenseCR, qliksenseContextsFile)
+	if err := api.ReadFromFile(&qliksenseCR, qliksenseContextsFile); err != nil {
+		log.Println(err)
+		return api.QliksenseCR{}, "", err
+	}
 
 	api.LogDebugMessage("Read context file: %s, Read QliksenseCR: %v", qliksenseContextsFile, qliksenseCR)
 	return qliksenseCR, qliksenseContextsFile, nil
@@ -287,7 +293,10 @@ func (q *Qliksense) SetContextConfig(args []string) error {
 func (q *Qliksense) ListContextConfigs() error {
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
 	var qliksenseConfig api.QliksenseConfig
-	api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
+		log.Println(err)
+		return err
+	}
 	out := ansi.NewColorableStdout()
 	w := tabwriter.NewWriter(out, 5, 8, 0, '\t', 0)
 	fmt.Fprintln(w, chalk.Underline.TextStyle("Context Name"), "\t", chalk.Underline.TextStyle("CR File Location"))
@@ -326,7 +335,10 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 	if !api.FileExists(qliksenseConfigFile) {
 		qliksenseConfig.AddBaseQliksenseConfigs(contextName)
 	} else {
-		api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile)
+		if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
+			log.Println(err)
+			return err
+		}
 		if isDefaultContext { // if config file exits but a default context is requested, we want to prevent writing to config file
 			configFileTrack = true
 		}
@@ -360,7 +372,10 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 		qliksenseCR.AddCommonConfig(contextName)
 		api.LogDebugMessage("Added Context: %s", contextName)
 	} else {
-		api.ReadFromFile(&qliksenseCR, qliksenseContextFile)
+		if err := api.ReadFromFile(&qliksenseCR, qliksenseContextFile); err != nil {
+			log.Println(err)
+			return err
+		}
 	}
 
 	api.WriteToFile(&qliksenseCR, qliksenseContextFile)
