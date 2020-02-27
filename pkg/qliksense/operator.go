@@ -2,27 +2,40 @@ package qliksense
 
 import (
 	"fmt"
-	"path/filepath"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
-func (q *Qliksense) ViewOperatorCrd() {
-	io.WriteString(os.Stdout, q.GetCRDString())
+func (q *Qliksense) ViewOperator() error {
+	io.WriteString(os.Stdout, q.GetOperatorCRDString())
+	return nil
+}
+
+func (q *Qliksense) ViewOperatorController() error {
+	io.WriteString(os.Stdout, q.GetOperatorControllerString())
+	return nil
 }
 
 // this will return crd,deployment,role, rolebinding,serviceaccount for operator
-func (q *Qliksense) GetCRDString() string {
+func (q *Qliksense) GetOperatorCRDString() string {
 	result := ""
 	for _, v := range q.getFileList("crd") {
 		result = q.getYamlFromPackrFile(v)
 	}
+
+	return result
+}
+
+func (q *Qliksense) GetOperatorControllerString() string {
+	result := ""
 	for _, v := range q.getFileList("crd-deploy") {
 		result = result + q.getYamlFromPackrFile(v)
 	}
 	return result
 }
+
 func (q *Qliksense) getYamlFromPackrFile(packrFile string) string {
 	s, err := q.CrdBox.FindString(packrFile)
 	if err != nil {

@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"strings"
+	"time"
 )
 
 func checkExists(filename string, isFile bool) os.FileInfo {
@@ -83,4 +85,34 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		}
 	}
 	return resultSvcKV, nil
+}
+
+func ExecuteTaskWithBlinkingStdoutFeedback(task func() (interface{}, error), feedback string) (result interface{}, err error) {
+	taskDone := make(chan bool)
+	go func() {
+		result, err = task()
+		taskDone <- true
+	}()
+	progressOnTicker := time.NewTicker(500 * time.Millisecond)
+	progressOffTicker := time.NewTicker(1000 * time.Millisecond)
+	printProgress := func(on bool) {
+		if on {
+			fmt.Printf("%s\r", feedback)
+		} else {
+			fmt.Printf("%s\r", strings.Repeat(" ", len(feedback)))
+		}
+	}
+	for {
+		select {
+		case <-taskDone:
+			progressOnTicker.Stop()
+			progressOffTicker.Stop()
+			printProgress(false)
+			return result, err
+		case <-progressOnTicker.C:
+			printProgress(true)
+		case <-progressOffTicker.C:
+			printProgress(false)
+		}
+	}
 }

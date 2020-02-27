@@ -115,7 +115,7 @@ func (qc *QliksenseConfig) BuildRepoPathForContext(contextName, version string) 
 }
 
 func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
-	return filepath.Join(qc.BuildRepoPath(version), "manifests")
+	return qc.BuildRepoPath(version)
 }
 
 func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
@@ -145,10 +145,37 @@ func (qc *QliksenseConfig) IsContextExist(ctxName string) bool {
 	return false
 }
 
-func (cr *QliksenseCR) AddLabelToCr(key, value string) error {
+func (cr *QliksenseCR) AddLabelToCr(key, value string) {
 	if cr.Metadata.Labels == nil {
 		cr.Metadata.Labels = make(map[string]string)
 	}
 	cr.Metadata.Labels[key] = value
-	return nil
+}
+
+func (cr *QliksenseCR) GetLabelFromCr(key string) string {
+	val := ""
+	if cr.Metadata.Labels != nil {
+		val = cr.Metadata.Labels[key]
+	}
+	return val
+}
+
+func (cr *QliksenseCR) GetString() (string, error) {
+	out, err := yaml.Marshal(cr)
+	if err != nil {
+		fmt.Println("cannot unmarshal cr ", err)
+		return "", err
+	}
+	return string(out), nil
+}
+
+func (cr *QliksenseCR) GetImageRegistry() string {
+	for _, nameValues := range cr.Spec.Configs {
+		for _, nameValue := range nameValues {
+			if nameValue.Name == "imageRegistry" {
+				return nameValue.Value
+			}
+		}
+	}
+	return ""
 }

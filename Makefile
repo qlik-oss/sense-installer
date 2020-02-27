@@ -24,8 +24,13 @@ SUPPORTED_ARCHES = amd64
 
 MIXIN = qliksense
 
+DEVNUL := /dev/null
+WHICH := which
+
 ifeq ($(CLIENT_PLATFORM),windows)
 FILE_EXT=.exe
+DEVNUL := NUL
+WHICH := where
 else ifeq ($(RUNTIME_PLATFORM),windows)
 FILE_EXT=.exe
 else
@@ -40,6 +45,12 @@ build: clean generate
 
 .PHONY: test
 test:
+ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
+	$(eval TMP := $(shell mktemp -d))
+	git clone https://github.com/docker/distribution.git $(TMP)/docker-distribution
+	cd $(TMP)/docker-distribution; git checkout -b v2.7.1; make
+	cp $(TMP)/docker-distribution/bin/registry pkg/qliksense/docker-registry
+endif
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
 
 xbuild-all: clean generate
