@@ -142,10 +142,11 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 			k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret)
 			if err != nil {
 				api.LogDebugMessage("Error while converting K8s secret to yaml")
+				return err
 			}
-			err := ioutil.WriteFile(secretFileName, k8sSecretBytes, os.ModePerm)
-			if err != nil {
+			if err = ioutil.WriteFile(secretFileName, k8sSecretBytes, os.ModePerm); err != nil {
 				api.LogDebugMessage("Error while writing K8s secret to file")
+				return err
 			}
 			// api.WriteToFile(&k8sSecret, secretFileName)
 			api.LogDebugMessage("Created a Kubernetes secret")
