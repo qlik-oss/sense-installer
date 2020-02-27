@@ -39,6 +39,13 @@ func TestAddCommonConfig(t *testing.T) {
 					Profile:     QliksenseDefaultProfile,
 					ReleaseName: "myqliksense",
 					RotateKeys:  DefaultRotateKeys,
+					Secrets: map[string]config.NameValues{
+						"qliksense": []config.NameValue{{
+							Name:  DefaultMongoDbUriKey,
+							Value: DefaultMongoDbUri,
+						},
+						},
+					},
 				},
 			},
 		},

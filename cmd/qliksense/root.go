@@ -95,8 +95,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 		Short: "Qliksense cli tool",
 		Long: `qliksense cli tool provides a wrapper around the porter api as well as
 		provides addition functionality`,
-		Args:         cobra.ArbitraryArgs,
-		SilenceUsage: true,
+		Args: cobra.ArbitraryArgs,
 	}
 
 	cmd.Flags().SetInterspersed(false)
@@ -106,13 +105,17 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// For qliksense overrides/commands
 
 	cmd.AddCommand(pullQliksenseImages(p))
+	cmd.AddCommand(pushQliksenseImages(p))
 	cmd.AddCommand(about(p))
 	// add version command
 	cmd.AddCommand(versionCmd)
 
 	// add operator command
 	cmd.AddCommand(operatorCmd)
-	operatorCmd.AddCommand(operatorViewCmd(p))
+	//operatorCmd.AddCommand(operatorViewCmd(p))
+	operatorCmd.AddCommand(operatorCrdCmd(p))
+	operatorCmd.AddCommand(operatorControllerCmd(p))
+
 	//add fetch command
 	cmd.AddCommand(fetchCmd(p))
 
@@ -149,6 +152,11 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
+
+	// add crds
+	cmd.AddCommand(crdsCmd)
+	crdsCmd.AddCommand(crdsViewCmd(p))
+	crdsCmd.AddCommand(crdsInstallCmd(p))
 	return cmd
 }
 

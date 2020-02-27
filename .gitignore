@@ -4,3 +4,4 @@ cmd/qliksense/__debug_bin
 pkg/qliksense/crds
 pkg/qliksense/packrd
 pkg/qliksense/qliksense-packr.go
+pkg/qliksense/docker-registry

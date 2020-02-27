@@ -21,7 +21,7 @@ func (q *Qliksense) UpgradeQK8s() error {
 		return err
 	}
 	qcr.Spec.RotateKeys = "no"
-	if err := q.applyConfigToK8s(qcr, "upgrade"); err != nil {
+	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
@@ -31,7 +31,7 @@ func (q *Qliksense) UpgradeQK8s() error {
 	if err != nil {
 		return err
 	}
-	if err := qapi.KubectlApply(r); err != nil {
+	if err := qapi.KubectlApply(r, qcr.Spec.NameSpace); err != nil {
 		fmt.Println("cannot do kubectl apply on operator CR")
 	}
 	return nil

@@ -2,7 +2,6 @@ package qliksense
 
 import (
 	"bytes"
-	"errors"
 	"io"
 	"io/ioutil"
 	"os"
@@ -81,7 +80,7 @@ func (q *Qliksense) AboutDir(configDirectory, profile string) (*VersionOutput, e
 		return nil, err
 	}
 
-	kuzManifest, err := executeKustomizeBuild(filepath.Join(configDirectory, "manifests", profile))
+	kuzManifest, err := executeKustomizeBuildWithStdoutProgress(filepath.Join(configDirectory, "manifests", profile))
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +119,7 @@ func (q *Qliksense) getConfigDirectory(gitUrl, gitRef, profileEntered string) (d
 	}
 
 	var profileFromCurrentContext string
-	exists, dir, profileFromCurrentContext, err = q.ConfigExistsInCurrentContext()
+	exists, dir, profileFromCurrentContext, err = q.configExistsInCurrentContext()
 	if err != nil {
 		return "", false, "", err
 	} else if exists {
@@ -170,16 +169,14 @@ func configExistsInCurrentDirectory(profile string) (exists bool, currentDirecto
 	return exists, currentDirectory, err
 }
 
-func (q *Qliksense) ConfigExistsInCurrentContext() (exists bool, directory string, profile string, err error) {
+func (q *Qliksense) configExistsInCurrentContext() (exists bool, directory string, profile string, err error) {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if currentCr, err := qConfig.GetCurrentCR(); err != nil {
 		return false, "", "", err
 	} else if currentCr.Spec.ManifestsRoot == "" {
 		return false, "", "", nil
-	} else if path.Base(currentCr.Spec.ManifestsRoot) != "manifests" {
-		return false, "", "", errors.New("currentCr.Spec.ManifestsRoot path should terminate with manifests/")
 	} else {
-		return true, path.Join(currentCr.Spec.ManifestsRoot, "../"), currentCr.Spec.Profile, nil
+		return true, currentCr.Spec.GetManifestsRoot(), currentCr.Spec.Profile, nil
 	}
 }
 

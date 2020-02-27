@@ -17,6 +17,8 @@ const (
 	QliksenseDefaultProfile    = "docker-desktop"
 	DefaultRotateKeys          = "yes"
 	QliksenseMetadataName      = "QliksenseConfigMetadata"
+	DefaultMongoDbUri          = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
+	DefaultMongoDbUriKey       = "mongoDbUri"
 )
 
 // AddCommonConfig adds common configs into CRs
@@ -33,6 +35,7 @@ func (qliksenseCR *QliksenseCR) AddCommonConfig(contextName string) {
 	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
 	qliksenseCR.Spec.ReleaseName = contextName
 	qliksenseCR.Spec.RotateKeys = DefaultRotateKeys
+	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongoDbUriKey, DefaultMongoDbUri, "")
 }
 
 // AddBaseQliksenseConfigs adds configs into config.yaml
@@ -49,6 +52,25 @@ func (qliksenseConfig *QliksenseConfig) AddBaseQliksenseConfigs(defaultQliksense
 		}
 		qliksenseConfig.Spec.CurrentContext = defaultQliksenseContext
 	}
+}
+
+func (qliksenseConfig *QliksenseConfig) SwitchCurrentCRToVersionAndProfile(version, profile string) error {
+	if qcr, err := qliksenseConfig.GetCurrentCR(); err != nil {
+		return err
+	} else {
+		versionManifestRoot := qliksenseConfig.BuildCurrentManifestsRoot(version)
+		if (qcr.Spec.ManifestsRoot != versionManifestRoot) || (profile != "" && qcr.Spec.Profile != profile) || (qcr.GetLabelFromCr("version") != version) {
+			qcr.Spec.ManifestsRoot = versionManifestRoot
+			if profile != "" {
+				qcr.Spec.Profile = profile
+			}
+			qcr.AddLabelToCr("version", version)
+			if err := qliksenseConfig.WriteCurrentContextCR(qcr); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 // WriteToFile (content, targetFile) writes content into specified file
@@ -82,12 +104,10 @@ func ReadFromFile(content interface{}, sourceFile string) error {
 	contents, err := ioutil.ReadFile(sourceFile)
 	if err != nil {
 		err = fmt.Errorf("There was an error reading from file: %s, %v", sourceFile, err)
-		log.Println(err)
 		return err
 	}
 	if err := yaml.Unmarshal(contents, content); err != nil {
 		err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-		log.Println(err)
 		return err
 	}
 	return nil

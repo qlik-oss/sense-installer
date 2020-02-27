@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	"errors"
 	"fmt"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -23,27 +24,18 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	fetchAndUpdateCR(qConfig, version)
 
-	//TODO: may need to check if CRD already installed, but doing apply does not hurt for now
-	//install crd into cluster
-	fmt.Println("Installing operator CRD")
-	if err := qapi.KubectlApply(q.GetCRDString()); err != nil {
-		fmt.Println("cannot do kubectl apply on opeartor CRD", err)
-		return err
-	}
-	// install generated manifests into cluster
-	fmt.Println("Installing generated manifests into cluster")
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
+
 	if opts.AcceptEULA != "" {
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}
 	if opts.MongoDbUri != "" {
-		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri)
+		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
@@ -55,11 +47,44 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
 	qConfig.WriteCurrentContextCR(qcr)
-	if err := q.applyConfigToK8s(qcr, "install"); err != nil {
+
+	//CRD will be installed outside of operator
+	//install operator controller into the namespace
+	fmt.Println("Installing operator controller")
+	if err := qapi.KubectlApply(q.GetOperatorControllerString(), qcr.Spec.NameSpace); err != nil {
+		fmt.Println("cannot do kubectl apply on opeartor controller", err)
+		return err
+	}
+
+	if qcr.Spec.Git.Repository != "" {
+		// fetching and applying manifest will be in the operator controller
+		return q.applyCR(qcr.Spec.NameSpace)
+	}
+	if version != "" { // no need to fetch manifest root already set by some other way
+		if err := fetchAndUpdateCR(qConfig, version); err != nil {
+			return err
+		}
+	}
+
+	qcr, err = qConfig.GetCurrentCR()
+	if err != nil {
+		fmt.Println("cannot get the current-context cr", err)
+		return err
+	} else if qcr.Spec.GetManifestsRoot() == "" {
+		return errors.New("cannot get the manifest root. Use qliksense fetch <version> or qliksense set manifestsRoot")
+	}
+
+	// install generated manifests into cluster
+	fmt.Println("Installing generated manifests into cluster")
+	if err := q.applyConfigToK8s(qcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
 
+	return q.applyCR(qcr.Spec.NameSpace)
+}
+
+func (q *Qliksense) applyCR(ns string) error {
 	// install operator cr into cluster
 	//get the current context cr
 	fmt.Println("Install operator CR into cluster")
@@ -67,8 +92,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if err != nil {
 		return err
 	}
-	if err := qapi.KubectlApply(r); err != nil {
+	if err := qapi.KubectlApply(r, ns); err != nil {
 		fmt.Println("cannot do kubectl apply on operator CR")
+		return err
 	}
 	return nil
 }
