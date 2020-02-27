@@ -40,27 +40,18 @@ require (
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.9
+	github.com/qlik-oss/k-apis v0.0.11
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
-	github.com/stretchr/testify v1.4.0
-	github.com/theupdateframework/notary v0.6.1 // indirect
-	github.com/xlab/handysort v0.0.0-20150421192137-fb3537ed64a1 // indirect
-	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
 	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-	golang.org/x/tools v0.0.0-20200225230052-807dcd883420 // indirect
+	golang.org/x/tools v0.0.0-20200226224502-204d844ad48d // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
-	gopkg.in/dancannon/gorethink.v3 v3.0.5 // indirect
-	gopkg.in/fatih/pool.v2 v2.0.0 // indirect
-	gopkg.in/gorethink/gorethink.v3 v3.0.5 // indirect
-	gopkg.in/square/go-jose.v1 v1.1.2
 	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
 	k8s.io/api v0.17.0

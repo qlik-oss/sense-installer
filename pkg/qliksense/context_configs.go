@@ -40,7 +40,92 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	if err != nil {
 		return err
 	}
+	// Metadata name in qliksense CR is the name of the current context
+	api.LogDebugMessage("Current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
+	rsaPublicKey, err := q.retrievePublicKey(qliksenseCR)
+	if err != nil {
+		return err
+	}
 
+	resultArgs, err := api.ProcessConfigArgs(args)
+	if err != nil {
+		return err
+	}
+	for _, ra := range resultArgs {
+		if err := q.processSecret(ra, rsaPublicKey, qliksenseCR, isSecretSet); err != nil {
+			return err
+		}
+	}
+	// write modified content into context-yaml
+	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
+	return nil
+}
+
+func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR api.QliksenseCR, isSecretSet bool) error {
+	// encrypt value with RSA key pair
+	valueBytes := []byte(ra.Value)
+	cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
+	if e2 != nil {
+		return e2
+	}
+	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
+	secretName := ""
+	if isSecretSet {
+		secretFolder := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)
+		secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
+
+		secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.Metadata.Name, ra.SvcName, "sense_installer")
+		api.LogDebugMessage("Constructed secret name: %s", secretName)
+
+		k8sSecret := v1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "v1",
+				Kind:       "Secret",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: secretName,
+			},
+			Type: v1.SecretTypeOpaque,
+		}
+
+		if !api.DirExists(secretFolder) {
+			if err := os.MkdirAll(secretFolder, os.ModePerm); err != nil {
+				err = fmt.Errorf("Not able to create %s dir: %v", secretFolder, err)
+				log.Println(err)
+				return err
+			}
+		}
+		// if read from file errors out, we can ignore it here
+		_ = api.ReadFromFile(k8sSecret, secretFileName)
+		if k8sSecret.Data == nil {
+			k8sSecret.Data = map[string][]byte{}
+		}
+		k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
+
+		// Write secret to file
+		k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret)
+		if err != nil {
+			api.LogDebugMessage("Error while converting K8s secret to yaml")
+			return err
+		}
+		if err = ioutil.WriteFile(secretFileName, k8sSecretBytes, os.ModePerm); err != nil {
+			api.LogDebugMessage("Error while writing K8s secret to file")
+			return err
+		}
+		// api.WriteToFile(&k8sSecret, secretFileName)
+		api.LogDebugMessage("Created a Kubernetes secret")
+
+		// Prepare args to update CR in the next step
+		base64EncodedSecret = ""
+	}
+
+	// write into CR the keyref of the secret
+	qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret, secretName)
+	return nil
+}
+
+func (q *Qliksense) retrievePublicKey(qliksenseCR api.QliksenseCR) (*rsa.PublicKey, error) {
 	secretKeyPairLocation := filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)
 	api.LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
 
@@ -61,108 +146,29 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		if err := os.MkdirAll(secretKeyPairLocation, os.ModePerm); err != nil {
 			err = fmt.Errorf("Not able to create %s dir: %v", secretKeyPairLocation, err)
 			log.Println(err)
-			return err
+			return nil, err
 		}
 		// generating and storing key-pair
 		err1 := api.GenerateAndStoreSecretKeypair(secretKeyPairLocation)
 		if err1 != nil {
 			err1 = fmt.Errorf("Not able to generate and store key pair for encryption")
 			log.Println(err1)
-			return err1
+			return nil, err1
 		}
 	}
-
-	var rsaPublicKey *rsa.PublicKey
-	var e1 error
-
 	// Read Public Key
 	publicKeybytes, err2 := api.ReadKeys(publicKeyFilePath)
 	if err2 != nil {
 		api.LogDebugMessage("Not able to read public key")
-		return err2
+		return nil, err2
 	}
 
 	// convert []byte into RSA public key object
-	rsaPublicKey, e1 = api.DecodeToPublicKey(publicKeybytes)
+	rsaPublicKey, e1 := api.DecodeToPublicKey(publicKeybytes)
 	if e1 != nil {
-		return e1
+		return nil, e1
 	}
-
-	resultArgs, err := api.ProcessConfigArgs(args)
-	if err != nil {
-		return err
-	}
-	secretName := ""
-	for _, ra := range resultArgs {
-		// Metadata name in qliksense CR is the name of the current context
-		api.LogDebugMessage("Current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
-
-		// encrypt value with RSA key pair
-		valueBytes := []byte(ra.Value)
-		cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
-		if e2 != nil {
-			return e2
-		}
-		base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
-
-		if isSecretSet {
-			currentContextPath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name)
-			secretFolder := filepath.Join(currentContextPath, QliksenseSecretsDir)
-			secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
-
-			secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.Metadata.Name, ra.SvcName, "sense_installer")
-			api.LogDebugMessage("Constructed secret name: %s", secretName)
-
-			k8sSecret := v1.Secret{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "v1",
-					Kind:       "Secret",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name: secretName,
-				},
-				Type: v1.SecretTypeOpaque,
-			}
-
-			if !api.DirExists(secretFolder) {
-				if err := os.MkdirAll(secretFolder, os.ModePerm); err != nil {
-					err = fmt.Errorf("Not able to create %s dir: %v", secretFolder, err)
-					log.Println(err)
-					return err
-				}
-			}
-
-			_ = api.ReadFromFile(k8sSecret, secretFileName)
-			if k8sSecret.Data == nil {
-				k8sSecret.Data = map[string][]byte{}
-			}
-			k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
-
-			// Write secret to file
-			k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret)
-			if err != nil {
-				api.LogDebugMessage("Error while converting K8s secret to yaml")
-				return err
-			}
-			if err = ioutil.WriteFile(secretFileName, k8sSecretBytes, os.ModePerm); err != nil {
-				api.LogDebugMessage("Error while writing K8s secret to file")
-				return err
-			}
-			// api.WriteToFile(&k8sSecret, secretFileName)
-			api.LogDebugMessage("Created a Kubernetes secret")
-
-			// Prepare args to update CR in the next step
-			base64EncodedSecret = ""
-		}
-
-		// write into CR the keyref of the secret
-		qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret, secretName, isSecretSet)
-	}
-
-	// write modified content into context-yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	return rsaPublicKey, nil
 }
 
 // SetConfigs - set-configs <key>=<value> commands
