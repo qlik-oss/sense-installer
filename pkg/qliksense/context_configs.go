@@ -10,8 +10,9 @@ import (
 
 	b64 "encoding/base64"
 
-	"github.com/qlik-oss/k-apis/pkg/config"
 	"github.com/qlik-oss/sense-installer/pkg/api"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -103,20 +104,39 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		api.LogDebugMessage("Returned cipher text: %s", base64EncodedSecret)
 
 		if isSecretSet {
-			// construct the K8s Secret struct
-			// write the key and encrypted value in it
-			secretName = qliksenseCR.Metadata.Name + "-" + secretKind + "-" + string(api.GenerateUUID())
-			api.LogDebugMessage("Computed secret name: %s", secretName)
-			// TODO: try to retrieve data section from the map, if map already exists, append to the datamap, DO NOT overwrite it
-			dataMap := map[string]string{
-				ra.Key: base64EncodedSecret}
-			k8sSecret := &config.K8sSecret{}
-			k8sSecret.ConstructK8sSecretStructure(secretName, dataMap)
-
-			// store it in /.qliksense/contexts/<current-context>/<secret-name>.yaml
 			currentContextPath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name)
+			secretFolder := filepath.Join(currentContextPath, "secrets")
+			secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
+
+			secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.Metadata.Name, ra.SvcName, "sense_installer")
+			api.LogDebugMessage("Computed secret name: %s", secretName)
+
+			k8sSecret := &v1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: secretName,
+				},
+				Type: v1.SecretTypeOpaque,
+			}
+
+			if !api.DirExists(secretFolder) {
+				if err := os.MkdirAll(secretFolder, os.ModePerm); err != nil {
+					err = fmt.Errorf("Not able to create %s dir: %v", secretFolder, err)
+					log.Println(err)
+					return err
+				}
+			}
+
+			_ = api.ReadFromFile(k8sSecret, secretFileName)
+			if k8sSecret.Data == nil {
+				k8sSecret.Data = map[string][]byte{}
+			}
+			k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
 			api.LogDebugMessage("Current context: %s", currentContextPath)
-			secretFileName := filepath.Join(currentContextPath, secretName+".yaml")
+
 			api.LogDebugMessage("Secret File name here: %s", secretFileName)
 
 			// Write secret to file
