@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 	"regexp"
-
-	"github.com/google/uuid"
 )
 
 func checkExists(filename string, isFile bool) os.FileInfo {
@@ -54,8 +52,6 @@ func ReadKeys(keyFile string) ([]byte, error) {
 		err = fmt.Errorf("There was an error reading from file: %s, %v", keyFile, err)
 		log.Println(err)
 		return nil, err
-	} else {
-		LogDebugMessage("Read key as byte[]: %+v", keybyteArray)
 	}
 	return keybyteArray, nil
 }
@@ -70,7 +66,6 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		return nil, err
 	}
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
-	// re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
 	re1 := regexp.MustCompile(`(\w{1,}).(\w{1,})=("*[\w\-_/:0-9]+"*)`)
 	for i, arg := range args {
 		LogDebugMessage("Arg received: %s", arg)
@@ -89,14 +84,3 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 	}
 	return resultSvcKV, nil
 }
-
-// GenerateUUID generates a random number
-func GenerateUUID() string {
-	id := uuid.New()
-	// fmt.Println(id.String())
-	return id.String()
-}
-
-// func getSecretFileName() string {
-// 	return
-// }

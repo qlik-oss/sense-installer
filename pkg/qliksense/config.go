@@ -109,12 +109,10 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 	var crString strings.Builder
 	crString.Write(out)
 
-	for _, v := range qcr.Spec.Secrets {
+	for svcName, v := range qcr.Spec.Secrets {
 		for _, item := range v {
 			if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
-				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.Metadata.Name, item.ValueFrom.SecretKeyRef.Name+".yaml")
-
-				api.LogDebugMessage("Secret File name: %s", secretFilePath)
+				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
 
 				if api.FileExists(secretFilePath) {
 					secretFile, err := ioutil.ReadFile(secretFilePath)

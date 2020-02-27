@@ -92,7 +92,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	secretName := ""
 	for _, ra := range resultArgs {
 		// Metadata name in qliksense CR is the name of the current context
-		api.LogDebugMessage("Trying to retreive current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
+		api.LogDebugMessage("Current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
 
 		// encrypt value with RSA key pair
 		valueBytes := []byte(ra.Value)
@@ -101,15 +101,14 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 			return e2
 		}
 		base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
-		api.LogDebugMessage("Returned cipher text: %s", base64EncodedSecret)
 
 		if isSecretSet {
 			currentContextPath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name)
-			secretFolder := filepath.Join(currentContextPath, "secrets")
+			secretFolder := filepath.Join(currentContextPath, QliksenseSecretsDir)
 			secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
 
 			secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.Metadata.Name, ra.SvcName, "sense_installer")
-			api.LogDebugMessage("Computed secret name: %s", secretName)
+			api.LogDebugMessage("Constructed secret name: %s", secretName)
 
 			k8sSecret := &v1.Secret{
 				TypeMeta: metav1.TypeMeta{
@@ -135,9 +134,6 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 				k8sSecret.Data = map[string][]byte{}
 			}
 			k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
-			api.LogDebugMessage("Current context: %s", currentContextPath)
-
-			api.LogDebugMessage("Secret File name here: %s", secretFileName)
 
 			// Write secret to file
 			api.WriteToFile(&k8sSecret, secretFileName)
