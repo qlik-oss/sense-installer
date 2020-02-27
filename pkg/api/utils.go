@@ -100,7 +100,3 @@ func GenerateUUID() string {
 // func getSecretFileName() string {
 // 	return
 // }
-
-func getCurrentContextPath() string {
-	qliksense.retrieveCurrentContextInfo()
-}
