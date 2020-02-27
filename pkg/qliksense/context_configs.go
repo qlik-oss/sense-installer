@@ -3,6 +3,7 @@ package qliksense
 import (
 	"crypto/rsa"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -112,7 +113,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 			secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.Metadata.Name, ra.SvcName, "sense_installer")
 			api.LogDebugMessage("Constructed secret name: %s", secretName)
 
-			k8sSecret := &v1.Secret{
+			k8sSecret := v1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					APIVersion: "v1",
 					Kind:       "Secret",
@@ -138,7 +139,15 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 			k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
 
 			// Write secret to file
-			api.WriteToFile(&k8sSecret, secretFileName)
+			k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret)
+			if err != nil {
+				api.LogDebugMessage("Error while converting K8s secret to yaml")
+			}
+			err := ioutil.WriteFile(secretFileName, k8sSecretBytes, os.ModePerm)
+			if err != nil {
+				api.LogDebugMessage("Error while writing K8s secret to file")
+			}
+			// api.WriteToFile(&k8sSecret, secretFileName)
 			api.LogDebugMessage("Created a Kubernetes secret")
 
 			// Prepare args to update CR in the next step
