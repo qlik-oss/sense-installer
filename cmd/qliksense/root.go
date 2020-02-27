@@ -2,13 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-
 	ansi "github.com/mattn/go-colorable"
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
@@ -17,6 +10,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/ttacon/chalk"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // To run this project in ddebug mode, run:
@@ -211,13 +210,7 @@ func copy(src, dst string) (int64, error) {
 }
 
 func levenstein(cmd *cobra.Command) bool {
-	type closeCommand struct {
-		Name          string
-		levensteinVal int
-	}
-	var lev closeCommand
-	lev.Name = ""
-	lev.levensteinVal = 10
+	cmd.SuggestionsMinimumDistance = 4
 	if len(os.Args) > 1 {
 		args := os.Args[1]
 		for _, ctx := range cmd.Commands() {
@@ -225,62 +218,19 @@ func levenstein(cmd *cobra.Command) bool {
 			if args == val.Name() {
 				//found command
 				return false
-			} else {
-				currVal := comparator([]rune(args), []rune(val.Name()))
-				if currVal < lev.levensteinVal {
-					lev.levensteinVal = currVal
-					lev.Name = val.Name()
-				}
-				fmt.Println(currVal, val.Name())
 			}
 		}
-		if lev.levensteinVal <= 4 {
+		suggest := cmd.SuggestionsFor(os.Args[1])
+		if len(suggest) > 0 {
 			arg := []string{}
 			for _, cm := range os.Args {
 				arg = append(arg, cm)
 			}
-			arg[1] = lev.Name
+			arg[1] = suggest[0]
 			out := ansi.NewColorableStdout()
 			fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
 			return true
 		}
 	}
 	return false
-}
-
-func comparator(str1, str2 []rune) int {
-	s1len := len(str1)
-	s2len := len(str2)
-	column := make([]int, len(str1)+1)
-
-	for y := 1; y <= s1len; y++ {
-		column[y] = y
-	}
-	for x := 1; x <= s2len; x++ {
-		column[0] = x
-		lastkey := x - 1
-		for y := 1; y <= s1len; y++ {
-			oldkey := column[y]
-			var incr int
-			if str1[y-1] != str2[x-1] {
-				incr = 1
-			}
-			column[y] = minimum(column[y]+1, column[y-1]+1, lastkey+incr)
-			lastkey = oldkey
-		}
-	}
-	return column[s1len]
-}
-
-func minimum(a, b, c int) int {
-	if a < b {
-		if a < c {
-			return a
-		}
-	} else {
-		if b < c {
-			return b
-		}
-	}
-	return c
 }
