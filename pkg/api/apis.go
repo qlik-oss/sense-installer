@@ -39,6 +39,10 @@ func (qc *QliksenseConfig) GetCR(contextName string) (*QliksenseCR, error) {
 	return getCRObject(crFilePath)
 }
 
+func getUnencryptedCR() {
+
+}
+
 // GetCurrentCR create a QliksenseCR object for current context
 func (qc *QliksenseConfig) GetCurrentCR() (*QliksenseCR, error) {
 	return qc.GetCR(qc.Spec.CurrentContext)

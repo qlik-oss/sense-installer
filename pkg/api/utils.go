@@ -10,14 +10,9 @@ import (
 	"time"
 )
 
-func checkExists(filename string, isFile bool) os.FileInfo {
+func checkExists(filename string) os.FileInfo {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
-		if isFile {
-			LogDebugMessage("File does not exist")
-		} else {
-			LogDebugMessage("Dir does not exist")
-		}
 		return nil
 	}
 	LogDebugMessage("File exists")
@@ -26,7 +21,7 @@ func checkExists(filename string, isFile bool) os.FileInfo {
 
 // FileExists checks if a file exists
 func FileExists(filename string) bool {
-	if fe := checkExists(filename, true); fe != nil && !fe.IsDir() {
+	if fe := checkExists(filename); fe != nil && !fe.IsDir() {
 		return true
 	}
 	return false
@@ -34,7 +29,7 @@ func FileExists(filename string) bool {
 
 // DirExists checks if a directory exists
 func DirExists(dirname string) bool {
-	if fe := checkExists(dirname, false); fe != nil && fe.IsDir() {
+	if fe := checkExists(dirname); fe != nil && fe.IsDir() {
 		return true
 	}
 	return false
@@ -54,8 +49,6 @@ func ReadKeys(keyFile string) ([]byte, error) {
 		err = fmt.Errorf("There was an error reading from file: %s, %v", keyFile, err)
 		log.Println(err)
 		return nil, err
-	} else {
-		LogDebugMessage("Read key as byte[]: %+v", keybyteArray)
 	}
 	return keybyteArray, nil
 }
@@ -70,7 +63,7 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		return nil, err
 	}
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
-	re1 := regexp.MustCompile(`(\w{1,})\[name=(\w{1,})\]=("*[\w\-_/:0-9]+"*)`)
+	re1 := regexp.MustCompile(`(\w{1,}).(\w{1,})=("*[\w\-_/:0-9]+"*)`)
 	for i, arg := range args {
 		LogDebugMessage("Arg received: %s", arg)
 		result := re1.FindStringSubmatch(arg)

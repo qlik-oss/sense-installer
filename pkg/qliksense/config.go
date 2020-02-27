@@ -2,13 +2,17 @@ package qliksense
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"gopkg.in/yaml.v2"
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -67,7 +71,6 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 }
 
 func (q *Qliksense) ConfigViewCR() error {
-
 	//get the current context cr
 	r, err := q.getCurrentCRString()
 	if err != nil {
@@ -89,5 +92,29 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 		fmt.Println("cannot get the context cr", err)
 		return "", err
 	}
-	return qcr.GetString()
+	out, err := yaml.Marshal(qcr)
+	if err != nil {
+		fmt.Println("cannot unmarshal cr ", err)
+		return "", err
+	}
+	var crString strings.Builder
+	crString.Write(out)
+
+	for svcName, v := range qcr.Spec.Secrets {
+		for _, item := range v {
+			if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
+				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
+
+				if api.FileExists(secretFilePath) {
+					secretFile, err := ioutil.ReadFile(secretFilePath)
+					if err != nil {
+						return "", err
+					}
+					crString.WriteString("\n---\n")
+					crString.Write(secretFile)
+				}
+			}
+		}
+	}
+	return crString.String(), nil
 }
