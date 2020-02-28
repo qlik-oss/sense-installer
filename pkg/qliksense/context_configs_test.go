@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -239,58 +240,114 @@ func TestSetConfigs(t *testing.T) {
 	}
 }
 
-func TestQliksense_PrepareK8sSecret(t *testing.T) {
-	type fields struct {
-		QliksenseHome        string
-		QliksenseEjsonKeyDir string
-		CrdBox               *packr.Box
+func TestSetImageRegistry(t *testing.T) {
+	getQlikSense := func(tmpQlikSenseHome string) (*Qliksense, error) {
+		if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(fmt.Sprintf(`
+apiVersion: config.qlik.com/v1
+kind: QliksenseConfig
+metadata:
+  name: QliksenseConfigMetadata
+spec:
+  contexts:
+  - name: qlik-default
+    crFile: %s/contexts/qlik-default/qlik-default.yaml
+  currentContext: qlik-default
+`, tmpQlikSenseHome)), os.ModePerm); err != nil {
+			return nil, err
+		}
+
+		defaultContextDir := path.Join(tmpQlikSenseHome, "contexts", "qlik-default")
+		if err := os.MkdirAll(defaultContextDir, os.ModePerm); err != nil {
+			return nil, err
+		}
+
+		version := "foo"
+		manifestsRootDir := fmt.Sprintf("%s/repo/%s", defaultContextDir, version)
+		if err := ioutil.WriteFile(path.Join(defaultContextDir, "qlik-default.yaml"), []byte(fmt.Sprintf(`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik-default
+  labels:
+    version: %s
+spec:
+  profile: docker-desktop
+  manifestsRoot: %s
+  namespace: some-namespace
+`, version, manifestsRootDir)), os.ModePerm); err != nil {
+			return nil, err
+		}
+		return &Qliksense{
+			QliksenseHome: tmpQlikSenseHome,
+		}, nil
 	}
-	type args struct {
-		qliksenseCR *api.QliksenseCR
-		targetFile  string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    map[string]string
-		wantErr bool
+	testCases := []struct {
+		name               string
+		registry           string
+		pushUsername       string
+		pushPassword       string
+		pullUsername       string
+		pullPassword       string
+		expectSecretsExist bool
 	}{
 		{
-			name: "valid case",
-			args: args{
-				qliksenseCR: &QliksenseCR{
-					CommonConfig: &CommonConfig{
-						ApiVersion: QliksenseContextApiVersion,
-						Kind:       QliksenseContextKind,
-						Metadata: &Metadata{
-							Name: "myqliksense",
-						},
-					},
-				},
-				targetFile: "secretfile.yaml",
-			},
-			want:    map[string]string{},
-			wantErr: false,
+			name:               "no auth",
+			registry:           "foobar",
+			pushUsername:       "",
+			pushPassword:       "",
+			pullUsername:       "",
+			pullPassword:       "",
+			expectSecretsExist: false,
+		},
+		{
+			name:               "auth",
+			registry:           "foobar",
+			pushUsername:       "foo-push",
+			pushPassword:       "bar-push",
+			pullUsername:       "foo-pull",
+			pullPassword:       "bar-pull",
+			expectSecretsExist: true,
 		},
 	}
-	tearDown := setup()
-	setupTargetFile()
-	defer tearDown()
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			q := &Qliksense{
-				QliksenseHome:        tt.fields.QliksenseHome,
-				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
-				CrdBox:               tt.fields.CrdBox,
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			tmpQlikSenseHome, err := ioutil.TempDir("", "")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, tt.args.targetFile)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			defer os.RemoveAll(tmpQlikSenseHome)
+
+			q, err := getQlikSense(tmpQlikSenseHome)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Qliksense.PrepareK8sSecret() = %v, want %v", got, tt.want)
+
+			if err := q.SetImageRegistry(testCase.registry, testCase.pushUsername, testCase.pushPassword,
+				testCase.pullUsername, testCase.pullPassword); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			qConfig := api.NewQConfig(q.QliksenseHome)
+			if testCase.expectSecretsExist {
+				if pushSecret, err := qConfig.GetPushDockerConfigJsonSecret(); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				} else if pushSecret.Uri != testCase.registry ||
+					pushSecret.Username != testCase.pushUsername || pushSecret.Password != testCase.pushPassword {
+					t.Fatalf("unexpected push secret content: %v", pushSecret)
+				}
+				if pullSecret, err := qConfig.GetDockerConfigJsonSecret("image-registry-pull-secret.yaml"); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				} else if pullSecret.Uri != testCase.registry ||
+					pullSecret.Name != "artifactory-docker-secret" || pullSecret.Namespace != "some-namespace" ||
+					pullSecret.Username != testCase.pullUsername || pullSecret.Password != testCase.pullPassword {
+					t.Fatalf("unexpected pull secret content: %v", pullSecret)
+				}
+			} else {
+				if _, err := qConfig.GetPushDockerConfigJsonSecret(); err == nil {
+					t.Fatal("unexpected image-registry-push-secret.yaml")
+				} else if _, err := qConfig.GetDockerConfigJsonSecret("image-registry-pull-secret.yaml"); err == nil {
+					t.Fatal("unexpected image-registry-pull-secret.yaml")
+				}
 			}
 		})
 	}
