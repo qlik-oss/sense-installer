@@ -147,6 +147,9 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add the list config command as a sub-command to the app config sub-command
 	configCmd.AddCommand(listContextConfigCmd(p))
 
+	// add set-image-registry command as a sub-command to the app config sub-command
+	configCmd.AddCommand(setImageRegistryCmd(p))
+
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
 
