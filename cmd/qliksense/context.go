@@ -120,7 +120,7 @@ qliksense config set-image-registry https://your.private.registry.example.com:50
 			}
 			if password != "" {
 				pullPassword = password
-				pushPassword = username
+				pushPassword = password
 			}
 			if (pullUsername != "" && pushUsername == "") || (pullUsername == "" && pushUsername != "") {
 				return errors.New("if you specify pull credentials, you must specify push credentials as well and vise versa")

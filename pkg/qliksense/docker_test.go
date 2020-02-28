@@ -46,6 +46,15 @@ func Test_locateDockerRegistryBinary(t *testing.T) {
 	t.Logf("output: %v\n", string(out))
 }
 
+func Test_getSelfSignedCertAndKey(t *testing.T) {
+	selfSignedCert, key, err := getSelfSignedCertAndKey()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	fmt.Print(string(selfSignedCert))
+	fmt.Print(string(key))
+}
+
 type clientAuthType byte
 
 const (

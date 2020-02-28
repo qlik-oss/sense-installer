@@ -49,7 +49,7 @@ func pushQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 			qConfig := qapi.NewQConfig(q.QliksenseHome)
 			if qcr, err := qConfig.GetCurrentCR(); err != nil {
 				return err
-			} else if registry := qcr.GetImageRegistry(); registry != "" {
+			} else if registry := qcr.GetImageRegistry(); registry == "" {
 				return errors.New("no image registry in config")
 			} else {
 				return q.PushImagesForCurrentCR()
