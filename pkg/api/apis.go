@@ -11,6 +11,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	pushSecretFileName = "image-registry-push-secret.yaml"
+	pullSecretFileName = "image-registry-pull-secret.yaml"
+)
+
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
 func NewQConfig(qsHome string) *QliksenseConfig {
 	configFile := filepath.Join(qsHome, "config.yaml")
@@ -139,6 +144,58 @@ func (qc *QliksenseConfig) IsContextExist(ctxName string) bool {
 		}
 	}
 	return false
+}
+
+func (qc *QliksenseConfig) GetCurrentContextDir() (string, error) {
+	if qcr, err := qc.GetCurrentCR(); err != nil {
+		return "", err
+	} else {
+		return filepath.Join(qc.QliksenseHomePath, "contexts", qcr.Metadata.Name), nil
+	}
+}
+
+func (qc *QliksenseConfig) GetCurrentContextSecretsDir() (string, error) {
+	if currentContextDir, err := qc.GetCurrentContextDir(); err != nil {
+		return "", err
+	} else {
+		return filepath.Join(currentContextDir, "secrets"), nil
+	}
+}
+
+func (qc *QliksenseConfig) setDockerConfigJsonSecret(filename string, dockerConfigJsonSecret *DockerConfigJsonSecret) error {
+	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
+		return err
+	} else if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(); err != nil {
+		return err
+	} else if err := os.MkdirAll(secretsDir, os.ModePerm); err != nil {
+		return err
+	} else {
+		return ioutil.WriteFile(filepath.Join(secretsDir, filename), dockerConfigJsonSecretYaml, os.ModePerm)
+	}
+}
+
+func (qc *QliksenseConfig) SetPushDockerConfigJsonSecret(dockerConfigJsonSecret *DockerConfigJsonSecret) error {
+	return qc.setDockerConfigJsonSecret(pushSecretFileName, dockerConfigJsonSecret)
+}
+
+func (qc *QliksenseConfig) SetPullDockerConfigJsonSecret(dockerConfigJsonSecret *DockerConfigJsonSecret) error {
+	return qc.setDockerConfigJsonSecret(pullSecretFileName, dockerConfigJsonSecret)
+}
+
+func (qc *QliksenseConfig) GetPushDockerConfigJsonSecret() (*DockerConfigJsonSecret, error) {
+	return qc.GetDockerConfigJsonSecret(pushSecretFileName)
+}
+
+func (qc *QliksenseConfig) GetDockerConfigJsonSecret(name string) (*DockerConfigJsonSecret, error) {
+	dockerConfigJsonSecret := &DockerConfigJsonSecret{}
+	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
+		return nil, err
+	} else if dockerConfigJsonSecretYaml, err := ioutil.ReadFile(filepath.Join(secretsDir, name)); err != nil {
+		return nil, err
+	} else if err := dockerConfigJsonSecret.FromYaml(dockerConfigJsonSecretYaml); err != nil {
+		return nil, err
+	}
+	return dockerConfigJsonSecret, nil
 }
 
 func (cr *QliksenseCR) AddLabelToCr(key, value string) {

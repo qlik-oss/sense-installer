@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
@@ -85,5 +87,56 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	f := cmd.Flags()
 	f.BoolVar(&secret, "secret", false, "Whether secrets should be encrypted as a Kubernetes Secret resource")
+	return cmd
+}
+
+func setImageRegistryCmd(q *qliksense.Qliksense) *cobra.Command {
+	var (
+		cmd          *cobra.Command
+		pushUsername string
+		pushPassword string
+		pullUsername string
+		pullPassword string
+		username     string
+		password     string
+	)
+
+	cmd = &cobra.Command{
+		Use:   "set-image-registry",
+		Short: "set private image registry",
+		Example: `
+qliksense config set-image-registry https://your.private.registry.example.com:5000 --push-username foo1 --push-password bar1 --pull-username foo2 --pull-password bar2
+qliksense config set-image-registry https://your.private.registry.example.com:5000 --username foo --password bar
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errors.New("private docker image registry FQDN is required")
+			}
+			registry := args[0]
+
+			if username != "" {
+				pullUsername = username
+				pushUsername = username
+			}
+			if password != "" {
+				pullPassword = password
+				pushPassword = username
+			}
+			if (pullUsername != "" && pushUsername == "") || (pullUsername == "" && pushUsername != "") {
+				return errors.New("if you specify pull credentials, you must specify push credentials as well and vise versa")
+			}
+			if (pullUsername == "" && pullPassword != "") || (pushUsername == "" && pushPassword != "") {
+				return errors.New("if you specify passwords, you must specify usernames as well")
+			}
+			return q.SetImageRegistry(registry, pushUsername, pushPassword, pullUsername, pullPassword)
+		},
+	}
+	f := cmd.Flags()
+	f.StringVar(&pushUsername, "push-username", "", "Username used for pushing images")
+	f.StringVar(&pushPassword, "push-password", "", "Password used for pushing images")
+	f.StringVar(&pullUsername, "pull-username", "", "Username used for pulling images")
+	f.StringVar(&pullPassword, "pull-password", "", "Password used for pulling images")
+	f.StringVar(&username, "username", "", "Username used for both pushing and pulling images")
+	f.StringVar(&password, "password", "", "Password used for both pushing and pulling images")
 	return cmd
 }

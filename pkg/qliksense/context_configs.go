@@ -10,6 +10,7 @@ import (
 	"text/tabwriter"
 
 	b64 "encoding/base64"
+
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/ttacon/chalk"
@@ -25,6 +26,9 @@ const (
 	DefaultQliksenseContext = "qlik-default"
 	MaxContextNameLength    = 17
 	QliksenseSecretsDir     = "secrets"
+
+	imageRegistryConfigKey = "imageRegistry"
+	pullSecretName         = "artifactory-docker-secret"
 )
 
 // SetSecrets - set-secrets <key>=<value> commands
@@ -352,4 +356,32 @@ func validateInput(input string) (string, error) {
 
 	}
 	return input, err
+}
+
+func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullUsername, pullPassword string) error {
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	if err != nil {
+		return err
+	}
+	if pushUsername != "" {
+		if err := qConfig.SetPushDockerConfigJsonSecret(&api.DockerConfigJsonSecret{
+			Uri:      registry,
+			Username: pushUsername,
+			Password: pushPassword,
+		}); err != nil {
+			return err
+		} else if err := qConfig.SetPullDockerConfigJsonSecret(&api.DockerConfigJsonSecret{
+			Name:      pullSecretName,
+			Namespace: qliksenseCR.Spec.NameSpace,
+			Uri:       registry,
+			Username:  pullUsername,
+			Password:  pullPassword,
+			Email:     pullUsername,
+		}); err != nil {
+			return err
+		}
+	}
+	qliksenseCR.Spec.AddToConfigs("qliksense", imageRegistryConfigKey, registry)
+	return api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
 }
