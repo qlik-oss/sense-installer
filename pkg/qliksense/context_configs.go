@@ -10,6 +10,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"encoding/base64"
 	b64 "encoding/base64"
 
 	ansi "github.com/mattn/go-colorable"
@@ -32,8 +33,6 @@ const (
 
 // SetSecrets - set-secrets <key>=<value> commands
 func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
-	api.LogDebugMessage("Args received: %v\n", args)
-	api.LogDebugMessage("isSecretSet: %v\n", isSecretSet)
 
 	// retrieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
@@ -41,7 +40,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		return err
 	}
 	// Metadata name in qliksense CR is the name of the current context
-	api.LogDebugMessage("Current context: %+v ----- %s", qliksenseCR.Metadata.Name, qliksenseContextsFile)
+	api.LogDebugMessage("Current context: %s", qliksenseCR.Metadata.Name)
 	rsaPublicKey, err := q.retrievePublicKey(qliksenseCR)
 	if err != nil {
 		return err
@@ -126,16 +125,7 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 }
 
 func (q *Qliksense) retrievePublicKey(qliksenseCR api.QliksenseCR) (*rsa.PublicKey, error) {
-	secretKeyPairLocation := filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)
-	api.LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
-
-	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
-		api.LogDebugMessage("Env variable: QLIKSENSE_KEY_LOCATION= %s", os.Getenv("QLIKSENSE_KEY_LOCATION"))
-		secretKeyPairLocation = os.Getenv("QLIKSENSE_KEY_LOCATION")
-	}
-	// Env var: QLIKSENSE_KEY_LOCATION hasn't been set, so dropping key pair in the location:
-	// /.qliksense/secrets/contexts/<current-context>/secrets/
-	api.LogDebugMessage("Using default location to store keys: %s", secretKeyPairLocation)
+	secretKeyPairLocation := q.GetSecretKeyPairLocation(qliksenseCR)
 
 	publicKeyFilePath := filepath.Join(secretKeyPairLocation, api.QliksensePublicKey)
 	privateKeyFilePath := filepath.Join(secretKeyPairLocation, api.QliksensePrivateKey)
@@ -169,6 +159,22 @@ func (q *Qliksense) retrievePublicKey(qliksenseCR api.QliksenseCR) (*rsa.PublicK
 		return nil, e1
 	}
 	return rsaPublicKey, nil
+}
+
+// GetSecretKeyPairLocation determines the secret key pair location
+func (q *Qliksense) GetSecretKeyPairLocation(qliksenseCR api.QliksenseCR) string {
+	// Check env var: QLIKSENSE_KEY_LOCATION to determine location to store keypair
+	var secretKeyPairLocation string
+	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
+		api.LogDebugMessage("Env variable: QLIKSENSE_KEY_LOCATION= %s", os.Getenv("QLIKSENSE_KEY_LOCATION"))
+		secretKeyPairLocation = os.Getenv("QLIKSENSE_KEY_LOCATION")
+	} else {
+		// QLIKSENSE_KEY_LOCATION has not been set, hence storing key pair in default location:
+		// /.qliksense/secrets/contexts/<current-context>/secrets/
+		secretKeyPairLocation = filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)
+	}
+	api.LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
+	return secretKeyPairLocation
 }
 
 // SetConfigs - set-configs <key>=<value> commands
@@ -421,4 +427,71 @@ func validateInput(input string) (string, error) {
 
 	}
 	return input, err
+}
+
+// PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
+func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile string) (map[string]string, error) {
+	secretKeyPairLocation := q.GetSecretKeyPairLocation(qliksenseCR)
+	privateKeyFile := filepath.Join(secretKeyPairLocation, api.QliksensePrivateKey)
+
+	// check if private key file  and targetFile exists
+	if !api.FileExists(privateKeyFile) || !api.FileExists(targetFile) {
+		err := fmt.Errorf("Either private key file or target file does not exist in the path provided")
+		log.Println(err)
+		return nil, err
+	}
+
+	// read the target file and private key
+	k8sSecret, privateKeybytes, err := readPrivateKeyAndTargetfile(privateKeyFile, targetFile)
+	if err != nil {
+		return nil, err
+	}
+	// retrieve value from data section
+	k8sSecret1, err := api.K8sSecretFromYaml(k8sSecret)
+	if err != nil {
+		return nil, err
+	}
+
+	// convert []byte into RSA public key object
+	rsaPrivateKey, err := api.DecodeToPrivateKey(privateKeybytes)
+	if err != nil {
+		return nil, err
+	}
+	dataMap := k8sSecret1.Data
+	var base64EncodedSecret string
+	var resultMap = make(map[string]string)
+	for k, v := range dataMap {
+		// base64 decode every value
+		decodedStr, _ := base64.StdEncoding.DecodeString(string(v))
+
+		decryptedString, err := api.Decrypt(decodedStr, rsaPrivateKey)
+		if err != nil {
+			err := fmt.Errorf("Not able to decrypt message")
+			return nil, err
+		}
+
+		// base64 encode the values
+		base64EncodedSecret = b64.StdEncoding.EncodeToString(decryptedString)
+		resultMap[k] = base64EncodedSecret
+	}
+	api.LogDebugMessage("B64 encoded Map: %v\n", resultMap)
+
+	return resultMap, nil
+}
+
+func readPrivateKeyAndTargetfile(privateKeyFile, targetFile string) ([]byte, []byte, error) {
+	k8sSecret, err := ioutil.ReadFile(targetFile)
+	if err != nil {
+		err := fmt.Errorf("Unable to read the targetFile")
+		log.Println(err)
+		return nil, nil, err
+	}
+
+	privateKeybytes, err := api.ReadKeys(privateKeyFile)
+	if err != nil {
+		err := fmt.Errorf("Not able to read public key")
+		log.Println(err)
+		return nil, nil, err
+	}
+	return k8sSecret, privateKeybytes, nil
 }
