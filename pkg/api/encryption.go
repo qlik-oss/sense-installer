@@ -13,8 +13,8 @@ import (
 
 const (
 	RSA_KEY_LENGTH = 4096
-	privateKeyPath = "privKey"
-	publicKeyPath  = "pubKey"
+	// privateKeyPath = "privKey"
+	// publicKeyPath  = "pubKey"
 
 	QliksensePublicKey  = "qliksensePub"
 	QliksensePrivateKey = "qliksensePriv"

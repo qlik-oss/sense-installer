@@ -434,13 +434,18 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	secretKeyPairLocation := q.GetSecretKeyPairLocation(qliksenseCR)
 	privateKeyFile := filepath.Join(secretKeyPairLocation, api.QliksensePrivateKey)
 
-	// check if private key file  and targetFile exists
-	if !api.FileExists(privateKeyFile) || !api.FileExists(targetFile) {
-		err := fmt.Errorf("Either private key file or target file does not exist in the path provided")
+	// check if private key file exists
+	if !api.FileExists(privateKeyFile) {
+		err := fmt.Errorf("Private key file does not exist in the path provided")
 		log.Println(err)
 		return "", err
 	}
-
+	// check if private key targetFile exists
+	if !api.FileExists(targetFile) {
+		err := fmt.Errorf("Target file does not exist in the path provided")
+		log.Println(err)
+		return "", err
+	}
 	// read the target file and private key
 	k8sSecret, privateKeybytes, err := readPrivateKeyAndTargetfile(privateKeyFile, targetFile)
 	if err != nil {
