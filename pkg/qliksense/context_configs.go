@@ -459,7 +459,7 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	}
 	dataMap := k8sSecret1.Data
 	var base64EncodedSecret string
-	var resultMap = make(map[string]string)
+	var resultMap = make(map[string][]byte])
 	for k, v := range dataMap {
 		// base64 decode every value
 		decodedStr, _ := base64.StdEncoding.DecodeString(string(v))
@@ -472,14 +472,12 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 
 		// base64 encode the values
 		base64EncodedSecret = b64.StdEncoding.EncodeToString(decryptedString)
-		// resultMap[k] = ([]byte)base64EncodedSecret
-		resultMap[k] = base64EncodedSecret
-
+		resultMap[k] = ([]byte)base64EncodedSecret
 	}
 	api.LogDebugMessage("B64 encoded Map: %v\n", resultMap)
 
 	// putting the above map back into the k8sSecret struct
-	k8sSecret1.StringData = resultMap
+	k8sSecret1.Data = resultMap
 	k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret1)
 	api.LogDebugMessage("Final Yaml: %v\n", string(k8sSecretBytes))
 	if err != nil {
