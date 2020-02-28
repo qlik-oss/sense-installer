@@ -430,7 +430,7 @@ func validateInput(input string) (string, error) {
 }
 
 // PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
-func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile string) (map[string]string, error) {
+func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile string) (string, error) {
 	secretKeyPairLocation := q.GetSecretKeyPairLocation(qliksenseCR)
 	privateKeyFile := filepath.Join(secretKeyPairLocation, api.QliksensePrivateKey)
 
@@ -438,24 +438,24 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	if !api.FileExists(privateKeyFile) || !api.FileExists(targetFile) {
 		err := fmt.Errorf("Either private key file or target file does not exist in the path provided")
 		log.Println(err)
-		return nil, err
+		return "", err
 	}
 
 	// read the target file and private key
 	k8sSecret, privateKeybytes, err := readPrivateKeyAndTargetfile(privateKeyFile, targetFile)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	// retrieve value from data section
 	k8sSecret1, err := api.K8sSecretFromYaml(k8sSecret)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// convert []byte into RSA public key object
 	rsaPrivateKey, err := api.DecodeToPrivateKey(privateKeybytes)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	dataMap := k8sSecret1.Data
 	var base64EncodedSecret string
@@ -467,16 +467,26 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 		decryptedString, err := api.Decrypt(decodedStr, rsaPrivateKey)
 		if err != nil {
 			err := fmt.Errorf("Not able to decrypt message")
-			return nil, err
+			return "", err
 		}
 
 		// base64 encode the values
 		base64EncodedSecret = b64.StdEncoding.EncodeToString(decryptedString)
+		// resultMap[k] = ([]byte)base64EncodedSecret
 		resultMap[k] = base64EncodedSecret
+
 	}
 	api.LogDebugMessage("B64 encoded Map: %v\n", resultMap)
 
-	return resultMap, nil
+	// putting the above map back into the k8sSecret struct
+	k8sSecret1.StringData = resultMap
+	k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret1)
+	api.LogDebugMessage("Final Yaml: %v\n", string(k8sSecretBytes))
+	if err != nil {
+		return "", err
+	}
+
+	return string(k8sSecretBytes), nil
 }
 
 func readPrivateKeyAndTargetfile(privateKeyFile, targetFile string) ([]byte, []byte, error) {
