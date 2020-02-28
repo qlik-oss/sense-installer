@@ -94,9 +94,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd = &cobra.Command{
 		Use:   "qliksense",
 		Short: "Qliksense cli tool",
-		Long: `qliksense cli tool provides a wrapper around the porter api as well as
-		provides addition functionality`,
-		Args: cobra.ArbitraryArgs,
+		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s and qliksense operator`,
+		Args:  cobra.ArbitraryArgs,
 	}
 
 	cmd.Flags().SetInterspersed(false)
