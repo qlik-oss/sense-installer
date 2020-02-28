@@ -94,7 +94,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd = &cobra.Command{
 		Use:   "qliksense",
 		Short: "Qliksense cli tool",
-		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s and qliksense operator`,
+		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
 	}
 
