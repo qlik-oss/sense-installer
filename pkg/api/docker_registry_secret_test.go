@@ -1,6 +1,8 @@
 package api
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -22,7 +24,12 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 	dockerConfigJsonSecretFromYaml := DockerConfigJsonSecret{}
 	validYamlMap := map[string]interface{}{}
 
-	dockerConfigJsonSecretYamlBytes, err := dockerConfigJsonSecret.ToYaml()
+	privateKey, err := rsa.GenerateKey(rand.Reader, RSA_KEY_LENGTH)
+	if err != nil {
+		t.Fatalf("error generating RSA private key: %v\n", err)
+	}
+
+	dockerConfigJsonSecretYamlBytes, err := dockerConfigJsonSecret.ToYaml(&privateKey.PublicKey)
 	dockerConfigJsonMap := map[string]interface{}{}
 	if err != nil {
 		t.Fatalf("error converting secret to yaml: %v", err)
@@ -36,8 +43,10 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 		t.Fatalf("error verifying validity of secret yaml: %v", string(dockerConfigJsonSecretYamlBytes))
 	} else if dockerConfigJsonBytesBase64, ok := validYamlMap["data"].(map[string]interface{})[".dockerconfigjson"]; !ok {
 		t.Fatalf("no .dockerconfigjson data key in the secret yaml: %v", string(dockerConfigJsonSecretYamlBytes))
-	} else if dockerConfigJsonBytes, err := base64.StdEncoding.DecodeString(dockerConfigJsonBytesBase64.(string)); err != nil {
+	} else if dockerConfigJsonEncryptedBytes, err := base64.StdEncoding.DecodeString(dockerConfigJsonBytesBase64.(string)); err != nil {
 		t.Fatalf("error decoding dockerConfigJsonBytes from base64: %v", err)
+	} else if dockerConfigJsonBytes, err := Decrypt(dockerConfigJsonEncryptedBytes, privateKey); err != nil {
+		t.Fatalf("error decrypting dockerConfigJsonBytes: %v", err)
 	} else if err := json.Unmarshal(dockerConfigJsonBytes, &dockerConfigJsonMap); err != nil {
 		t.Fatalf("error unmarshalling dockerConfigJson from json: %v", err)
 	} else if dockerConfigJson, ok := dockerConfigJsonMap["auths"].(map[string]interface{})[dockerConfigJsonSecret.Uri]; !ok {
@@ -56,7 +65,7 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 	}
 
 	t.Logf("dockerConfigJsonSecretYaml: \n%v\n", string(dockerConfigJsonSecretYamlBytes))
-	if err := dockerConfigJsonSecretFromYaml.FromYaml(dockerConfigJsonSecretYamlBytes); err != nil {
+	if err := dockerConfigJsonSecretFromYaml.FromYaml(dockerConfigJsonSecretYamlBytes, privateKey); err != nil {
 		t.Fatalf("error reading secret in from yaml: %v", err)
 	} else if !reflect.DeepEqual(dockerConfigJsonSecret, dockerConfigJsonSecretFromYaml) {
 		t.Fatalf("secret: %v does not equal secret: %v", dockerConfigJsonSecret, dockerConfigJsonSecretFromYaml)
