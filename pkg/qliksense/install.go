@@ -3,6 +3,7 @@ package qliksense
 import (
 	"errors"
 	"fmt"
+
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -34,7 +35,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
 	}
 	if opts.MongoDbUri != "" {
-		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri)
+		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
