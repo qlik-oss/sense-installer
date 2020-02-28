@@ -49,7 +49,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	}
 
 	for _, image := range versionOut.Images {
-		if err := pullImage(image, imagesDir, true); err != nil {
+		if err := pullImage(image, imagesDir); err != nil {
 			fmt.Printf("%v\n", err)
 			return err
 		}
@@ -64,7 +64,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	return nil
 }
 
-func pullImage(image, imagesDir string, tlsOn bool) error {
+func pullImage(image, imagesDir string) error {
 	srcRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%v", image))
 	if err != nil {
 		return err
@@ -87,16 +87,12 @@ func pullImage(image, imagesDir string, tlsOn bool) error {
 	defer policyContext.Destroy()
 
 	fmt.Printf("==> Pulling image from %v\n", srcRef.StringWithinTransport())
-	sourceCtx := &imageTypes.SystemContext{
-		ArchitectureChoice: "amd64",
-		OSChoice:           "linux",
-	}
-	if !tlsOn {
-		sourceCtx.DockerInsecureSkipTLSVerify = imageTypes.OptionalBoolTrue
-	}
 	if _, err := copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,
-		SourceCtx:    sourceCtx,
+		SourceCtx: &imageTypes.SystemContext{
+			ArchitectureChoice: "amd64",
+			OSChoice:           "linux",
+		},
 		DestinationCtx: &imageTypes.SystemContext{
 			OCISharedBlobDirPath: filepath.Join(imagesDir, imageSharedBlobsDirName),
 		},
@@ -107,7 +103,7 @@ func pullImage(image, imagesDir string, tlsOn bool) error {
 }
 
 // TagAndPushImages ...
-func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
+func (q *Qliksense) PushImagesForCurrentCR() error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
@@ -116,6 +112,17 @@ func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
 	version := qcr.GetLabelFromCr("version")
 	profile := qcr.Spec.Profile
 	repoDir := qcr.Spec.ManifestsRoot
+
+	dockerConfigJsonSecret, err := qConfig.GetPushDockerConfigJsonSecret()
+	if err != nil {
+		if os.IsNotExist(err) {
+			dockerConfigJsonSecret = &qapi.DockerConfigJsonSecret{
+				Uri: qcr.GetImageRegistry(),
+			}
+		} else {
+			return err
+		}
+	}
 
 	imagesDir, err := setupImagesDir(q.QliksenseHome)
 	if err != nil {
@@ -128,7 +135,7 @@ func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
 	}
 
 	for _, image := range versionOut.Images {
-		if err = pushImage(image, imagesDir, registry); err != nil {
+		if err = pushImage(image, imagesDir, dockerConfigJsonSecret); err != nil {
 			fmt.Printf("%v\n", err)
 			return err
 		}
@@ -144,13 +151,13 @@ func (q *Qliksense) PushImagesForCurrentCR(registry string) error {
 	return nil
 }
 
-func pushImage(image, imagesDir, registryName string) error {
+func pushImage(image, imagesDir string, dockerConfigJsonSecret *qapi.DockerConfigJsonSecret) error {
 	imageNameParts := getImageNameParts(image)
 	srcDir := filepath.Join(imagesDir, imageIndexDirName, imageNameParts.name, imageNameParts.tag)
 	if exists, err := directoryExists(srcDir); err != nil {
 		return err
 	} else if !exists {
-		if err := pullImage(image, imagesDir, true); err != nil {
+		if err := pullImage(image, imagesDir); err != nil {
 			return err
 		}
 	}
@@ -159,7 +166,7 @@ func pushImage(image, imagesDir, registryName string) error {
 		return err
 	}
 
-	newImage := fmt.Sprintf("%v/%v:%v", registryName, imageNameParts.name, imageNameParts.tag)
+	newImage := fmt.Sprintf("%v/%v:%v", dockerConfigJsonSecret.Uri, imageNameParts.name, imageNameParts.tag)
 	destRef, err := alltransports.ParseImageName(fmt.Sprintf("docker://%v", newImage))
 	if err != nil {
 		return err
@@ -171,15 +178,22 @@ func pushImage(image, imagesDir, registryName string) error {
 	}
 	defer policyContext.Destroy()
 
+	destinationCtx := &imageTypes.SystemContext{
+		DockerInsecureSkipTLSVerify: imageTypes.OptionalBoolTrue,
+	}
+	if dockerConfigJsonSecret.Username != "" {
+		destinationCtx.DockerAuthConfig = &imageTypes.DockerAuthConfig{
+			Username: dockerConfigJsonSecret.Username,
+			Password: dockerConfigJsonSecret.Password,
+		}
+	}
 	fmt.Printf("==> Pushing image to: %v\n", destRef.StringWithinTransport())
 	if _, err = copy.Image(context.Background(), policyContext, destRef, srcRef, &copy.Options{
 		ReportWriter: os.Stdout,
 		SourceCtx: &imageTypes.SystemContext{
 			OCISharedBlobDirPath: filepath.Join(imagesDir, imageSharedBlobsDirName),
 		},
-		DestinationCtx: &imageTypes.SystemContext{
-			DockerInsecureSkipTLSVerify: imageTypes.OptionalBoolTrue,
-		},
+		DestinationCtx: destinationCtx,
 	}); err != nil {
 		return err
 	}

@@ -5,8 +5,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 var (
@@ -215,6 +218,119 @@ func TestSetConfigs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.args.q.SetConfigs(tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("SetConfigs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestSetImageRegistry(t *testing.T) {
+	getQlikSense := func(tmpQlikSenseHome string) (*Qliksense, error) {
+		if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(fmt.Sprintf(`
+apiVersion: config.qlik.com/v1
+kind: QliksenseConfig
+metadata:
+  name: QliksenseConfigMetadata
+spec:
+  contexts:
+  - name: qlik-default
+    crFile: %s/contexts/qlik-default/qlik-default.yaml
+  currentContext: qlik-default
+`, tmpQlikSenseHome)), os.ModePerm); err != nil {
+			return nil, err
+		}
+
+		defaultContextDir := path.Join(tmpQlikSenseHome, "contexts", "qlik-default")
+		if err := os.MkdirAll(defaultContextDir, os.ModePerm); err != nil {
+			return nil, err
+		}
+
+		version := "foo"
+		manifestsRootDir := fmt.Sprintf("%s/repo/%s", defaultContextDir, version)
+		if err := ioutil.WriteFile(path.Join(defaultContextDir, "qlik-default.yaml"), []byte(fmt.Sprintf(`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik-default
+  labels:
+    version: %s
+spec:
+  profile: docker-desktop
+  manifestsRoot: %s
+  namespace: some-namespace
+`, version, manifestsRootDir)), os.ModePerm); err != nil {
+			return nil, err
+		}
+		return &Qliksense{
+			QliksenseHome: tmpQlikSenseHome,
+		}, nil
+	}
+	testCases := []struct {
+		name               string
+		registry           string
+		pushUsername       string
+		pushPassword       string
+		pullUsername       string
+		pullPassword       string
+		expectSecretsExist bool
+	}{
+		{
+			name:               "no auth",
+			registry:           "foobar",
+			pushUsername:       "",
+			pushPassword:       "",
+			pullUsername:       "",
+			pullPassword:       "",
+			expectSecretsExist: false,
+		},
+		{
+			name:               "auth",
+			registry:           "foobar",
+			pushUsername:       "foo-push",
+			pushPassword:       "bar-push",
+			pullUsername:       "foo-pull",
+			pullPassword:       "bar-pull",
+			expectSecretsExist: true,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			tmpQlikSenseHome, err := ioutil.TempDir("", "")
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			defer os.RemoveAll(tmpQlikSenseHome)
+
+			q, err := getQlikSense(tmpQlikSenseHome)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if err := q.SetImageRegistry(testCase.registry, testCase.pushUsername, testCase.pushPassword,
+				testCase.pullUsername, testCase.pullPassword); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			qConfig := api.NewQConfig(q.QliksenseHome)
+			if testCase.expectSecretsExist {
+				if pushSecret, err := qConfig.GetPushDockerConfigJsonSecret(); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				} else if pushSecret.Uri != testCase.registry ||
+					pushSecret.Username != testCase.pushUsername || pushSecret.Password != testCase.pushPassword {
+					t.Fatalf("unexpected push secret content: %v", pushSecret)
+				}
+				if pullSecret, err := qConfig.GetDockerConfigJsonSecret("image-registry-pull-secret.yaml"); err != nil {
+					t.Fatalf("unexpected error: %v", err)
+				} else if pullSecret.Uri != testCase.registry ||
+					pullSecret.Name != "artifactory-docker-secret" || pullSecret.Namespace != "some-namespace" ||
+					pullSecret.Username != testCase.pullUsername || pullSecret.Password != testCase.pullPassword {
+					t.Fatalf("unexpected pull secret content: %v", pullSecret)
+				}
+			} else {
+				if _, err := qConfig.GetPushDockerConfigJsonSecret(); err == nil {
+					t.Fatal("unexpected image-registry-push-secret.yaml")
+				} else if _, err := qConfig.GetDockerConfigJsonSecret("image-registry-pull-secret.yaml"); err == nil {
+					t.Fatal("unexpected image-registry-pull-secret.yaml")
+				}
 			}
 		})
 	}

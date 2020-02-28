@@ -2,20 +2,20 @@ package main
 
 import (
 	"fmt"
+	ansi "github.com/mattn/go-colorable"
+	"github.com/mitchellh/go-homedir"
+	"github.com/qlik-oss/sense-installer/pkg"
+	"github.com/qlik-oss/sense-installer/pkg/api"
+	"github.com/qlik-oss/sense-installer/pkg/qliksense"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/ttacon/chalk"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/mitchellh/go-homedir"
-	"github.com/qlik-oss/sense-installer/pkg"
-	"github.com/qlik-oss/sense-installer/pkg/api"
-	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // To run this project in ddebug mode, run:
@@ -32,12 +32,10 @@ func initAndExecute() error {
 		qlikSenseHome string
 		err           error
 	)
-
 	qlikSenseHome, err = setUpPaths()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	// create dirs and appropriate files for setting up contexts
 	api.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 
@@ -46,10 +44,13 @@ func initAndExecute() error {
 		return err
 	}
 	qliksenseClient.SetUpQliksenseDefaultContext()
-	if err := rootCmd(qliksenseClient).Execute(); err != nil {
-		return err
+	cmd := rootCmd(qliksenseClient)
+	//levenstein checks
+	if levenstein(cmd) == false {
+		if err := cmd.Execute(); err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
@@ -147,8 +148,13 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add the list config command as a sub-command to the app config sub-command
 	configCmd.AddCommand(listContextConfigCmd(p))
 
+
 	// add the delete-context config command as a sub-command to the app config command
 	configCmd.AddCommand(deleteContextConfigCmd(p))
+
+	// add set-image-registry command as a sub-command to the app config sub-command
+	configCmd.AddCommand(setImageRegistryCmd(p))
+
 
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
@@ -217,4 +223,30 @@ func copy(src, dst string) (int64, error) {
 	defer destination.Close()
 	nBytes, err = io.Copy(destination, source)
 	return nBytes, err
+}
+
+func levenstein(cmd *cobra.Command) bool {
+	cmd.SuggestionsMinimumDistance = 4
+	if len(os.Args) > 1 {
+		args := os.Args[1]
+		for _, ctx := range cmd.Commands() {
+			val := *ctx
+			if args == val.Name() {
+				//found command
+				return false
+			}
+		}
+		suggest := cmd.SuggestionsFor(os.Args[1])
+		if len(suggest) > 0 {
+			arg := []string{}
+			for _, cm := range os.Args {
+				arg = append(arg, cm)
+			}
+			arg[1] = suggest[0]
+			out := ansi.NewColorableStdout()
+			fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+			return true
+		}
+	}
+	return false
 }
