@@ -139,7 +139,6 @@ func (q *Qliksense) SetConfigs(args []string) error {
 
 	return nil
 }
-
 func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string, error) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
