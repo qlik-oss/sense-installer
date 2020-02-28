@@ -96,7 +96,7 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 			}
 		}
 		// if read from file errors out, we can ignore it here
-		_ = api.ReadFromFile(k8sSecret, secretFileName)
+		_ = api.ReadFromFile(&k8sSecret, secretFileName)
 		if k8sSecret.Data == nil {
 			k8sSecret.Data = map[string][]byte{}
 		}
