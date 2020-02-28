@@ -6,13 +6,32 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
+
+	"github.com/gobuffalo/packr/v2"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 var (
 	testDir = "./tests"
 )
 
+func setupTargetFile() {
+	targetFileString :=
+		`
+	apiVersion: v1
+data:
+  testKey1: WTFuMWtOYURhNndvS3JCZ05PbWtHbWpkdy91bEVnbGowTGw0QWIxc0phWDBBUmtWQWpTRHNmbFc5ajlFMkQvN3MyUjJvaDN3Z25YSWUwb3lxamxYdUIxa2NNU2M4UEZEa1YrZ3ZDOUFzdzhmcHBVQ0lBS2h1M2lTdzZKRWlKWURLUmplQnJ5dmtxcUdpQ2xtSXlac29QZGdlNWI5Ynh1M0lWN1JYdjdPdExZWjhOS000MHJCTE04dTFRbDU4RHhvVEc0dkdINHpsajczNVQra0w1U3NSWkQraDhxc2tvN0pZMzBBMEFVTngyK1FrbGpCeWdWR0VteUZHUy9xQk95Y284TWFsWlZPd2dnaThLMDZIMnBCdDBEMG5DdzV6UGZyMHpEbmdiT2V3ZS9XYjNlZlJOSEdoMStsTlNYTzhNd1RJc3RMbWdYbDRBTnJ3QXEyenhGbWcvNmUrc0FIYVFGc1pNd0tuVWxvSkpNUUFkSm1XdWJRNDNPOTlDZEVjeFBOOWw0Mi9Uc0Y5NVp5dzRtM0ZTRTB1bVdxbjQzeXNsOXVuQUhOL3FodG9tZlZOS08vdm1yTERSYzJjV1hDOTlNcEVjc0J0amNPeFNFcVBCNkNDUDZIMXdCR0NNcE5zS2lncms1aXVGL1BxZllOVEZaeGh1QjFBeVdlbUsybGpsWSt1Tjc3aWRNcEJQV29OVTVMR0pTb3AzRzNaajVMbXhmTXluYy9tRU1INnFmUGg3TVV2MmdsVTZ5N1puRUtpUkkrcmRIdU9EM2pPOThoWEJVcS9JK1N5VGNzS3VFQ2dVTlp0UlZXaGRkQitPck0vamYyQnZPc20yRFZWcjIremlzK0hhano3cmg2Z29YUmdnVHpxajBNdXFZK1gyeDBidE54ckZBaHdKQUhvbTQ9
+kind: Secret
+metadata:
+  name: ctxname-testSvcName-sense_installer
+type: Opaque
+`
+	targetFile := filepath.Join(testDir, "secretfile.yaml")
+	// tests/config.yaml exists
+	ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
+}
 func setup() func() {
 	// create tests dir
 	if err := os.Mkdir(testDir, 0777); err != nil {
@@ -215,6 +234,63 @@ func TestSetConfigs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.args.q.SetConfigs(tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("SetConfigs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestQliksense_PrepareK8sSecret(t *testing.T) {
+	type fields struct {
+		QliksenseHome        string
+		QliksenseEjsonKeyDir string
+		CrdBox               *packr.Box
+	}
+	type args struct {
+		qliksenseCR *api.QliksenseCR
+		targetFile  string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    map[string]string
+		wantErr bool
+	}{
+		{
+			name: "valid case",
+			args: args{
+				qliksenseCR: &QliksenseCR{
+					CommonConfig: &CommonConfig{
+						ApiVersion: QliksenseContextApiVersion,
+						Kind:       QliksenseContextKind,
+						Metadata: &Metadata{
+							Name: "myqliksense",
+						},
+					},
+				},
+				targetFile: "secretfile.yaml",
+			},
+			want:    map[string]string{},
+			wantErr: false,
+		},
+	}
+	tearDown := setup()
+	setupTargetFile()
+	defer tearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := &Qliksense{
+				QliksenseHome:        tt.fields.QliksenseHome,
+				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
+				CrdBox:               tt.fields.CrdBox,
+			}
+			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, tt.args.targetFile)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Qliksense.PrepareK8sSecret() = %v, want %v", got, tt.want)
 			}
 		})
 	}

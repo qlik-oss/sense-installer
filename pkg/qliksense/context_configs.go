@@ -231,7 +231,7 @@ func retrieveCurrentContextInfo(q *Qliksense) (api.QliksenseCR, string, error) {
 	return qliksenseCR, qliksenseContextsFile, nil
 }
 
-// SetOtherConfigs - set profile/namespace/storageclassname/git.repository commands
+// SetOtherConfigs - set profile/namespace/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
@@ -271,7 +271,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
 		default:
-			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName,rotateKeys or git.repository arguments")
+			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName,rotateKeys, manifestRoot or git.repository arguments")
 		}
 	}
 	// write modified content into context.yaml
