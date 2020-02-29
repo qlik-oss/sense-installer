@@ -35,15 +35,15 @@ const (
 
 // SetSecrets - set-secrets <key>=<value> commands
 func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
-
-	// retrieve current context from config.yaml
+	qConfig := api.NewQConfig(q.QliksenseHome)
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
 	if err != nil {
 		return err
 	}
+
 	// Metadata name in qliksense CR is the name of the current context
 	api.LogDebugMessage("Current context: %s", qliksenseCR.Metadata.Name)
-	rsaPublicKey, err := q.retrievePublicKey(qliksenseCR)
+	rsaPublicKey, _, err := qConfig.GetCurrentContextEncryptionKeyPair()
 	if err != nil {
 		return err
 	}
@@ -124,59 +124,6 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 	// write into CR the keyref of the secret
 	qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret, secretName)
 	return nil
-}
-
-func (q *Qliksense) retrievePublicKey(qliksenseCR api.QliksenseCR) (*rsa.PublicKey, error) {
-	secretKeyPairLocation := q.GetSecretKeyPairLocation(qliksenseCR)
-
-	publicKeyFilePath := filepath.Join(secretKeyPairLocation, api.QliksensePublicKey)
-	privateKeyFilePath := filepath.Join(secretKeyPairLocation, api.QliksensePrivateKey)
-
-	// try to create the dir if it doesn't exist
-	if !api.FileExists(publicKeyFilePath) || !api.FileExists(privateKeyFilePath) {
-		api.LogDebugMessage("Qliksense secretKeyLocation dir does not exist, creating it now: %s", secretKeyPairLocation)
-		if err := os.MkdirAll(secretKeyPairLocation, os.ModePerm); err != nil {
-			err = fmt.Errorf("Not able to create %s dir: %v", secretKeyPairLocation, err)
-			log.Println(err)
-			return nil, err
-		}
-		// generating and storing key-pair
-		err1 := api.GenerateAndStoreSecretKeypair(secretKeyPairLocation)
-		if err1 != nil {
-			err1 = fmt.Errorf("Not able to generate and store key pair for encryption")
-			log.Println(err1)
-			return nil, err1
-		}
-	}
-	// Read Public Key
-	publicKeybytes, err2 := api.ReadKeys(publicKeyFilePath)
-	if err2 != nil {
-		api.LogDebugMessage("Not able to read public key")
-		return nil, err2
-	}
-
-	// convert []byte into RSA public key object
-	rsaPublicKey, e1 := api.DecodeToPublicKey(publicKeybytes)
-	if e1 != nil {
-		return nil, e1
-	}
-	return rsaPublicKey, nil
-}
-
-// GetSecretKeyPairLocation determines the secret key pair location
-func (q *Qliksense) GetSecretKeyPairLocation(qliksenseCR api.QliksenseCR) string {
-	// Check env var: QLIKSENSE_KEY_LOCATION to determine location to store keypair
-	var secretKeyPairLocation string
-	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
-		api.LogDebugMessage("Env variable: QLIKSENSE_KEY_LOCATION= %s", os.Getenv("QLIKSENSE_KEY_LOCATION"))
-		secretKeyPairLocation = os.Getenv("QLIKSENSE_KEY_LOCATION")
-	} else {
-		// QLIKSENSE_KEY_LOCATION has not been set, hence storing key pair in default location:
-		// /.qliksense/secrets/contexts/<current-context>/secrets/
-		secretKeyPairLocation = filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)
-	}
-	api.LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
-	return secretKeyPairLocation
 }
 
 // SetConfigs - set-configs <key>=<value> commands
@@ -433,24 +380,20 @@ func validateInput(input string) (string, error) {
 
 // PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
 func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile string) (string, error) {
-	secretKeyPairLocation := q.GetSecretKeyPairLocation(qliksenseCR)
-	privateKeyFile := filepath.Join(secretKeyPairLocation, api.QliksensePrivateKey)
-
-	// check if private key file exists
-	if !api.FileExists(privateKeyFile) {
-		err := fmt.Errorf("Private key file does not exist in the path provided")
-		log.Println(err)
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	if err != nil {
 		return "", err
 	}
-	api.LogDebugMessage("target file: %s\n", targetFile)
-	// check if private key targetFile exists
+
+	// check if targetFile exists
 	if !api.FileExists(targetFile) {
 		err := fmt.Errorf("Target file does not exist in the path provided")
 		log.Println(err)
 		return "", err
 	}
-	// read the target file and private key
-	k8sSecret, privateKeybytes, err := readPrivateKeyAndTargetfile(privateKeyFile, targetFile)
+	// read the target file
+	k8sSecret, err := readTargetfile(targetFile)
 	if err != nil {
 		return "", err
 	}
@@ -487,21 +430,14 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	return string(k8sSecretBytes), nil
 }
 
-func readPrivateKeyAndTargetfile(privateKeyFile, targetFile string) ([]byte, []byte, error) {
+func readTargetfile(targetFile string) ([]byte, error) {
 	k8sSecret, err := ioutil.ReadFile(targetFile)
 	if err != nil {
 		err := fmt.Errorf("Unable to read the targetFile")
 		log.Println(err)
-		return nil, nil, err
+		return nil, err
 	}
-
-	privateKeybytes, err := api.ReadKeys(privateKeyFile)
-	if err != nil {
-		err := fmt.Errorf("Not able to read public key")
-		log.Println(err)
-		return nil, nil, err
-	}
-	return k8sSecret, privateKeybytes, nil
+	return k8sSecret, nil
 }
 
 func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullUsername, pullPassword string) error {
