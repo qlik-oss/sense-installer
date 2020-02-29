@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"encoding/base64"
 	b64 "encoding/base64"
 
 	ansi "github.com/mattn/go-colorable"
@@ -443,6 +442,7 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 		log.Println(err)
 		return "", err
 	}
+	api.LogDebugMessage("target file: %s\n", targetFile)
 	// check if private key targetFile exists
 	if !api.FileExists(targetFile) {
 		err := fmt.Errorf("Target file does not exist in the path provided")
@@ -459,28 +459,21 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	if err != nil {
 		return "", err
 	}
-
 	// convert []byte into RSA public key object
 	rsaPrivateKey, err := api.DecodeToPrivateKey(privateKeybytes)
 	if err != nil {
 		return "", err
 	}
 	dataMap := k8sSecret1.Data
-	var base64EncodedSecret string
+	// var base64EncodedSecret string
 	var resultMap = make(map[string][]byte)
 	for k, v := range dataMap {
-		// base64 decode every value
-		decodedStr, _ := base64.StdEncoding.DecodeString(string(v))
-
-		decryptedString, err := api.Decrypt(decodedStr, rsaPrivateKey)
+		decryptedString, err := api.Decrypt(v, rsaPrivateKey)
 		if err != nil {
-			err := fmt.Errorf("Not able to decrypt message")
+			err := fmt.Errorf("Not able to decrypt message: %v", err)
 			return "", err
 		}
-
-		// base64 encode the values
-		base64EncodedSecret = b64.StdEncoding.EncodeToString(decryptedString)
-		resultMap[k] = []byte(base64EncodedSecret)
+		resultMap[k] = decryptedString
 	}
 	api.LogDebugMessage("B64 encoded Map: %v\n", resultMap)
 
@@ -491,7 +484,6 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	if err != nil {
 		return "", err
 	}
-
 	return string(k8sSecretBytes), nil
 }
 

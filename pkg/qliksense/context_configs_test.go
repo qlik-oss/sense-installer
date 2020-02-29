@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/gobuffalo/packr/v2"
@@ -22,19 +24,20 @@ const (
 )
 
 var targetFile string
-
-func setupTargetFileAndPrivateKey() {
-	targetFileString :=
-		`
-	apiVersion: v1
+var targetFileStringTemplate = `
+apiVersion: v1
 data:
-  testKey1: WTFuMWtOYURhNndvS3JCZ05PbWtHbWpkdy91bEVnbGowTGw0QWIxc0phWDBBUmtWQWpTRHNmbFc5ajlFMkQvN3MyUjJvaDN3Z25YSWUwb3lxamxYdUIxa2NNU2M4UEZEa1YrZ3ZDOUFzdzhmcHBVQ0lBS2h1M2lTdzZKRWlKWURLUmplQnJ5dmtxcUdpQ2xtSXlac29QZGdlNWI5Ynh1M0lWN1JYdjdPdExZWjhOS000MHJCTE04dTFRbDU4RHhvVEc0dkdINHpsajczNVQra0w1U3NSWkQraDhxc2tvN0pZMzBBMEFVTngyK1FrbGpCeWdWR0VteUZHUy9xQk95Y284TWFsWlZPd2dnaThLMDZIMnBCdDBEMG5DdzV6UGZyMHpEbmdiT2V3ZS9XYjNlZlJOSEdoMStsTlNYTzhNd1RJc3RMbWdYbDRBTnJ3QXEyenhGbWcvNmUrc0FIYVFGc1pNd0tuVWxvSkpNUUFkSm1XdWJRNDNPOTlDZEVjeFBOOWw0Mi9Uc0Y5NVp5dzRtM0ZTRTB1bVdxbjQzeXNsOXVuQUhOL3FodG9tZlZOS08vdm1yTERSYzJjV1hDOTlNcEVjc0J0amNPeFNFcVBCNkNDUDZIMXdCR0NNcE5zS2lncms1aXVGL1BxZllOVEZaeGh1QjFBeVdlbUsybGpsWSt1Tjc3aWRNcEJQV29OVTVMR0pTb3AzRzNaajVMbXhmTXluYy9tRU1INnFmUGg3TVV2MmdsVTZ5N1puRUtpUkkrcmRIdU9EM2pPOThoWEJVcS9JK1N5VGNzS3VFQ2dVTlp0UlZXaGRkQitPck0vamYyQnZPc20yRFZWcjIremlzK0hhano3cmg2Z29YUmdnVHpxajBNdXFZK1gyeDBidE54ckZBaHdKQUhvbTQ9
+  testKey1: %s
 kind: Secret
 metadata:
   name: ctxname-testSvcName-sense_installer
 type: Opaque
 `
+var encText = "eiGjS2UkxXY/cLoA90hnddXCeJSZj8TF7gIHRq0c+4mIpBVFRLRo79pAMuEORFobRLQnPiwLUkLQ/BNLpA1tu8hsFaiQwIv6/iP1mNepdF2ha9Tf6XVlTYCbQJ2mmHOY0TQk/d1QwXa73+PXz0paLMB+y9/39w7SThL8NHbIKxGAs4rXurVIlmoOaXJmshUCYmEUFV26B9Y4yVQJKfOlheslYrbqVWXhA9lFa/r74yUJnYSrluj9D32eY1xJvI1tUR2oQRUuscAZ8W0v3SjoyUwiXV4L4mJb8qiNx+15PfVMK9V7LVdoRbka+rR2lOtFxQOk6mw41s244AGeU81scgt0PdFiAuNtc2Z42jF92kY4rxRrBqwx6b/oMXUuYAldU4hkNyfNGVINeqQbyMyMcBL1FSe/QuutbInCPDTODQTeZKQB58cgNl/cCORSBYuDPj8dXkPyyUU1+XGju+UEUxS6SG9WLfdozW5Q4FeBVIblS3oraQ0y4S4DYc2r44I7yEmklO3O1leSnCFCpTWMiRC++j5KDkKLYDoL/SXUTh3jMu19z4TXcZ6LCbfbA6hgEh3fcju4XCwXM8NDSzJomLsPmdsvscoqiNgJKjHJNDVHm/1VH0vzSHwMdhoWYXLbM2iX3ucV7q/OEPkLjQF0p5/9XYo0zyIa8uxcZjbimlY="
+var decText = "Value1234"
 
+func setupTargetFileAndPrivateKey() error {
+	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
 	privKeyBytes := []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIJJwIBAAKCAgEAwUCimKCidbF3UxEHPy8K+hvhklRB9JYhj5sJy0if4lTVibkK
 1MrYCykOnmC40pPU9GLY1b8HxAg9tvyRn0YHUxOra6vVQaVcOVJhTM8D18d+lSr3
@@ -90,7 +93,11 @@ Gu7HNIOrwOHzviI7J6Nd/l9MmeKqklHSgJvko/f5TmiXuQQ8xDZf84rcjQ==
 
 	targetFile = filepath.Join(testDir, "targetfile.yaml")
 	// tests/config.yaml exists
-	ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
+	err := ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return err
+	}
 	if !api.FileExists(targetFile) {
 		fmt.Print("Target file DOES NOT exist")
 	} else {
@@ -106,7 +113,12 @@ Gu7HNIOrwOHzviI7J6Nd/l9MmeKqklHSgJvko/f5TmiXuQQ8xDZf84rcjQ==
 
 	privKeyFile := filepath.Join(secretKeyPairDir, "qliksensePriv")
 	// construct and write priv key file into secretsDir location
-	ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
+	err = ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return err
+	}
+	return nil
 }
 
 func setup() func() {
@@ -430,6 +442,10 @@ spec:
 }
 
 func TestQliksense_PrepareK8sSecret(t *testing.T) {
+	tearDown := setup()
+	setupTargetFileAndPrivateKey()
+	defer tearDown()
+
 	type fields struct {
 		QliksenseHome        string
 		QliksenseEjsonKeyDir string
@@ -443,7 +459,7 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    map[string]string
+		want    string
 		wantErr bool
 	}{
 		{
@@ -460,13 +476,10 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 				},
 				targetFile: targetFile,
 			},
-			want:    map[string]string{},
+			want:    fmt.Sprintf(targetFileStringTemplate, base64.StdEncoding.EncodeToString([]byte(decText))),
 			wantErr: false,
 		},
 	}
-	tearDown := setup()
-	setupTargetFileAndPrivateKey()
-	defer tearDown()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -475,13 +488,13 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
 				CrdBox:               tt.fields.CrdBox,
 			}
-
+			log.Println("TTTarget file:", tt.args.targetFile)
 			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, tt.args.targetFile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
+			if !reflect.DeepEqual(strings.TrimSpace(got), strings.TrimSpace(tt.want)) {
 				t.Errorf("Qliksense.PrepareK8sSecret() = %v, want %v", got, tt.want)
 			}
 		})
