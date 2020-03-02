@@ -22,7 +22,6 @@ const (
 	contexts           = "contexts"
 )
 
-var targetFile string
 var targetFileStringTemplate = `
 apiVersion: v1
 data:
@@ -35,7 +34,7 @@ type: Opaque
 var encText = "eiGjS2UkxXY/cLoA90hnddXCeJSZj8TF7gIHRq0c+4mIpBVFRLRo79pAMuEORFobRLQnPiwLUkLQ/BNLpA1tu8hsFaiQwIv6/iP1mNepdF2ha9Tf6XVlTYCbQJ2mmHOY0TQk/d1QwXa73+PXz0paLMB+y9/39w7SThL8NHbIKxGAs4rXurVIlmoOaXJmshUCYmEUFV26B9Y4yVQJKfOlheslYrbqVWXhA9lFa/r74yUJnYSrluj9D32eY1xJvI1tUR2oQRUuscAZ8W0v3SjoyUwiXV4L4mJb8qiNx+15PfVMK9V7LVdoRbka+rR2lOtFxQOk6mw41s244AGeU81scgt0PdFiAuNtc2Z42jF92kY4rxRrBqwx6b/oMXUuYAldU4hkNyfNGVINeqQbyMyMcBL1FSe/QuutbInCPDTODQTeZKQB58cgNl/cCORSBYuDPj8dXkPyyUU1+XGju+UEUxS6SG9WLfdozW5Q4FeBVIblS3oraQ0y4S4DYc2r44I7yEmklO3O1leSnCFCpTWMiRC++j5KDkKLYDoL/SXUTh3jMu19z4TXcZ6LCbfbA6hgEh3fcju4XCwXM8NDSzJomLsPmdsvscoqiNgJKjHJNDVHm/1VH0vzSHwMdhoWYXLbM2iX3ucV7q/OEPkLjQF0p5/9XYo0zyIa8uxcZjbimlY="
 var decText = "Value1234"
 
-func setupTargetFileAndPrivateKey() error {
+func setupTargetFileAndPrivateKey() (string, error) {
 	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
 	privKeyBytes := []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIJJwIBAAKCAgEAwUCimKCidbF3UxEHPy8K+hvhklRB9JYhj5sJy0if4lTVibkK
@@ -106,17 +105,12 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 -----END RSA PUBLIC KEY-----
 `)
 
-	targetFile = filepath.Join(testDir, "targetfile.yaml")
+	targetFile := filepath.Join(testDir, "targetfile.yaml")
 	// tests/config.yaml exists
 	err := ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return err
-	}
-	if !api.FileExists(targetFile) {
-		fmt.Print("Target file DOES NOT exist")
-	} else {
-		fmt.Print("Target file EXISTS")
+		return "",err
 	}
 
 	secretKeyPairDir := filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets)
@@ -131,16 +125,24 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 	err = ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return err
+		return "",err
 	}
 	pubKeyFile := filepath.Join(secretKeyPairDir, "qliksensePub")
 	// construct and write pub key file into secretsDir location
 	err = ioutil.WriteFile(pubKeyFile, publicKeyBytes, 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return err
+		return "",err
 	}
-	return nil
+	return targetFile, nil
+}
+
+func removePrivateKey() {
+	err:=os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "qliksensePriv"))
+	if err!=nil{
+		log.Fatalf("Could not delete private key %v",err)
+	}
+return
 }
 
 func setup() func() {
@@ -464,9 +466,6 @@ spec:
 }
 
 func TestQliksense_PrepareK8sSecret(t *testing.T) {
-	tearDown := setup()
-	setupTargetFileAndPrivateKey()
-	defer tearDown()
 
 	type fields struct {
 		QliksenseHome        string
@@ -481,6 +480,7 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 		args    args
 		want    string
 		wantErr bool
+		setup func() (string, func())
 	}{
 		{
 			name: "valid case",
@@ -497,20 +497,50 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 						},
 					},
 				},
-				targetFile: targetFile,
 			},
 			want:    fmt.Sprintf(targetFileStringTemplate, base64.StdEncoding.EncodeToString([]byte(decText))),
 			wantErr: false,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				targetFile, _:= setupTargetFileAndPrivateKey()
+				return targetFile, tearDown
+			},
+		},
+		{
+			name: "private key not supplied should result in decryption error",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				qliksenseCR: api.QliksenseCR{
+					CommonConfig: api.CommonConfig{
+						ApiVersion: api.QliksenseContextApiVersion,
+						Kind:       api.QliksenseContextKind,
+						Metadata: &api.Metadata{
+							Name: qlikDefaultContext,
+						},
+					},
+				},
+			},
+			want:  "",
+			wantErr: true,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				targetFile, _:= setupTargetFileAndPrivateKey()
+				removePrivateKey()
+				return targetFile, tearDown
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			log.Println("TTTarget file:", tt.args.targetFile)
+			targetFile, tearDown := tt.setup()
+
 			q := &Qliksense{
 				QliksenseHome: tt.fields.QliksenseHome,
 			}
-			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, tt.args.targetFile)
+			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, targetFile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -518,6 +548,7 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			if !reflect.DeepEqual(strings.TrimSpace(got), strings.TrimSpace(tt.want)) {
 				t.Errorf("Qliksense.PrepareK8sSecret() = %v, want %v", got, tt.want)
 			}
+			tearDown()
 		})
 	}
 }
