@@ -21,7 +21,7 @@ jobs:
           name: "Publish Release on GitHub"
           command: |
             go get github.com/tcnksm/ghr
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG}  /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
+            # ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG}  /go/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}/bin/${CIRCLE_TAG}/
 workflows:
   version: 2
   commit:
@@ -29,7 +29,14 @@ workflows:
       - build:
           filters:
             branches:
-              only: master
+              ignore: master
+
+      - build_release:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: master
   build_release:
     jobs:
       - build:
