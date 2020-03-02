@@ -402,13 +402,8 @@ func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile str
 	if err != nil {
 		return "", err
 	}
-	// convert []byte into RSA public key object
-	rsaPrivateKey, err := api.DecodeToPrivateKey(privateKeybytes)
-	if err != nil {
-		return "", err
-	}
+	
 	dataMap := k8sSecret1.Data
-	// var base64EncodedSecret string
 	var resultMap = make(map[string][]byte)
 	for k, v := range dataMap {
 		decryptedString, err := api.Decrypt(v, rsaPrivateKey)

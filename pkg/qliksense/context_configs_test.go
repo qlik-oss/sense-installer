@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gobuffalo/packr/v2"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -91,6 +90,22 @@ Gu7HNIOrwOHzviI7J6Nd/l9MmeKqklHSgJvko/f5TmiXuQQ8xDZf84rcjQ==
 -----END RSA PRIVATE KEY-----
 `)
 
+	publicKeyBytes := []byte(`-----BEGIN RSA PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwUCimKCidbF3UxEHPy8K
++hvhklRB9JYhj5sJy0if4lTVibkK1MrYCykOnmC40pPU9GLY1b8HxAg9tvyRn0YH
+UxOra6vVQaVcOVJhTM8D18d+lSr3Lp1yiX+UGT4nzWI9+R1CCbwXrqeQVoZs6QZK
+ynEXMkFI9/wNMOwPOvQFOSTuoEoCO+zyTyUWEkNbUq825ELUQdIsjgmlWUOONudx
+sAr7ESRXW9QTHVh6uWmr3VRKZHby1JdU3I/wjdlGg5M2dDuXy5nQO9w/nYLjJXiw
++zzOetZ/+t7/VOkOpNTeJQhwTM1WF7Y2VLetbi9FHgyzHatrduh07+XEiTbgDf3G
+Ix2bp2p6oh0G3N2zpiLcK/aZj8rouWWydfFfsU3MZ4FfJDP8I6b9awxjmKYqIr6h
+iPQCJaLBED8mwK+I5evIbnKv6E6uK+BApWA/R7ElragoFYbqQ1VpvntVMtJt9Dy5
+ZrI+IQARdXD3bb34oh0IPBhClnvvMUc1cWxDoXEX6oJ4I+LzxE87Zkwnan9qOwen
+golMVKFwPx1o37qrbmrXID21kKt7FL6xN4HxHLkItr1fKzdyWDFRHgASTAWfx5BI
+wvPuUW0vZHkvO80VyV2L63whVhPnPASmFkbviomrBttYfpr2aGQqF/qR1Nlxe834
+MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
+-----END RSA PUBLIC KEY-----
+`)
+
 	targetFile = filepath.Join(testDir, "targetfile.yaml")
 	// tests/config.yaml exists
 	err := ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
@@ -114,6 +129,13 @@ Gu7HNIOrwOHzviI7J6Nd/l9MmeKqklHSgJvko/f5TmiXuQQ8xDZf84rcjQ==
 	privKeyFile := filepath.Join(secretKeyPairDir, "qliksensePriv")
 	// construct and write priv key file into secretsDir location
 	err = ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return err
+	}
+	pubKeyFile := filepath.Join(secretKeyPairDir, "qliksensePub")
+	// construct and write pub key file into secretsDir location
+	err = ioutil.WriteFile(pubKeyFile, publicKeyBytes, 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
 		return err
@@ -448,8 +470,6 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 
 	type fields struct {
 		QliksenseHome        string
-		QliksenseEjsonKeyDir string
-		CrdBox               *packr.Box
 	}
 	type args struct {
 		qliksenseCR api.QliksenseCR
@@ -464,6 +484,9 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 	}{
 		{
 			name: "valid case",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
 			args: args{
 				qliksenseCR: api.QliksenseCR{
 					CommonConfig: api.CommonConfig{
@@ -483,12 +506,10 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q := &Qliksense{
-				QliksenseHome:        tt.fields.QliksenseHome,
-				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
-				CrdBox:               tt.fields.CrdBox,
-			}
 			log.Println("TTTarget file:", tt.args.targetFile)
+			q := &Qliksense{
+				QliksenseHome: tt.fields.QliksenseHome,
+			}
 			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, tt.args.targetFile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
