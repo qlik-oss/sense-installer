@@ -226,7 +226,9 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
 		default:
-			log.Println("As part of the `qliksense config set` command, please enter one of: profile, namespace, storageClassName,rotateKeys, manifestRoot or git.repository arguments")
+			err := fmt.Errorf("Please enter one of: profile, namespace, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
+			log.Println(err)
+			return err
 		}
 	}
 	// write modified content into context.yaml
@@ -238,7 +240,10 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 // SetContextConfig - set the context for qliksense kubernetes resources to live in
 func (q *Qliksense) SetContextConfig(args []string) error {
 	if len(args) == 1 {
-		q.SetUpQliksenseContext(args[0], false)
+		err:= q.SetUpQliksenseContext(args[0], false)
+		if err!=nil{
+			return err
+		}
 	} else {
 		err := fmt.Errorf("Please provide a name to configure the context with")
 		log.Println(err)
@@ -278,6 +283,11 @@ func (q *Qliksense) SetUpQliksenseDefaultContext() error {
 
 // SetUpQliksenseContext - to setup qliksense context
 func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext bool) error {
+	if contextName == ""{
+		err := fmt.Errorf("Please enter a non-empty context-name")
+		log.Println(err)
+		return err
+	}
 	// check the length of the context name entered by the user, it should not exceed 17 chars
 	if len(contextName) > MaxContextNameLength {
 		err := fmt.Errorf("Please enter a context-name with utmost 17 characters")
@@ -380,18 +390,18 @@ func validateInput(input string) (string, error) {
 
 // PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
 func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
-	qConfig := api.NewQConfig(q.QliksenseHome)
-	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
-	if err != nil {
-		return "", err
-	}
-
 	// check if targetFile exists
 	if !api.FileExists(targetFile) {
 		err := fmt.Errorf("Target file does not exist in the path provided")
 		log.Println(err)
 		return "", err
 	}
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	if err != nil {
+		return "", err
+	}
+
 	// read the target file
 	k8sSecret, err := readTargetfile(targetFile)
 	if err != nil {

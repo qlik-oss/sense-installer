@@ -3,6 +3,7 @@ package qliksense
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/gobuffalo/packr/v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -237,6 +238,15 @@ func TestSetUpQliksenseContext(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "empty contextname",
+			args: args{
+				qlikSenseHome:    testDir,
+				contextName:      "",
+				isDefaultContext: false,
+			},
+			wantErr: true,
+		},
 	}
 	tearDown := setup()
 	defer tearDown()
@@ -307,6 +317,26 @@ func TestSetOtherConfigs(t *testing.T) {
 				args: []string{"profile=minikube", "namespace=qliksense", "storageClassName=efs"},
 			},
 			wantErr: false,
+		},
+		{
+			name: "invalid configs",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{"someconfig=somevalue"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty configs",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{},
+			},
+			wantErr: true,
 		},
 	}
 	tearDown := setup()
@@ -536,6 +566,67 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 				t.Errorf("Qliksense.PrepareK8sSecret() = %v, want %v", got, tt.want)
 			}
 			tearDown()
+		})
+	}
+}
+
+// TODO
+func TestQliksense_ListContextConfigs(t *testing.T) {
+	type fields struct {
+		QliksenseHome        string
+		QliksenseEjsonKeyDir string
+		CrdBox               *packr.Box
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := &Qliksense{
+				QliksenseHome:        tt.fields.QliksenseHome,
+				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
+				CrdBox:               tt.fields.CrdBox,
+			}
+			if err := q.ListContextConfigs(); (err != nil) != tt.wantErr {
+				t.Errorf("ListContextConfigs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TODO
+func TestQliksense_SetSecrets(t *testing.T) {
+	type fields struct {
+		QliksenseHome        string
+		QliksenseEjsonKeyDir string
+		CrdBox               *packr.Box
+	}
+	type args struct {
+		args        []string
+		isSecretSet bool
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := &Qliksense{
+				QliksenseHome:        tt.fields.QliksenseHome,
+				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
+				CrdBox:               tt.fields.CrdBox,
+			}
+			if err := q.SetSecrets(tt.args.args, tt.args.isSecretSet); (err != nil) != tt.wantErr {
+				t.Errorf("SetSecrets() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }
