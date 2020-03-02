@@ -379,7 +379,7 @@ func validateInput(input string) (string, error) {
 }
 
 // PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
-func (q *Qliksense) PrepareK8sSecret(qliksenseCR api.QliksenseCR, targetFile string) (string, error) {
+func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 	qConfig := api.NewQConfig(q.QliksenseHome)
 	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
 	if err != nil {

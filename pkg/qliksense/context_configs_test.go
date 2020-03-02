@@ -470,14 +470,9 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 	type fields struct {
 		QliksenseHome        string
 	}
-	type args struct {
-		qliksenseCR api.QliksenseCR
-		targetFile  string
-	}
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
 		want    string
 		wantErr bool
 		setup func() (string, func())
@@ -486,17 +481,6 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			name: "valid case",
 			fields: fields{
 				QliksenseHome: testDir,
-			},
-			args: args{
-				qliksenseCR: api.QliksenseCR{
-					CommonConfig: api.CommonConfig{
-						ApiVersion: api.QliksenseContextApiVersion,
-						Kind:       api.QliksenseContextKind,
-						Metadata: &api.Metadata{
-							Name: qlikDefaultContext,
-						},
-					},
-				},
 			},
 			want:    fmt.Sprintf(targetFileStringTemplate, base64.StdEncoding.EncodeToString([]byte(decText))),
 			wantErr: false,
@@ -511,17 +495,6 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			fields: fields{
 				QliksenseHome: testDir,
 			},
-			args: args{
-				qliksenseCR: api.QliksenseCR{
-					CommonConfig: api.CommonConfig{
-						ApiVersion: api.QliksenseContextApiVersion,
-						Kind:       api.QliksenseContextKind,
-						Metadata: &api.Metadata{
-							Name: qlikDefaultContext,
-						},
-					},
-				},
-			},
 			want:  "",
 			wantErr: true,
 			setup: func() (string, func()) {
@@ -535,17 +508,6 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			name: "target file not supplied",
 			fields: fields{
 				QliksenseHome: testDir,
-			},
-			args: args{
-				qliksenseCR: api.QliksenseCR{
-					CommonConfig: api.CommonConfig{
-						ApiVersion: api.QliksenseContextApiVersion,
-						Kind:       api.QliksenseContextKind,
-						Metadata: &api.Metadata{
-							Name: qlikDefaultContext,
-						},
-					},
-				},
 			},
 			want:  "",
 			wantErr: true,
@@ -565,7 +527,7 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			q := &Qliksense{
 				QliksenseHome: tt.fields.QliksenseHome,
 			}
-			got, err := q.PrepareK8sSecret(tt.args.qliksenseCR, targetFile)
+			got, err := q.PrepareK8sSecret(targetFile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
 				return
