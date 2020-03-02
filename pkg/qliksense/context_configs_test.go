@@ -531,6 +531,31 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 				return targetFile, tearDown
 			},
 		},
+		{
+			name: "target file not supplied",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				qliksenseCR: api.QliksenseCR{
+					CommonConfig: api.CommonConfig{
+						ApiVersion: api.QliksenseContextApiVersion,
+						Kind:       api.QliksenseContextKind,
+						Metadata: &api.Metadata{
+							Name: qlikDefaultContext,
+						},
+					},
+				},
+			},
+			want:  "",
+			wantErr: true,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				_, _= setupTargetFileAndPrivateKey()
+				removePrivateKey()
+				return "", tearDown
+			},
+		},
 	}
 
 	for _, tt := range tests {
