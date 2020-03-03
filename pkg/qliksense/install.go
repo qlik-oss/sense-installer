@@ -9,7 +9,6 @@ import (
 
 type InstallCommandOptions struct {
 	AcceptEULA   string
-	Namespace    string
 	StorageClass string
 	MongoDbUri   string
 	RotateKeys   string
@@ -40,9 +39,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
 	}
-	if opts.Namespace != "" {
-		qcr.Spec.NameSpace = opts.Namespace
-	}
 	if opts.RotateKeys != "" {
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
@@ -51,14 +47,14 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")
-	if err := qapi.KubectlApply(q.GetOperatorControllerString(), qcr.Spec.NameSpace); err != nil {
+	if err := qapi.KubectlApply(q.GetOperatorControllerString(), ""); err != nil {
 		fmt.Println("cannot do kubectl apply on opeartor controller", err)
 		return err
 	}
 
-	if qcr.Spec.Git.Repository != "" {
+	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
-		return q.applyCR(qcr.Spec.NameSpace)
+		return q.applyCR()
 	}
 	if version != "" { // no need to fetch manifest root already set by some other way
 		if err := fetchAndUpdateCR(qConfig, version); err != nil {
@@ -81,10 +77,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 
-	return q.applyCR(qcr.Spec.NameSpace)
+	return q.applyCR()
 }
 
-func (q *Qliksense) applyCR(ns string) error {
+func (q *Qliksense) applyCR() error {
 	// install operator cr into cluster
 	//get the current context cr
 	fmt.Println("Install operator CR into cluster")
@@ -92,7 +88,7 @@ func (q *Qliksense) applyCR(ns string) error {
 	if err != nil {
 		return err
 	}
-	if err := qapi.KubectlApply(r, ns); err != nil {
+	if err := qapi.KubectlApply(r, ""); err != nil {
 		fmt.Println("cannot do kubectl apply on operator CR")
 		return err
 	}

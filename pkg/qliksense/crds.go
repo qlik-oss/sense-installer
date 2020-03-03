@@ -3,8 +3,9 @@ package qliksense
 import (
 	"errors"
 	"fmt"
-	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"path/filepath"
+
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 type CrdCommandOptions struct {
@@ -40,11 +41,11 @@ func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 
 	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
 		return err
-	} else if err = qapi.KubectlApply(engineCRD, qcr.Spec.NameSpace); err != nil {
+	} else if err = qapi.KubectlApply(engineCRD, ""); err != nil {
 		return err
 	}
 	if opts.All { // install opeartor crd
-		if err := qapi.KubectlApply(q.GetOperatorCRDString(), qcr.Spec.NameSpace); err != nil {
+		if err := qapi.KubectlApply(q.GetOperatorCRDString(), ""); err != nil {
 			fmt.Println("cannot do kubectl apply on opeartor CRD", err)
 			return err
 		}
