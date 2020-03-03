@@ -47,12 +47,12 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	if err != nil {
 		return err
 	}
-
 	resultArgs, err := api.ProcessConfigArgs(args)
 	if err != nil {
 		return err
 	}
 	for _, ra := range resultArgs {
+		api.LogDebugMessage("value args to be encrypted: %s", ra.Value)
 		if err := q.processSecret(ra, rsaPublicKey, &qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
@@ -71,6 +71,7 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 		return e2
 	}
 	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
+	api.LogDebugMessage("base64 encoded secret: %s\n", base64EncodedSecret)
 	secretName := ""
 	if isSecretSet {
 		secretFolder := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)

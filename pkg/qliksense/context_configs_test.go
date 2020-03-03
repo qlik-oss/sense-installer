@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"crypto/rsa"
 	"encoding/base64"
 	b64 "encoding/base64"
 	"fmt"
@@ -661,17 +660,17 @@ func Test_SetSecrets(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		//{
-		//	name: "valid secret secrets=true",
-		//	fields: fields{
-		//		QliksenseHome: testDir,
-		//	},
-		//	args: args{
-		//		args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
-		//		isSecretSet: true,
-		//	},
-		//	wantErr: false,
-		//},
+		{
+			name: "valid secret secrets=true",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				isSecretSet: true,
+			},
+			wantErr: false,
+		},
 	}
 	tearDown := setup()
 	pubKeyBytes, privateKeyBytes, _, err := setupTargetFileAndPrivateKey()
@@ -711,79 +710,81 @@ func Test_SetSecrets(t *testing.T) {
 				t.FailNow()
 			}
 
-			//for svcName, v := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
-			for _, v := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
-				for _, item := range v { // we are sure we only have one entry
-					//if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
-					//	// secret=true
-					//	secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
-					//	if api.FileExists(secretFilePath) {
-					//		k8sSecret := v1.Secret{}
-					//		secretFileContents, err := ioutil.ReadFile(secretFilePath)
-					//		if err != nil {
-					//			err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-					//			log.Printf("An error occurred during unmarshalling: %v", err)
-					//			t.FailNow()
-					//		}
-					//		if err = yaml.Unmarshal(secretFileContents, &k8sSecret); err != nil {
-					//			err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-					//			log.Printf("An error occurred during unmarshalling: %v", err)
-					//			t.FailNow()
-					//		}
-					//		if k8sSecret.Data == nil {
-					//			err = fmt.Errorf("No Data in Secret: %v", err)
-					//			log.Printf("No Data in Secret: %v", err)
-					//			t.FailNow()
-					//		}
-					//		base64EncodedSecret, err := EncryptTestValue([]byte(testValue), pubKey)
-					//		if err != nil {
-					//			err := fmt.Errorf("Error occurred while testing encryption: %v", err)
-					//			log.Printf("No Data in Secret: %v", err)
-					//			t.FailNow()
-					//		}
-					//		if string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]) != base64EncodedSecret {
-					//			t.FailNow()
-					//		}
-					//	}
-					//
-					//} else {
-					// secret=false
-					if item.Value != "" {
-						fmt.Printf("\n\nValue computed by test run: %s\n\n", item.Value)
-						fmt.Printf("\n\nValue to be encrypted for validation: %s\n\n", testValue)
-						//base64EncodedSecret, err := EncryptTestValue([]byte(testValue), pubKey)
-						//fmt.Printf("\n\nEncrypted given Value: %s\n\n", base64EncodedSecret)
+			for svcName, _ := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+				for _, v := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+					for _, item := range v { // we are sure we only have one entry
+						if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
+							// secret=true
+							secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
+							if api.FileExists(secretFilePath) {
+								//k8sSecret := v1.Secret{}
+								secretFileContents, err := ioutil.ReadFile(secretFilePath)
+								if err != nil {
+									err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+									log.Printf("An error occurred during unmarshalling: %v", err)
+									t.FailNow()
+								}
+								api.LogDebugMessage("Secret file here: %v", string(secretFileContents))
+								k8sSecret, err := api.K8sSecretFromYaml(secretFileContents)
+								if err != nil {
+									err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+									log.Printf("---------------An error occurred during unmarshalling: %v", err)
+									t.FailNow()
+								}
+								if k8sSecret.Data == nil {
+									err = fmt.Errorf("No Data in Secret: %v", err)
+									log.Printf("No Data in Secret: %v", err)
+									t.FailNow()
+								}
+								//		base64EncodedSecret, err := EncryptTestValue([]byte(testValue), pubKey)
+								decodedValue, err := b64.StdEncoding.DecodeString(string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]))
+								decryptedVal, err := api.Decrypt(decodedValue, privKey)
+								if err != nil {
+									err := fmt.Errorf("Error occurred while testing encryption: %v", err)
+									log.Printf("No Data in Secret: %v", err)
+									t.FailNow()
+								}
+								if string(decryptedVal) != testValue {
+									t.FailNow()
+								}
+							}
 
-						decodedValue, err := b64.StdEncoding.DecodeString(item.Value)
-						if err != nil {
-							err := fmt.Errorf("Error occurred while decoding: %v", err)
-							log.Printf("decode error: %v", err)
-							t.FailNow()
-						}
-						api.LogDebugMessage("\nDecoded value: %s\n", decodedValue)
-						decryptedVal, err := api.Decrypt(decodedValue, privKey)
-						if err != nil {
-							err := fmt.Errorf("Error occurred while testing decryption: %v", err)
-							log.Printf("decryption error: %v", err)
-							t.FailNow()
-						}
-						api.LogDebugMessage(`\ndecrypted value: "%s", orig value: "%s"\n`, decryptedVal, testValue)
-						if string(decryptedVal) != testValue {
-							fmt.Printf("\n\nitem.Value != input value\n")
-							fmt.Printf("\n\nFailing now...\n")
-							t.FailNow()
+						} else {
+							// secret=false
+							if item.Value != "" {
+								//fmt.Printf("\n\nValue computed by test run: %s\n\n", item.Value)
+								//fmt.Printf("\n\nValue to be encrypted for validation: %s\n\n", testValue)
+
+								decodedValue, err := b64.StdEncoding.DecodeString(item.Value)
+								if err != nil {
+									err := fmt.Errorf("Error occurred while decoding: %v", err)
+									log.Printf("decode error: %v", err)
+									t.FailNow()
+								}
+								//api.LogDebugMessage("\nDecoded value: %s\n", decodedValue)
+								decryptedVal, err := api.Decrypt(decodedValue, privKey)
+								if err != nil {
+									err := fmt.Errorf("Error occurred while testing decryption: %v", err)
+									log.Printf("decryption error: %v", err)
+									t.FailNow()
+								}
+								//api.LogDebugMessage(`\ndecrypted value: "%s", orig value: "%s"\n`, decryptedVal, testValue)
+								if string(decryptedVal) != testValue {
+									//fmt.Printf("\n\nitem.Value != input value\n")
+									//fmt.Printf("\n\nFailing now...\n")
+									t.FailNow()
+								}
+							}
 						}
 					}
-					//}
+
 				}
-
 			}
-
 		})
 	}
 }
 
-func EncryptTestValue(testValueBytes []byte, pubKey *rsa.PublicKey) (string, error) {
-	cipherText, e2 := api.Encrypt(testValueBytes, pubKey)
-	return b64.StdEncoding.EncodeToString(cipherText), e2
-}
+//func EncryptTestValue(testValueBytes []byte, pubKey *rsa.PublicKey) (string, error) {
+//	cipherText, err := api.Encrypt(testValueBytes, pubKey)
+//	return b64.StdEncoding.EncodeToString(cipherText), err
+//}
