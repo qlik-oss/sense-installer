@@ -460,16 +460,20 @@ func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullU
 		}); err != nil {
 			return err
 		} else if err := qConfig.SetPullDockerConfigJsonSecret(&api.DockerConfigJsonSecret{
-			Name:      pullSecretName,
-			Namespace: qliksenseCR.GetNamespace(),
-			Uri:       registry,
-			Username:  pullUsername,
-			Password:  pullPassword,
-			Email:     pullUsername,
+			Name:     pullSecretName,
+			Uri:      registry,
+			Username: pullUsername,
+			Password: pullPassword,
+			Email:    pullUsername,
 		}); err != nil {
 			return err
 		}
+	} else if err := qConfig.DeletePushDockerConfigJsonSecret(); err != nil && !os.IsNotExist(err) {
+		return err
+	} else if err := qConfig.DeletePullDockerConfigJsonSecret(); err != nil && !os.IsNotExist(err) {
+		return err
 	}
+
 	qliksenseCR.Spec.AddToConfigs("qliksense", imageRegistryConfigKey, registry)
 	return api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
 }

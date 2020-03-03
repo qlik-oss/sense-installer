@@ -28,7 +28,6 @@ func (kdcjt *k8sDockerConfigJsonType) GenerateAuth() {
 
 type DockerConfigJsonSecret struct {
 	Name      string
-	Namespace string
 	Uri       string
 	Username  string
 	Password  string
@@ -51,9 +50,13 @@ func (d *DockerConfigJsonSecret) ToYaml(encryptionKey *rsa.PublicKey) ([]byte, e
 	if err != nil {
 		return nil, err
 	}
-	k8sDockerConfigJsonMapEncryptedBytes, err := Encrypt(k8sDockerConfigJsonMapBytes, encryptionKey)
-	if err != nil {
-		return nil, err
+	var k8sDockerConfigJsonMapMaybeEncryptedBytes []byte
+	if encryptionKey != nil {
+		if k8sDockerConfigJsonMapMaybeEncryptedBytes, err = Encrypt(k8sDockerConfigJsonMapBytes, encryptionKey); err != nil {
+			return nil, err
+		}
+	} else {
+		k8sDockerConfigJsonMapMaybeEncryptedBytes = k8sDockerConfigJsonMapBytes
 	}
 
 	k8sSecret := v1.Secret{
@@ -63,11 +66,10 @@ func (d *DockerConfigJsonSecret) ToYaml(encryptionKey *rsa.PublicKey) ([]byte, e
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      d.Name,
-			Namespace: d.Namespace,
 		},
 		Type: v1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
-			".dockerconfigjson": k8sDockerConfigJsonMapEncryptedBytes,
+			".dockerconfigjson": k8sDockerConfigJsonMapMaybeEncryptedBytes,
 		},
 	}
 
@@ -90,7 +92,6 @@ func (d *DockerConfigJsonSecret) FromYaml(secretBytes []byte, decryptionKey *rsa
 		return err
 	} else {
 		d.Name = k8sSecret.ObjectMeta.Name
-		d.Namespace = k8sSecret.ObjectMeta.Namespace
 		for registry, k8sDockerConfigJson := range k8sDockerConfigJsonMap.Auths {
 			d.Uri = registry
 			d.Username = k8sDockerConfigJson.Username

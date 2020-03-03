@@ -178,10 +178,30 @@ func (qc *QliksenseConfig) SetPullDockerConfigJsonSecret(dockerConfigJsonSecret 
 }
 
 func (qc *QliksenseConfig) GetPushDockerConfigJsonSecret() (*DockerConfigJsonSecret, error) {
-	return qc.GetDockerConfigJsonSecret(pushSecretFileName)
+	return qc.getDockerConfigJsonSecret(pushSecretFileName)
 }
 
-func (qc *QliksenseConfig) GetDockerConfigJsonSecret(name string) (*DockerConfigJsonSecret, error) {
+func (qc *QliksenseConfig) GetPullDockerConfigJsonSecret() (*DockerConfigJsonSecret, error) {
+	return qc.getDockerConfigJsonSecret(pullSecretFileName)
+}
+
+func (qc *QliksenseConfig) DeletePushDockerConfigJsonSecret() error {
+	return qc.deleteDockerConfigJsonSecret(pushSecretFileName)
+}
+
+func (qc *QliksenseConfig) DeletePullDockerConfigJsonSecret() error {
+	return qc.deleteDockerConfigJsonSecret(pullSecretFileName)
+}
+
+func (qc *QliksenseConfig) deleteDockerConfigJsonSecret(name string) error {
+	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
+		return err
+	} else {
+		return os.Remove(filepath.Join(secretsDir, name))
+	}
+}
+
+func (qc *QliksenseConfig) getDockerConfigJsonSecret(name string) (*DockerConfigJsonSecret, error) {
 	dockerConfigJsonSecret := &DockerConfigJsonSecret{}
 	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
 		return nil, err
