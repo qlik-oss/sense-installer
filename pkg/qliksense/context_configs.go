@@ -53,7 +53,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		return err
 	}
 	for _, ra := range resultArgs {
-		if err := q.processSecret(ra, rsaPublicKey, qliksenseCR, isSecretSet); err != nil {
+		if err := q.processSecret(ra, rsaPublicKey, &qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
 	}
@@ -63,7 +63,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	return nil
 }
 
-func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR api.QliksenseCR, isSecretSet bool) error {
+func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
 	// encrypt value with RSA key pair
 	valueBytes := []byte(ra.Value)
 	cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
@@ -114,7 +114,6 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 			api.LogDebugMessage("Error while writing K8s secret to file")
 			return err
 		}
-		// api.WriteToFile(&k8sSecret, secretFileName)
 		api.LogDebugMessage("Created a Kubernetes secret")
 
 		// Prepare args to update CR in the next step
@@ -240,8 +239,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 // SetContextConfig - set the context for qliksense kubernetes resources to live in
 func (q *Qliksense) SetContextConfig(args []string) error {
 	if len(args) == 1 {
-		err:= q.SetUpQliksenseContext(args[0], false)
-		if err!=nil{
+		err := q.SetUpQliksenseContext(args[0], false)
+		if err != nil {
 			return err
 		}
 	} else {
@@ -283,7 +282,7 @@ func (q *Qliksense) SetUpQliksenseDefaultContext() error {
 
 // SetUpQliksenseContext - to setup qliksense context
 func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext bool) error {
-	if contextName == ""{
+	if contextName == "" {
 		err := fmt.Errorf("Please enter a non-empty context-name")
 		log.Println(err)
 		return err

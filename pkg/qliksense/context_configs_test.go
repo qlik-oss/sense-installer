@@ -1,9 +1,10 @@
 package qliksense
 
 import (
+	"crypto/rsa"
 	"encoding/base64"
+	b64 "encoding/base64"
 	"fmt"
-	"github.com/gobuffalo/packr/v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -35,7 +37,7 @@ type: Opaque
 var encText = "eiGjS2UkxXY/cLoA90hnddXCeJSZj8TF7gIHRq0c+4mIpBVFRLRo79pAMuEORFobRLQnPiwLUkLQ/BNLpA1tu8hsFaiQwIv6/iP1mNepdF2ha9Tf6XVlTYCbQJ2mmHOY0TQk/d1QwXa73+PXz0paLMB+y9/39w7SThL8NHbIKxGAs4rXurVIlmoOaXJmshUCYmEUFV26B9Y4yVQJKfOlheslYrbqVWXhA9lFa/r74yUJnYSrluj9D32eY1xJvI1tUR2oQRUuscAZ8W0v3SjoyUwiXV4L4mJb8qiNx+15PfVMK9V7LVdoRbka+rR2lOtFxQOk6mw41s244AGeU81scgt0PdFiAuNtc2Z42jF92kY4rxRrBqwx6b/oMXUuYAldU4hkNyfNGVINeqQbyMyMcBL1FSe/QuutbInCPDTODQTeZKQB58cgNl/cCORSBYuDPj8dXkPyyUU1+XGju+UEUxS6SG9WLfdozW5Q4FeBVIblS3oraQ0y4S4DYc2r44I7yEmklO3O1leSnCFCpTWMiRC++j5KDkKLYDoL/SXUTh3jMu19z4TXcZ6LCbfbA6hgEh3fcju4XCwXM8NDSzJomLsPmdsvscoqiNgJKjHJNDVHm/1VH0vzSHwMdhoWYXLbM2iX3ucV7q/OEPkLjQF0p5/9XYo0zyIa8uxcZjbimlY="
 var decText = "Value1234"
 
-func setupTargetFileAndPrivateKey() (string, error) {
+func setupTargetFileAndPrivateKey() ([]byte, []byte, string, error) {
 	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
 	privKeyBytes := []byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIJJwIBAAKCAgEAwUCimKCidbF3UxEHPy8K+hvhklRB9JYhj5sJy0if4lTVibkK
@@ -111,7 +113,7 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 	err := ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return "",err
+		return nil, nil, "", err
 	}
 
 	secretKeyPairDir := filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets)
@@ -126,24 +128,25 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 	err = ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return "",err
+		return nil, nil, "", err
 	}
 	pubKeyFile := filepath.Join(secretKeyPairDir, "qliksensePub")
+	api.LogDebugMessage("Test setup - \npub key path: %s\n, priv key path: %s\n", pubKeyFile, privKeyFile)
 	// construct and write pub key file into secretsDir location
 	err = ioutil.WriteFile(pubKeyFile, publicKeyBytes, 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return "",err
+		return nil, nil, "", err
 	}
-	return targetFile, nil
+	return publicKeyBytes, privKeyBytes, targetFile, nil
 }
 
 func removePrivateKey() {
-	err:=os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "qliksensePriv"))
-	if err!=nil{
-		log.Fatalf("Could not delete private key %v",err)
+	err := os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "qliksensePriv"))
+	if err != nil {
+		log.Fatalf("Could not delete private key %v", err)
 	}
-return
+	return
 }
 
 func setup() func() {
@@ -160,7 +163,7 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crLocation: /root/.qliksense/contexts/qlik-default.yaml
+    crFile: /root/.qliksense/contexts/qlik-default.yaml
   currentContext: qlik-default
 `
 	configFile := filepath.Join(testDir, "config.yaml")
@@ -193,6 +196,22 @@ spec:
 		os.RemoveAll(testDir)
 	}
 	return tearDown
+}
+
+func readCRFile() (*api.QliksenseCR, error) {
+	qlikDefaultContext := "qlik-default"
+	qliksenseCR := &api.QliksenseCR{}
+	contextFileContents, err := ioutil.ReadFile(filepath.Join(testDir, contexts, qlikDefaultContext, qlikDefaultContext+".yaml"))
+	if err != nil {
+		log.Println(err)
+		err = fmt.Errorf("Not able to read current context info")
+		return nil, err
+	}
+	if err := yaml.Unmarshal(contextFileContents, qliksenseCR); err != nil {
+		err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+		return nil, err
+	}
+	return qliksenseCR, nil
 }
 
 func Test_retrieveCurrentContextInfo(t *testing.T) {
@@ -366,7 +385,7 @@ func TestSetConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"qliksense[name=acceptEULA]=\"yes\"", "qliksense[name=mongoDbUri]=\"mongo://mongo:3307\""},
+				args: []string{"qliksense.acceptEULA=\"yes\"", "qliksense.mongoDbUri=\"mongo://mongo:3307\""},
 			},
 			wantErr: false,
 		},
@@ -495,17 +514,17 @@ spec:
 	}
 }
 
-func TestQliksense_PrepareK8sSecret(t *testing.T) {
+func Test_PrepareK8sSecret(t *testing.T) {
 
 	type fields struct {
-		QliksenseHome        string
+		QliksenseHome string
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		want    string
 		wantErr bool
-		setup func() (string, func())
+		setup   func() (string, func())
 	}{
 		{
 			name: "valid case",
@@ -516,7 +535,7 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			wantErr: false,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				targetFile, _:= setupTargetFileAndPrivateKey()
+				_, _, targetFile, _ := setupTargetFileAndPrivateKey()
 				return targetFile, tearDown
 			},
 		},
@@ -525,11 +544,11 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			fields: fields{
 				QliksenseHome: testDir,
 			},
-			want:  "",
+			want:    "",
 			wantErr: true,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				targetFile, _:= setupTargetFileAndPrivateKey()
+				_, _, targetFile, _ := setupTargetFileAndPrivateKey()
 				removePrivateKey()
 				return targetFile, tearDown
 			},
@@ -539,11 +558,11 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 			fields: fields{
 				QliksenseHome: testDir,
 			},
-			want:  "",
+			want:    "",
 			wantErr: true,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				_, _= setupTargetFileAndPrivateKey()
+				_, _, _, _ = setupTargetFileAndPrivateKey()
 				removePrivateKey()
 				return "", tearDown
 			},
@@ -570,40 +589,56 @@ func TestQliksense_PrepareK8sSecret(t *testing.T) {
 	}
 }
 
-// TODO
-func TestQliksense_ListContextConfigs(t *testing.T) {
+func Test_ListContextConfigs(t *testing.T) {
 	type fields struct {
-		QliksenseHome        string
-		QliksenseEjsonKeyDir string
-		CrdBox               *packr.Box
+		QliksenseHome string
 	}
 	tests := []struct {
 		name    string
 		fields  fields
 		wantErr bool
+		setup   func() (string, func())
 	}{
-		// TODO: Add test cases.
+		{
+			name: "valid case",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			wantErr: false,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				return "", tearDown
+			},
+		},
+		{
+			name: "config yaml does not exist",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			wantErr: true,
+			setup: func() (string, func()) {
+				return "", func() {}
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			_, tearDown := tt.setup()
+
 			q := &Qliksense{
-				QliksenseHome:        tt.fields.QliksenseHome,
-				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
-				CrdBox:               tt.fields.CrdBox,
+				QliksenseHome: tt.fields.QliksenseHome,
 			}
 			if err := q.ListContextConfigs(); (err != nil) != tt.wantErr {
 				t.Errorf("ListContextConfigs() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			tearDown()
 		})
 	}
 }
 
-// TODO
-func TestQliksense_SetSecrets(t *testing.T) {
+func Test_SetSecrets(t *testing.T) {
 	type fields struct {
-		QliksenseHome        string
-		QliksenseEjsonKeyDir string
-		CrdBox               *packr.Box
+		QliksenseHome string
 	}
 	type args struct {
 		args        []string
@@ -615,18 +650,140 @@ func TestQliksense_SetSecrets(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "valid secret secrets=false",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				isSecretSet: false,
+			},
+			wantErr: false,
+		},
+		//{
+		//	name: "valid secret secrets=true",
+		//	fields: fields{
+		//		QliksenseHome: testDir,
+		//	},
+		//	args: args{
+		//		args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+		//		isSecretSet: true,
+		//	},
+		//	wantErr: false,
+		//},
+	}
+	tearDown := setup()
+	pubKeyBytes, privateKeyBytes, _, err := setupTargetFileAndPrivateKey()
+	if err != nil {
+		t.FailNow()
+	}
+	defer tearDown()
+
+	api.LogDebugMessage("\npublic key: \n%s\n", pubKeyBytes)
+	//pubKey, err := api.DecodeToPublicKey(pubKeyBytes)
+	//if err != nil {
+	//	t.FailNow()
+	//}
+	privKey, err := api.DecodeToPrivateKey(privateKeyBytes)
+	if err != nil {
+		t.FailNow()
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := &Qliksense{
-				QliksenseHome:        tt.fields.QliksenseHome,
-				QliksenseEjsonKeyDir: tt.fields.QliksenseEjsonKeyDir,
-				CrdBox:               tt.fields.CrdBox,
+				QliksenseHome: tt.fields.QliksenseHome,
 			}
 			if err := q.SetSecrets(tt.args.args, tt.args.isSecretSet); (err != nil) != tt.wantErr {
 				t.Errorf("SetSecrets() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
+			// VERIFICATION PART BELOW
+			// extract the value for testing
+			testValueArr := strings.Split(tt.args.args[0], "=")
+			testValue := strings.ReplaceAll(testValueArr[1], "\"", "")
+			fmt.Printf("\nValue:: %s\n\nhello", testValue)
+
+			qliksenseCR, err := readCRFile()
+			if err != nil {
+				err = fmt.Errorf("Not able to read from context file: %v", err)
+				log.Println(err)
+				t.FailNow()
+			}
+
+			//for svcName, v := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+			for _, v := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+				for _, item := range v { // we are sure we only have one entry
+					//if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
+					//	// secret=true
+					//	secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
+					//	if api.FileExists(secretFilePath) {
+					//		k8sSecret := v1.Secret{}
+					//		secretFileContents, err := ioutil.ReadFile(secretFilePath)
+					//		if err != nil {
+					//			err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+					//			log.Printf("An error occurred during unmarshalling: %v", err)
+					//			t.FailNow()
+					//		}
+					//		if err = yaml.Unmarshal(secretFileContents, &k8sSecret); err != nil {
+					//			err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+					//			log.Printf("An error occurred during unmarshalling: %v", err)
+					//			t.FailNow()
+					//		}
+					//		if k8sSecret.Data == nil {
+					//			err = fmt.Errorf("No Data in Secret: %v", err)
+					//			log.Printf("No Data in Secret: %v", err)
+					//			t.FailNow()
+					//		}
+					//		base64EncodedSecret, err := EncryptTestValue([]byte(testValue), pubKey)
+					//		if err != nil {
+					//			err := fmt.Errorf("Error occurred while testing encryption: %v", err)
+					//			log.Printf("No Data in Secret: %v", err)
+					//			t.FailNow()
+					//		}
+					//		if string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]) != base64EncodedSecret {
+					//			t.FailNow()
+					//		}
+					//	}
+					//
+					//} else {
+					// secret=false
+					if item.Value != "" {
+						fmt.Printf("\n\nValue computed by test run: %s\n\n", item.Value)
+						fmt.Printf("\n\nValue to be encrypted for validation: %s\n\n", testValue)
+						//base64EncodedSecret, err := EncryptTestValue([]byte(testValue), pubKey)
+						//fmt.Printf("\n\nEncrypted given Value: %s\n\n", base64EncodedSecret)
+
+						decodedValue, err := b64.StdEncoding.DecodeString(item.Value)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while decoding: %v", err)
+							log.Printf("decode error: %v", err)
+							t.FailNow()
+						}
+						api.LogDebugMessage("\nDecoded value: %s\n", decodedValue)
+						decryptedVal, err := api.Decrypt(decodedValue, privKey)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while testing decryption: %v", err)
+							log.Printf("decryption error: %v", err)
+							t.FailNow()
+						}
+						api.LogDebugMessage(`\ndecrypted value: "%s", orig value: "%s"\n`, decryptedVal, testValue)
+						if string(decryptedVal) != testValue {
+							fmt.Printf("\n\nitem.Value != input value\n")
+							fmt.Printf("\n\nFailing now...\n")
+							t.FailNow()
+						}
+					}
+					//}
+				}
+
+			}
+
 		})
 	}
+}
+
+func EncryptTestValue(testValueBytes []byte, pubKey *rsa.PublicKey) (string, error) {
+	cipherText, e2 := api.Encrypt(testValueBytes, pubKey)
+	return b64.StdEncoding.EncodeToString(cipherText), e2
 }
