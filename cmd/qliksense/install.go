@@ -10,7 +10,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 	c := &cobra.Command{
 		Use:     "install",
 		Short:   "install a qliksense release",
-		Long:    `install a qliksesne release`,
+		Long:    `install a qliksense release`,
 		Example: `qliksense install <version>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
