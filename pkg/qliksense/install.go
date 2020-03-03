@@ -49,7 +49,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if dockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
 		if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(nil); err != nil {
 			return err
-		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), qcr.Spec.NameSpace); err != nil {
+		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
 			return err
 		}
 	} else {
@@ -58,7 +58,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		}
 		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(nil); err != nil {
 			return err
-		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), qcr.Spec.NameSpace); err != nil {
+		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), ""); err != nil {
 			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)
 		}
 	}
