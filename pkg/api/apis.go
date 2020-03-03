@@ -77,17 +77,13 @@ func (qc *QliksenseConfig) SetCrLocation(contextName, filepath string) (*Qliksen
 }
 
 func getCRObject(crfile string) (*QliksenseCR, error) {
-	data, err := ioutil.ReadFile(crfile)
-	if err != nil {
-		fmt.Println("Cannot read config file from: "+crfile, err)
-		return nil, err
-	}
 	cr := &QliksenseCR{}
-	err = yaml.Unmarshal(data, cr)
+	err := ReadFromFile(cr, crfile)
 	if err != nil {
 		fmt.Println("cannot unmarshal cr ", err)
 		return nil, err
 	}
+
 	return cr, nil
 }
 
@@ -132,13 +128,7 @@ func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
 	if crf == "" {
 		return errors.New("context name " + contextName + " not found")
 	}
-	by, err := yaml.Marshal(cr)
-	if err != nil {
-		fmt.Println("cannot marshal cr ", err)
-		return err
-	}
-	ioutil.WriteFile(crf, by, 0644)
-	return nil
+	return WriteToFile(cr, crf)
 }
 
 func (qc *QliksenseConfig) WriteCurrentContextCR(cr *QliksenseCR) error {
@@ -158,7 +148,7 @@ func (qc *QliksenseConfig) GetCurrentContextDir() (string, error) {
 	if qcr, err := qc.GetCurrentCR(); err != nil {
 		return "", err
 	} else {
-		return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, qcr.Metadata.Name), nil
+		return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, qcr.GetObjectMeta().GetName()), nil
 	}
 }
 
@@ -222,7 +212,7 @@ func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string,
 		if qcr, err := qc.GetCurrentCR(); err != nil {
 			return "", err
 		} else {
-			secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, qcr.Metadata.Name, qliksenseSecretsDirName)
+			secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, qcr.GetObjectMeta().GetName(), qliksenseSecretsDirName)
 		}
 	}
 	LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
@@ -271,22 +261,17 @@ func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey,
 }
 
 func (cr *QliksenseCR) AddLabelToCr(key, value string) {
-	if cr.Metadata.Labels == nil {
-		cr.Metadata.Labels = make(map[string]string)
-	}
-	cr.Metadata.Labels[key] = value
+	m := cr.GetObjectMeta().GetLabels()
+	m[key] = value
+	cr.GetObjectMeta().SetLabels(m)
 }
 
 func (cr *QliksenseCR) GetLabelFromCr(key string) string {
-	val := ""
-	if cr.Metadata.Labels != nil {
-		val = cr.Metadata.Labels[key]
-	}
-	return val
+	return cr.GetObjectMeta().GetLabels()[key]
 }
 
 func (cr *QliksenseCR) GetString() (string, error) {
-	out, err := yaml.Marshal(cr)
+	out, err := K8sToYaml(cr)
 	if err != nil {
 		fmt.Println("cannot unmarshal cr ", err)
 		return "", err

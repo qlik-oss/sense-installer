@@ -32,7 +32,7 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 
 	if qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
-		return q.applyCR(qcr.Spec.NameSpace)
+		return q.applyCR()
 	}
 	return q.applyConfigToK8s(qcr)
 }
@@ -54,8 +54,9 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		return err
 	}
 	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
+	qcr.SetNamespace(qapi.GetKubectlNamespace())
 	// generate patches
-	cr.GeneratePatches(qcr.Spec, path.Join(userHomeDir, ".kube", "config"))
+	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
 	mByte, err := executeKustomizeBuild(profilePath)
@@ -63,7 +64,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
 		return err
 	}
-	if err = qapi.KubectlApply(string(mByte), qcr.Spec.NameSpace); err != nil {
+	if err = qapi.KubectlApply(string(mByte), qcr.GetNamespace()); err != nil {
 		return err
 	}
 
@@ -103,7 +104,7 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 	for svcName, v := range qcr.Spec.Secrets {
 		for _, item := range v {
 			if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
-				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
+				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.GetName(), QliksenseSecretsDir, svcName+".yaml")
 
 				if api.FileExists(secretFilePath) {
 					secretFile, err := ioutil.ReadFile(secretFilePath)

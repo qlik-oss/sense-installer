@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -12,6 +13,26 @@ var (
 )
 
 func TestAddCommonConfig(t *testing.T) {
+	gvk := schema.GroupVersionKind{
+		Group:   QliksenseGroup,
+		Kind:    QliksenseKind,
+		Version: QliksenseApiVersion,
+	}
+	q := &QliksenseCR{}
+	q.SetName("myqliksense")
+	q.SetGroupVersionKind(gvk)
+	q.Spec = &config.CRSpec{
+		Profile:    QliksenseDefaultProfile,
+		RotateKeys: DefaultRotateKeys,
+		Secrets: map[string]config.NameValues{
+			"qliksense": []config.NameValue{{
+				Name:  DefaultMongoDbUriKey,
+				Value: DefaultMongoDbUri,
+			},
+			},
+		},
+	}
+
 	type args struct {
 		qliksenseCR *QliksenseCR
 		contextName string
@@ -27,27 +48,7 @@ func TestAddCommonConfig(t *testing.T) {
 				qliksenseCR: &QliksenseCR{},
 				contextName: "myqliksense",
 			},
-			want: &QliksenseCR{
-				CommonConfig: CommonConfig{
-					ApiVersion: QliksenseContextApiVersion,
-					Kind:       QliksenseContextKind,
-					Metadata: &Metadata{
-						Name: "myqliksense",
-					},
-				},
-				Spec: &config.CRSpec{
-					Profile:     QliksenseDefaultProfile,
-					ReleaseName: "myqliksense",
-					RotateKeys:  DefaultRotateKeys,
-					Secrets: map[string]config.NameValues{
-						"qliksense": []config.NameValue{{
-							Name:  DefaultMongoDbUriKey,
-							Value: DefaultMongoDbUri,
-						},
-						},
-					},
-				},
-			},
+			want: q,
 		},
 	}
 	for _, tt := range tests {
@@ -61,6 +62,18 @@ func TestAddCommonConfig(t *testing.T) {
 }
 
 func TestAddBaseQliksenseConfigs(t *testing.T) {
+	gvk := schema.GroupVersionKind{
+		Group:   QliksenseConfigApiGroup,
+		Kind:    QliksenseConfigKind,
+		Version: QliksenseConfigApiVersion,
+	}
+	qc := &QliksenseConfig{}
+	qc.SetGroupVersionKind(gvk)
+	qc.SetName(QliksenseMetadataName)
+	qc.Spec = &ContextSpec{
+		CurrentContext: "qlik-default",
+	}
+
 	type args struct {
 		qliksenseConfig         *QliksenseConfig
 		defaultQliksenseContext string
@@ -76,18 +89,7 @@ func TestAddBaseQliksenseConfigs(t *testing.T) {
 				qliksenseConfig:         &QliksenseConfig{},
 				defaultQliksenseContext: "qlik-default",
 			},
-			want: &QliksenseConfig{
-				CommonConfig: CommonConfig{
-					ApiVersion: QliksenseConfigApiVersion,
-					Kind:       QliksenseConfigKind,
-					Metadata: &Metadata{
-						Name: QliksenseMetadataName,
-					},
-				},
-				Spec: &ContextSpec{
-					CurrentContext: "qlik-default",
-				},
-			},
+			want: qc,
 		},
 	}
 	for _, tt := range tests {
