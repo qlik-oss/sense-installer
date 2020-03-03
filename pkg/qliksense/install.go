@@ -44,6 +44,25 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 	qConfig.WriteCurrentContextCR(qcr)
 
+	//if the docker pull secret exists on disk, install it in the cluster
+	//if it doesn't exist on disk, remove it in the cluster
+	if dockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
+		if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(nil); err != nil {
+			return err
+		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), qcr.Spec.NameSpace); err != nil {
+			return err
+		}
+	} else {
+		deleteDockerConfigJsonSecret := qapi.DockerConfigJsonSecret{
+			Name: pullSecretName,
+		}
+		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(nil); err != nil {
+			return err
+		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), qcr.Spec.NameSpace); err != nil {
+			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)
+		}
+	}
+
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")

@@ -15,7 +15,6 @@ import (
 func TestDockerConfigJsonSecret(t *testing.T) {
 	dockerConfigJsonSecret := DockerConfigJsonSecret{
 		Name:      "some-name",
-		Namespace: "some-namespace",
 		Uri:       "some-uri",
 		Username:  "some-username",
 		Password:  "some-password",
@@ -38,7 +37,6 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 	} else if validYamlMap["apiVersion"] != "v1" ||
 		validYamlMap["kind"] != "Secret" ||
 		validYamlMap["metadata"].(map[string]interface{})["name"] != dockerConfigJsonSecret.Name ||
-		validYamlMap["metadata"].(map[string]interface{})["namespace"] != dockerConfigJsonSecret.Namespace ||
 		validYamlMap["type"] != "kubernetes.io/dockerconfigjson" {
 		t.Fatalf("error verifying validity of secret yaml: %v", string(dockerConfigJsonSecretYamlBytes))
 	} else if dockerConfigJsonBytesBase64, ok := validYamlMap["data"].(map[string]interface{})[".dockerconfigjson"]; !ok {

@@ -83,13 +83,12 @@ func kubectlOperation(manifests string, oprName string, namespace string) error 
 		cmd = exec.Command("kubectl", arguments...)
 	}
 
+	sterrBuffer := &bytes.Buffer{}
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = sterrBuffer
 	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("kubectl apply failed with %s\n", err)
-		fmt.Println("temp CRD file: " + tempYaml.Name())
-		return err
+		return fmt.Errorf("kubectl %v failed with: %v, %v, temp k8s yaml file:%v\n", oprName, err, sterrBuffer.String(), tempYaml.Name())
 	}
 	os.Remove(tempYaml.Name())
 	return nil
