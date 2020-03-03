@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
-	"gopkg.in/yaml.v2"
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	"github.com/qlik-oss/sense-installer/pkg/api"
@@ -56,6 +55,8 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
 	// generate patches
+	b, _ := qapi.K8sToYaml(&qcr.KApiCr)
+	fmt.Println(string(b))
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
@@ -93,7 +94,7 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 		fmt.Println("cannot get the context cr", err)
 		return "", err
 	}
-	out, err := yaml.Marshal(qcr)
+	out, err := qapi.K8sToYaml(qcr)
 	if err != nil {
 		fmt.Println("cannot unmarshal cr ", err)
 		return "", err

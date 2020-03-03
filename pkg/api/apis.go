@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/jinzhu/copier"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -23,13 +22,9 @@ const (
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
 func NewQConfig(qsHome string) *QliksenseConfig {
 	configFile := filepath.Join(qsHome, "config.yaml")
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		fmt.Println("Cannot read config file from: "+configFile, err)
-		os.Exit(1)
-	}
 	qc := &QliksenseConfig{}
-	err = yaml.Unmarshal(data, qc)
+
+	err := ReadFromFile(qc, configFile)
 	if err != nil {
 		fmt.Println("yaml unmarshalling error ", err)
 		os.Exit(1)
@@ -262,6 +257,9 @@ func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey,
 
 func (cr *QliksenseCR) AddLabelToCr(key, value string) {
 	m := cr.GetObjectMeta().GetLabels()
+	if m == nil {
+		m = make(map[string]string)
+	}
 	m[key] = value
 	cr.GetObjectMeta().SetLabels(m)
 }

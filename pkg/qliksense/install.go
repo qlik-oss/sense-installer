@@ -52,7 +52,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 
-	if qcr.Spec.Git.Repository != "" {
+	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
 		return q.applyCR()
 	}

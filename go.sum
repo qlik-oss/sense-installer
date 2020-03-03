@@ -850,6 +850,8 @@ github.com/qlik-oss/k-apis v0.0.12 h1:4IUX0zV9PPSOhVdrcLS5lajv2Pvhq8Wwu1RNoQn+9u
 github.com/qlik-oss/k-apis v0.0.12/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/k-apis v0.0.13 h1:O1afKtmkGNDskXlk1vntp0SLWq8BKXJ/VFdij7OTSZY=
 github.com/qlik-oss/k-apis v0.0.13/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
+github.com/qlik-oss/k-apis v0.0.14 h1:DbA1nW1viSU6NjmFY8bHtJHxNrBcmBoHP7CyTWGeeLw=
+github.com/qlik-oss/k-apis v0.0.14/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9 h1:iqeqTS4zjp6rPEaxmFB7pemA2CMjOEN5dYSXZaQ82uw=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9/go.mod h1:OCt7FTrRVHj4kmR2xLJJUIqu00BTr6GeF09hSmM17Kw=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=

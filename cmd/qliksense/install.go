@@ -11,7 +11,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 		Use:     "install",
 		Short:   "install a qliksense release",
 		Long:    `install a qliksesne release`,
-		Example: `qliksense install <version>`,
+		Example: `qliksense install <version> #if no version provides, expect manifestsRoot is set somewhere in the file system`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return q.InstallQK8s("", opts)
