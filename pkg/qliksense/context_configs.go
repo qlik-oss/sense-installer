@@ -72,10 +72,10 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
 	secretName := ""
 	if isSecretSet {
-		secretFolder := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.GetName(), QliksenseSecretsDir)
+		secretFolder := qliksenseCR.GetK8sSecretsFolder(q.QliksenseHome)
 		secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
 
-		secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.GetName(), ra.SvcName, "sense_installer")
+		secretName = fmt.Sprintf("%s.%s.%s", qliksenseCR.GetName(), ra.SvcName, "senseinstaller")
 		api.LogDebugMessage("Constructed secret name: %s", secretName)
 
 		k8sSecret := v1.Secret{
@@ -185,7 +185,7 @@ func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) 
 	return qliksenseCR, qliksenseContextsFile, nil
 }
 
-// SetOtherConfigs - set profile/namespace/storageclassname/git.repository/manifestRoot commands
+// SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
@@ -222,7 +222,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
 		default:
-			err := fmt.Errorf("Please enter one of: profile, namespace, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
 			log.Println(err)
 			return err
 		}
@@ -414,7 +414,12 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 	dataMap := k8sSecret1.Data
 	var resultMap = make(map[string][]byte)
 	for k, v := range dataMap {
-		decryptedString, err := api.Decrypt(v, rsaPrivateKey)
+		ba, err := b64.StdEncoding.DecodeString(string(v))
+		if err != nil {
+			err := fmt.Errorf("Not able to decode message: %v", err)
+			return "", err
+		}
+		decryptedString, err := api.Decrypt(ba, rsaPrivateKey)
 		if err != nil {
 			err := fmt.Errorf("Not able to decrypt message: %v", err)
 			return "", err

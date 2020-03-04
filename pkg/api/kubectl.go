@@ -9,10 +9,14 @@ import (
 	"strings"
 )
 
+// KubectlApply create resoruces in the provided namespace,
+// if namespace="" then use whatever the kubectl default is
 func KubectlApply(manifests, namespace string) error {
 	return kubectlOperation(manifests, "apply", namespace)
 }
 
+// KubectlDelete delete resoruces in the provided namespace,
+// if namespace="" then use whatever the kubectl default is
 func KubectlDelete(manifests, namespace string) error {
 	return kubectlOperation(manifests, "delete", namespace)
 }
