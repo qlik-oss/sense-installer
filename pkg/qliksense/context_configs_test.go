@@ -497,17 +497,17 @@ spec:
 					pushSecret.Username != testCase.pushUsername || pushSecret.Password != testCase.pushPassword {
 					t.Fatalf("unexpected push secret content: %v", pushSecret)
 				}
-				if pullSecret, err := qConfig.GetDockerConfigJsonSecret("image-registry-pull-secret.yaml"); err != nil {
+				if pullSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err != nil {
 					t.Fatalf("unexpected error: %v", err)
 				} else if pullSecret.Uri != testCase.registry ||
-					pullSecret.Name != "artifactory-docker-secret" || pullSecret.Namespace != "some-namespace" ||
+					pullSecret.Name != "artifactory-docker-secret" ||
 					pullSecret.Username != testCase.pullUsername || pullSecret.Password != testCase.pullPassword {
 					t.Fatalf("unexpected pull secret content: %v", pullSecret)
 				}
 			} else {
 				if _, err := qConfig.GetPushDockerConfigJsonSecret(); err == nil {
 					t.Fatal("unexpected image-registry-push-secret.yaml")
-				} else if _, err := qConfig.GetDockerConfigJsonSecret("image-registry-pull-secret.yaml"); err == nil {
+				} else if _, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
 					t.Fatal("unexpected image-registry-pull-secret.yaml")
 				}
 			}

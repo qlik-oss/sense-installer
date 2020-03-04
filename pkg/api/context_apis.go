@@ -1,51 +1,54 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
-	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	machine_yaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 const (
-	QliksenseConfigApiVersion  = "config.qlik.com/v1"
-	QliksenseConfigKind        = "QliksenseConfig"
-	QliksenseContextApiVersion = "qlik.com/v1"
-	QliksenseContextKind       = "Qliksense"
-	QliksenseDefaultProfile    = "docker-desktop"
-	DefaultRotateKeys          = "yes"
-	QliksenseMetadataName      = "QliksenseConfigMetadata"
-	DefaultMongoDbUri          = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
-	DefaultMongoDbUriKey       = "mongoDbUri"
+	QliksenseConfigApiVersion = "v1"
+	QliksenseConfigApiGroup   = "config.qlik.com"
+	QliksenseConfigKind       = "QliksenseConfig"
+
+	QliksenseApiVersion     = "v1"
+	QliksenseKind           = "Qliksense"
+	QliksenseGroup          = "qlik.com"
+	QliksenseDefaultProfile = "docker-desktop"
+	DefaultRotateKeys       = "yes"
+	QliksenseMetadataName   = "QliksenseConfigMetadata"
+	DefaultMongoDbUri       = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
+	DefaultMongoDbUriKey    = "mongoDbUri"
 )
 
 // AddCommonConfig adds common configs into CRs
 func (qliksenseCR *QliksenseCR) AddCommonConfig(contextName string) {
-	qliksenseCR.ApiVersion = QliksenseContextApiVersion
-	qliksenseCR.Kind = QliksenseContextKind
-	if qliksenseCR.Metadata == nil {
-		qliksenseCR.Metadata = &Metadata{}
+	qliksenseCR.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   QliksenseGroup,
+		Kind:    QliksenseKind,
+		Version: QliksenseApiVersion,
+	})
+	qliksenseCR.SetName(contextName)
+	qliksenseCR.Spec = &config.CRSpec{
+		Profile:    QliksenseDefaultProfile,
+		RotateKeys: DefaultRotateKeys,
 	}
-	if qliksenseCR.Metadata.Name == "" {
-		qliksenseCR.Metadata.Name = contextName
-	}
-	qliksenseCR.Spec = &config.CRSpec{}
-	qliksenseCR.Spec.Profile = QliksenseDefaultProfile
-	qliksenseCR.Spec.ReleaseName = contextName
-	qliksenseCR.Spec.RotateKeys = DefaultRotateKeys
 	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongoDbUriKey, DefaultMongoDbUri, "")
 }
 
 // AddBaseQliksenseConfigs adds configs into config.yaml
 func (qliksenseConfig *QliksenseConfig) AddBaseQliksenseConfigs(defaultQliksenseContext string) {
-	qliksenseConfig.ApiVersion = QliksenseConfigApiVersion
-	qliksenseConfig.Kind = QliksenseConfigKind
-	if qliksenseConfig.Metadata == nil {
-		qliksenseConfig.Metadata = &Metadata{}
-	}
-	qliksenseConfig.Metadata.Name = QliksenseMetadataName
+	qliksenseConfig.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   QliksenseConfigApiGroup,
+		Kind:    QliksenseConfigKind,
+		Version: QliksenseConfigApiVersion,
+	})
+	qliksenseConfig.SetName(QliksenseMetadataName)
 	if defaultQliksenseContext != "" {
 		if qliksenseConfig.Spec == nil {
 			qliksenseConfig.Spec = &ContextSpec{}
@@ -79,13 +82,12 @@ func WriteToFile(content interface{}, targetFile string) error {
 		return nil
 	}
 
-	x, err := yaml.Marshal(content)
+	x, err := K8sToYaml(content)
 	if err != nil {
 		err = fmt.Errorf("An error occurred during marshalling CR: %v", err)
 		log.Println(err)
 		return err
 	}
-
 	// Writing content
 	err = ioutil.WriteFile(targetFile, x, 0644)
 	if err != nil {
@@ -106,9 +108,9 @@ func ReadFromFile(content interface{}, sourceFile string) error {
 		err = fmt.Errorf("There was an error reading from file: %s, %v", sourceFile, err)
 		return err
 	}
-	if err := yaml.Unmarshal(contents, content); err != nil {
-		err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-		return err
-	}
+	// reading k8s style object
+	// https://stackoverflow.com/questions/44306554/how-to-deserialize-kubernetes-yaml-file
+	dec := machine_yaml.NewYAMLOrJSONDecoder(bytes.NewReader(contents), 10000)
+	dec.Decode(content)
 	return nil
 }
