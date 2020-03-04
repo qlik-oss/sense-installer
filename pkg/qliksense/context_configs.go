@@ -22,13 +22,11 @@ import (
 
 const (
 	// Below are some constants to support qliksense context setup
-	QliksenseConfigHome        = "/.qliksense"
-	QliksenseConfigContextHome = "/.qliksense/contexts"
-	QliksenseConfigFile        = "config.yaml"
-	QliksenseContextsDir       = "contexts"
-	DefaultQliksenseContext    = "qlik-default"
-	MaxContextNameLength       = 17
-	QliksenseSecretsDir        = "secrets"
+	QliksenseConfigFile     = "config.yaml"
+	QliksenseContextsDir    = "contexts"
+	DefaultQliksenseContext = "qlik-default"
+	MaxContextNameLength    = 17
+	QliksenseSecretsDir     = "secrets"
 
 	imageRegistryConfigKey = "imageRegistry"
 	pullSecretName         = "artifactory-docker-secret"
