@@ -54,7 +54,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	}
 	for _, ra := range resultArgs {
 		api.LogDebugMessage("value args to be encrypted: %s", ra.Value)
-		if err := q.processSecret(ra, rsaPublicKey, &qliksenseCR, isSecretSet); err != nil {
+		if err := q.processSecret(ra, rsaPublicKey, qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
 	}

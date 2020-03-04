@@ -334,7 +334,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"profile=minikube", "namespace=qliksense", "storageClassName=efs"},
+				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs"},
 			},
 			wantErr: false,
 		},
@@ -755,7 +755,7 @@ func Test_SetSecrets(t *testing.T) {
 func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.QliksenseCR, svcName string) (string, error) {
 	if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
 		// secret=true
-		secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
+		secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.GetName(), QliksenseSecretsDir, svcName+".yaml")
 		if api.FileExists(secretFilePath) {
 			secretFileContents, err := ioutil.ReadFile(secretFilePath)
 			if err != nil {
