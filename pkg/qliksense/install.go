@@ -65,6 +65,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		}
 	}
 
+	// check if acceptEULA is yes or not
+	if !qcr.IsEULA() {
+		return errors.New(agreementTempalte + "\n Please do $ qliksense install --acceptEULA=yes\n")
+	}
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")

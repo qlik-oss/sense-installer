@@ -310,3 +310,16 @@ func (cr *QliksenseCR) GetImageRegistry() string {
 func (cr *QliksenseCR) GetK8sSecretsFolder(qlikSenseHomeDir string) string {
 	return filepath.Join(qlikSenseHomeDir, qliksenseContextsDirName, cr.GetName(), qliksenseSecretsDirName)
 }
+
+func (cr *QliksenseCR) IsEULA() bool {
+	for k, nvs := range cr.Spec.Configs {
+		if k == "qliksense" {
+			for _, nv := range nvs {
+				if nv.Name == "acceptEULA" {
+					return nv.Value == "yes"
+				}
+			}
+		}
+	}
+	return false
+}
