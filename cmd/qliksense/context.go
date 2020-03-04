@@ -13,9 +13,12 @@ func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set-context",
-		Short:   "Sets the context in which the Kubernetes cluster and resources live in",
-		Example: `qliksense config set-context <context_name>`,
+		Use:   "set-context",
+		Short: "Sets the context in which the Kubernetes cluster and resources live in",
+		Example: `
+qliksense config set-context <context_name>
+   - The above configuration will be displayed in the CR
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetContextConfig(args)
 		},
@@ -45,9 +48,12 @@ func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set",
-		Short:   "configure a key value pair into the current context",
-		Example: `qliksense config set <key>=<value>`,
+		Use:   "set",
+		Short: "configure a key value pair into the current context",
+		Example: `
+qliksense config set <key>=<value>
+    - The above configuration will be displayed in the CR
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetOtherConfigs(args)
 		},
@@ -61,9 +67,12 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set-configs",
-		Short:   "set configurations into the qliksense context as key-value pairs",
-		Example: `qliksense config set-configs <service_name>.<attribute>="<value>"`,
+		Use:   "set-configs",
+		Short: "set configurations into the qliksense context as key-value pairs",
+		Example: `
+qliksense config set-configs <service_name>.<attribute>="<value>"
+    - The above configuration will be displayed in the CR
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetConfigs(args)
 		},
@@ -88,7 +97,8 @@ qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=true
 
 qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=false
 		- Encrypt the secret value and display it in the current context
-		- No secret resource is created.`,
+		- No secret resource is created
+        - The above configuration will be displayed in the CR `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetSecrets(args, secret)
 		},
