@@ -21,13 +21,22 @@ func pullQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 				return err
 			}
 
+			qConfig := qapi.NewQConfig(q.QliksenseHome)
+			if version == "" {
+				if qcr, err := qConfig.GetCurrentCR(); err != nil {
+					return err
+				} else {
+					version = qcr.GetLabelFromCr("version")
+				}
+			}
+
 			if version != "" {
-				qConfig := qapi.NewQConfig(q.QliksenseHome)
 				if !qConfig.IsRepoExistForCurrent(version) {
 					if err := q.FetchQK8s(version); err != nil {
 						return err
 					}
-				} else if err := qConfig.SwitchCurrentCRToVersionAndProfile(version, opts.Profile); err != nil {
+				}
+				if err := qConfig.SwitchCurrentCRToVersionAndProfile(version, opts.Profile); err != nil {
 					return err
 				}
 			}
