@@ -2,6 +2,13 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
 	ansi "github.com/mattn/go-colorable"
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
@@ -10,12 +17,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/ttacon/chalk"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // To run this project in ddebug mode, run:
@@ -123,6 +124,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(installCmd(p))
 
 	// add config command
+	configCmd := configCmd(p)
 	cmd.AddCommand(configCmd)
 	configCmd.AddCommand(configApplyCmd(p))
 	configCmd.AddCommand(configViewCmd(p))

@@ -76,7 +76,7 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		resultSvcKV[i] = &ServiceKeyValue{
 			SvcName: result[1],
 			Key:     result[2],
-			Value:   result[3],
+			Value:   strings.ReplaceAll(result[3], `"`, ""),
 		}
 	}
 	return resultSvcKV, nil

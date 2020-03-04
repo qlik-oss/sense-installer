@@ -242,7 +242,6 @@ func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey,
 
 	publicKeyFilePath := filepath.Join(secretKeyPairLocation, QliksensePublicKey)
 	privateKeyFilePath := filepath.Join(secretKeyPairLocation, QliksensePrivateKey)
-
 	// try to create the dir if it doesn't exist
 	if !FileExists(publicKeyFilePath) || !FileExists(privateKeyFilePath) {
 		LogDebugMessage("Qliksense secretKeyLocation dir does not exist, creating it now: %s", secretKeyPairLocation)

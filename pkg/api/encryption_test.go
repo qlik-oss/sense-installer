@@ -114,7 +114,7 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 	}
 
 	encDataStr := base64.StdEncoding.EncodeToString(encData)
-	log.Printf("encrypted data: %s\n", encDataStr)
+	log.Println("Encoded text:", encDataStr)
 	dec, _ := base64.StdEncoding.DecodeString(encDataStr)
 	data, err := Decrypt(dec, privKey)
 	if err != nil {
@@ -125,5 +125,4 @@ MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 		t.Error("original string and decrypted string don't match")
 		t.FailNow()
 	}
-	log.Printf("decrypted data: %s\n", data)
 }

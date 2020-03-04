@@ -1,20 +1,154 @@
 package qliksense
 
 import (
+	"encoding/base64"
+	b64 "encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
+
 	"github.com/qlik-oss/sense-installer/pkg/api"
+	"gopkg.in/yaml.v2"
 )
 
-var (
-	testDir = "./tests"
+const (
+	testDir            = "./tests"
+	qlikDefaultContext = "qlik-default"
+	secrets            = "secrets"
+	contexts           = "contexts"
 )
+
+var targetFileStringTemplate = `
+apiVersion: v1
+data:
+  testKey1: %s
+kind: Secret
+metadata:
+  name: ctxname-testSvcName-sense_installer
+type: Opaque
+`
+var encText = "eiGjS2UkxXY/cLoA90hnddXCeJSZj8TF7gIHRq0c+4mIpBVFRLRo79pAMuEORFobRLQnPiwLUkLQ/BNLpA1tu8hsFaiQwIv6/iP1mNepdF2ha9Tf6XVlTYCbQJ2mmHOY0TQk/d1QwXa73+PXz0paLMB+y9/39w7SThL8NHbIKxGAs4rXurVIlmoOaXJmshUCYmEUFV26B9Y4yVQJKfOlheslYrbqVWXhA9lFa/r74yUJnYSrluj9D32eY1xJvI1tUR2oQRUuscAZ8W0v3SjoyUwiXV4L4mJb8qiNx+15PfVMK9V7LVdoRbka+rR2lOtFxQOk6mw41s244AGeU81scgt0PdFiAuNtc2Z42jF92kY4rxRrBqwx6b/oMXUuYAldU4hkNyfNGVINeqQbyMyMcBL1FSe/QuutbInCPDTODQTeZKQB58cgNl/cCORSBYuDPj8dXkPyyUU1+XGju+UEUxS6SG9WLfdozW5Q4FeBVIblS3oraQ0y4S4DYc2r44I7yEmklO3O1leSnCFCpTWMiRC++j5KDkKLYDoL/SXUTh3jMu19z4TXcZ6LCbfbA6hgEh3fcju4XCwXM8NDSzJomLsPmdsvscoqiNgJKjHJNDVHm/1VH0vzSHwMdhoWYXLbM2iX3ucV7q/OEPkLjQF0p5/9XYo0zyIa8uxcZjbimlY="
+var decText = "Value1234"
+
+func setupTargetFileAndPrivateKey() ([]byte, []byte, string, error) {
+	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
+	privKeyBytes := []byte(`-----BEGIN RSA PRIVATE KEY-----
+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
+-----END RSA PRIVATE KEY-----
+`)
+
+	publicKeyBytes := []byte(`-----BEGIN RSA PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwUCimKCidbF3UxEHPy8K
++hvhklRB9JYhj5sJy0if4lTVibkK1MrYCykOnmC40pPU9GLY1b8HxAg9tvyRn0YH
+UxOra6vVQaVcOVJhTM8D18d+lSr3Lp1yiX+UGT4nzWI9+R1CCbwXrqeQVoZs6QZK
+ynEXMkFI9/wNMOwPOvQFOSTuoEoCO+zyTyUWEkNbUq825ELUQdIsjgmlWUOONudx
+sAr7ESRXW9QTHVh6uWmr3VRKZHby1JdU3I/wjdlGg5M2dDuXy5nQO9w/nYLjJXiw
++zzOetZ/+t7/VOkOpNTeJQhwTM1WF7Y2VLetbi9FHgyzHatrduh07+XEiTbgDf3G
+Ix2bp2p6oh0G3N2zpiLcK/aZj8rouWWydfFfsU3MZ4FfJDP8I6b9awxjmKYqIr6h
+iPQCJaLBED8mwK+I5evIbnKv6E6uK+BApWA/R7ElragoFYbqQ1VpvntVMtJt9Dy5
+ZrI+IQARdXD3bb34oh0IPBhClnvvMUc1cWxDoXEX6oJ4I+LzxE87Zkwnan9qOwen
+golMVKFwPx1o37qrbmrXID21kKt7FL6xN4HxHLkItr1fKzdyWDFRHgASTAWfx5BI
+wvPuUW0vZHkvO80VyV2L63whVhPnPASmFkbviomrBttYfpr2aGQqF/qR1Nlxe834
+MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
+-----END RSA PUBLIC KEY-----
+`)
+
+	targetFile := filepath.Join(testDir, "targetfile.yaml")
+	// tests/config.yaml exists
+	err := ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return nil, nil, "", err
+	}
+
+	secretKeyPairDir := filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets)
+	if err := os.MkdirAll(secretKeyPairDir, 0777); err != nil {
+		err = fmt.Errorf("Not able to create directories")
+		log.Fatal(err)
+	}
+	os.Setenv("QLIKSENSE_KEY_LOCATION", secretKeyPairDir)
+
+	privKeyFile := filepath.Join(secretKeyPairDir, "qliksensePriv")
+	// construct and write priv key file into secretsDir location
+	err = ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return nil, nil, "", err
+	}
+	pubKeyFile := filepath.Join(secretKeyPairDir, "qliksensePub")
+	api.LogDebugMessage("Test setup - \npub key path: %s\n, priv key path: %s\n", pubKeyFile, privKeyFile)
+	// construct and write pub key file into secretsDir location
+	err = ioutil.WriteFile(pubKeyFile, publicKeyBytes, 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return nil, nil, "", err
+	}
+	return publicKeyBytes, privKeyBytes, targetFile, nil
+}
+
+func removePrivateKey() {
+	err := os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "qliksensePriv"))
+	if err != nil {
+		log.Fatalf("Could not delete private key %v", err)
+	}
+	return
+}
 
 func setup() func() {
 	// create tests dir
@@ -30,7 +164,7 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crLocation: /root/.qliksense/contexts/qlik-default.yaml
+    crFile: /root/.qliksense/contexts/qlik-default.yaml
   currentContext: qlik-default
 `
 	configFile := filepath.Join(testDir, "config.yaml")
@@ -63,6 +197,22 @@ spec:
 		os.RemoveAll(testDir)
 	}
 	return tearDown
+}
+
+func readCRFile() (*api.QliksenseCR, error) {
+	qlikDefaultContext := "qlik-default"
+	qliksenseCR := &api.QliksenseCR{}
+	contextFileContents, err := ioutil.ReadFile(filepath.Join(testDir, contexts, qlikDefaultContext, qlikDefaultContext+".yaml"))
+	if err != nil {
+		log.Println(err)
+		err = fmt.Errorf("Not able to read current context info")
+		return nil, err
+	}
+	if err := yaml.Unmarshal(contextFileContents, qliksenseCR); err != nil {
+		err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+		return nil, err
+	}
+	return qliksenseCR, nil
 }
 
 func Test_retrieveCurrentContextInfo(t *testing.T) {
@@ -104,6 +254,15 @@ func TestSetUpQliksenseContext(t *testing.T) {
 			args: args{
 				qlikSenseHome:    testDir,
 				contextName:      "testContext_abcdefgh",
+				isDefaultContext: false,
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty contextname",
+			args: args{
+				qlikSenseHome:    testDir,
+				contextName:      "",
 				isDefaultContext: false,
 			},
 			wantErr: true,
@@ -175,9 +334,29 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"profile=minikube", "namespace=qliksense", "storageClassName=efs"},
+				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs"},
 			},
 			wantErr: false,
+		},
+		{
+			name: "invalid configs",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{"someconfig=somevalue"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty configs",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{},
+			},
+			wantErr: true,
 		},
 	}
 	tearDown := setup()
@@ -207,7 +386,7 @@ func TestSetConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"qliksense[name=acceptEULA]=\"yes\"", "qliksense[name=mongoDbUri]=\"mongo://mongo:3307\""},
+				args: []string{"qliksense.acceptEULA=\"yes\"", "qliksense.mongoDbUri=\"mongo://mongo:3307\""},
 			},
 			wantErr: false,
 		},
@@ -334,4 +513,271 @@ spec:
 			}
 		})
 	}
+}
+
+func Test_PrepareK8sSecret(t *testing.T) {
+
+	type fields struct {
+		QliksenseHome string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		want    string
+		wantErr bool
+		setup   func() (string, func())
+	}{
+		{
+			name: "valid case",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			want:    fmt.Sprintf(targetFileStringTemplate, base64.StdEncoding.EncodeToString([]byte(decText))),
+			wantErr: false,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				_, _, targetFile, _ := setupTargetFileAndPrivateKey()
+				return targetFile, tearDown
+			},
+		},
+		{
+			name: "private key not supplied should result in decryption error",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			want:    "",
+			wantErr: true,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				_, _, targetFile, _ := setupTargetFileAndPrivateKey()
+				removePrivateKey()
+				return targetFile, tearDown
+			},
+		},
+		{
+			name: "target file not supplied",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			want:    "",
+			wantErr: true,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				_, _, _, _ = setupTargetFileAndPrivateKey()
+				removePrivateKey()
+				return "", tearDown
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			targetFile, tearDown := tt.setup()
+
+			q := &Qliksense{
+				QliksenseHome: tt.fields.QliksenseHome,
+			}
+			got, err := q.PrepareK8sSecret(targetFile)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Qliksense.PrepareK8sSecret() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(strings.TrimSpace(got), strings.TrimSpace(tt.want)) {
+				t.Errorf("Qliksense.PrepareK8sSecret() = %v, want %v", got, tt.want)
+			}
+			tearDown()
+		})
+	}
+}
+
+func Test_ListContextConfigs(t *testing.T) {
+	type fields struct {
+		QliksenseHome string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+		setup   func() (string, func())
+	}{
+		{
+			name: "valid case",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			wantErr: false,
+			setup: func() (string, func()) {
+				tearDown := setup()
+				return "", tearDown
+			},
+		},
+		{
+			name: "config yaml does not exist",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			wantErr: true,
+			setup: func() (string, func()) {
+				return "", func() {}
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, tearDown := tt.setup()
+
+			q := &Qliksense{
+				QliksenseHome: tt.fields.QliksenseHome,
+			}
+			if err := q.ListContextConfigs(); (err != nil) != tt.wantErr {
+				t.Errorf("ListContextConfigs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			tearDown()
+		})
+	}
+}
+
+func Test_SetSecrets(t *testing.T) {
+	type fields struct {
+		QliksenseHome string
+	}
+	type args struct {
+		args        []string
+		isSecretSet bool
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "valid secret secrets=false",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				isSecretSet: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid secret secrets=true",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				isSecretSet: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid secret secrets=false",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{},
+				isSecretSet: false,
+			},
+			wantErr: true,
+		},
+	}
+	tearDown := setup()
+	_, privateKeyBytes, _, err := setupTargetFileAndPrivateKey()
+	if err != nil {
+		t.FailNow()
+	}
+	defer tearDown()
+
+	privKey, err := api.DecodeToPrivateKey(privateKeyBytes)
+	if err != nil {
+		t.FailNow()
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := &Qliksense{
+				QliksenseHome: tt.fields.QliksenseHome,
+			}
+			if err := q.SetSecrets(tt.args.args, tt.args.isSecretSet); (err != nil) != tt.wantErr {
+				t.Errorf("SetSecrets() error = %v, wantErr %v", err, tt.wantErr)
+				t.FailNow()
+			}
+			if tt.wantErr || len(tt.args.args) == 0 {
+				return
+			}
+			// VERIFICATION PART BELOW
+			// extract the value for testing
+			testValueArr := strings.Split(tt.args.args[0], "=")
+			testValue := strings.ReplaceAll(testValueArr[1], "\"", "")
+
+			qliksenseCR, err := readCRFile()
+			if err != nil {
+				err = fmt.Errorf("Not able to read from context file: %v", err)
+				log.Println(err)
+				t.FailNow()
+			}
+
+			for svcName := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+				for _, v := range qliksenseCR.Spec.Secrets {
+					for _, item := range v { // we are sure we only have one entry
+						valToBeEncrypted, err := getValueToBeDecodedForSetSecrets(item, qliksenseCR, svcName)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while decoding: %v", err)
+							log.Printf("decode error: %v", err)
+							t.FailNow()
+						}
+						decodedValue, err := b64.StdEncoding.DecodeString(valToBeEncrypted)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while decoding: %v", err)
+							log.Printf("decode error: %v", err)
+							t.FailNow()
+						}
+						decryptedVal, err := api.Decrypt(decodedValue, privKey)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while testing decryption: %v", err)
+							log.Printf("No Data in Secret: %v", err)
+							t.FailNow()
+						}
+						if string(decryptedVal) != testValue {
+							t.FailNow()
+						}
+					}
+
+				}
+			}
+		})
+	}
+}
+
+func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.QliksenseCR, svcName string) (string, error) {
+	if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
+		// secret=true
+		secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.GetName(), QliksenseSecretsDir, svcName+".yaml")
+		if api.FileExists(secretFilePath) {
+			secretFileContents, err := ioutil.ReadFile(secretFilePath)
+			if err != nil {
+				err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+				return "", err
+			}
+			k8sSecret, err := api.K8sSecretFromYaml(secretFileContents)
+			if err != nil {
+				err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+				return "", err
+			}
+			if k8sSecret.Data == nil {
+				err = fmt.Errorf("No Data in Secret: %v", err)
+				return "", err
+			}
+			return string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]), nil
+		}
+	}
+	// secret=false
+	if item.Value != "" {
+		return item.Value, nil
+	}
+	err := fmt.Errorf("Both Value and ValueFrom are empty")
+	return "", err
 }
