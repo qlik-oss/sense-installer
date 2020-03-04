@@ -671,19 +671,25 @@ func Test_SetSecrets(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "invalid secret secrets=false",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{},
+				isSecretSet: false,
+			},
+			wantErr: true,
+		},
 	}
 	tearDown := setup()
-	pubKeyBytes, privateKeyBytes, _, err := setupTargetFileAndPrivateKey()
+	_, privateKeyBytes, _, err := setupTargetFileAndPrivateKey()
 	if err != nil {
 		t.FailNow()
 	}
 	defer tearDown()
 
-	api.LogDebugMessage("\npublic key: \n%s\n", pubKeyBytes)
-	//pubKey, err := api.DecodeToPublicKey(pubKeyBytes)
-	//if err != nil {
-	//	t.FailNow()
-	//}
 	privKey, err := api.DecodeToPrivateKey(privateKeyBytes)
 	if err != nil {
 		t.FailNow()
@@ -695,8 +701,11 @@ func Test_SetSecrets(t *testing.T) {
 			}
 			if err := q.SetSecrets(tt.args.args, tt.args.isSecretSet); (err != nil) != tt.wantErr {
 				t.Errorf("SetSecrets() error = %v, wantErr %v", err, tt.wantErr)
+				t.FailNow()
 			}
-
+			if tt.wantErr || len(tt.args.args) == 0 {
+				return
+			}
 			// VERIFICATION PART BELOW
 			// extract the value for testing
 			testValueArr := strings.Split(tt.args.args[0], "=")
@@ -717,7 +726,6 @@ func Test_SetSecrets(t *testing.T) {
 							// secret=true
 							secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
 							if api.FileExists(secretFilePath) {
-								//k8sSecret := v1.Secret{}
 								secretFileContents, err := ioutil.ReadFile(secretFilePath)
 								if err != nil {
 									err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
@@ -736,7 +744,6 @@ func Test_SetSecrets(t *testing.T) {
 									log.Printf("No Data in Secret: %v", err)
 									t.FailNow()
 								}
-								//		base64EncodedSecret, err := EncryptTestValue([]byte(testValue), pubKey)
 								decodedValue, err := b64.StdEncoding.DecodeString(string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]))
 								decryptedVal, err := api.Decrypt(decodedValue, privKey)
 								if err != nil {
@@ -752,26 +759,19 @@ func Test_SetSecrets(t *testing.T) {
 						} else {
 							// secret=false
 							if item.Value != "" {
-								//fmt.Printf("\n\nValue computed by test run: %s\n\n", item.Value)
-								//fmt.Printf("\n\nValue to be encrypted for validation: %s\n\n", testValue)
-
 								decodedValue, err := b64.StdEncoding.DecodeString(item.Value)
 								if err != nil {
 									err := fmt.Errorf("Error occurred while decoding: %v", err)
 									log.Printf("decode error: %v", err)
 									t.FailNow()
 								}
-								//api.LogDebugMessage("\nDecoded value: %s\n", decodedValue)
 								decryptedVal, err := api.Decrypt(decodedValue, privKey)
 								if err != nil {
 									err := fmt.Errorf("Error occurred while testing decryption: %v", err)
 									log.Printf("decryption error: %v", err)
 									t.FailNow()
 								}
-								//api.LogDebugMessage(`\ndecrypted value: "%s", orig value: "%s"\n`, decryptedVal, testValue)
 								if string(decryptedVal) != testValue {
-									//fmt.Printf("\n\nitem.Value != input value\n")
-									//fmt.Printf("\n\nFailing now...\n")
 									t.FailNow()
 								}
 							}
@@ -783,8 +783,3 @@ func Test_SetSecrets(t *testing.T) {
 		})
 	}
 }
-
-//func EncryptTestValue(testValueBytes []byte, pubKey *rsa.PublicKey) (string, error) {
-//	cipherText, err := api.Encrypt(testValueBytes, pubKey)
-//	return b64.StdEncoding.EncodeToString(cipherText), err
-//}
