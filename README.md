@@ -14,23 +14,23 @@
   
 ## About
 
-The Qlik Sense installer CLI (qliksense) provides an imperitive interface to many of the configurations that need to be applied against the declaritive structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s). This cli faciliates to do
+The Qlik Sense installer CLI (qliksense) provides an imperative interface to many of the configurations that need to be applied against the declarative structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s). This cli facilitates:
 
 - installation of QSEoK
 - installation of qliksense operator to manage QSEoK
 - air gapped installation of QSEoK
 
-This is a technology preview that uses qlik modified [kustomize](https://github.com/qlik-oss/kustomize) to kubernetes manifests of the versions of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository.
+This is a technology preview that uses Qlik modified [kustomize](https://github.com/qlik-oss/kustomize) to kubernetes manifests of the versions of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository.
 
-For each version of a qliksense sense edge build there should be a corresponding release in [qliksense-k8s] repository under [releases](https://github.com/qlik-oss/qliksense-k8s/releases)
+For each version of a qliksense edge build there should be a corresponding release in [qliksense-k8s] repository under [releases](https://github.com/qlik-oss/qliksense-k8s/releases)
 
 ### Future Direction
 
 - More operations:
-  - Expanded preflight checks
+  - Expand preflight checks
   - backup/restore operations
   - fully support airgap installation of QSEoK
-  - restore unwanted deletion of kubernetes resoureces
+  - restore unwanted deletion of kubernetes resources
 
 ## Getting Started
 
@@ -97,7 +97,7 @@ spec:
 The `qliksense` cli creates a default qliksense context (different from kubectl context) named `qlik-default` which will be the prefix for all kubernetes resources created by the cli under this context latter on. New context and configuration can be created by the cli.
 
 ```console
-$ qliksense config
+$ qliksense config -h
 do operations on/around CR
 
 Usage:
@@ -107,9 +107,9 @@ Available Commands:
   apply         generate the patchs and apply manifests to k8s
   list-contexts retrieves the contexts and lists them
   set           configure a key value pair into the current context
-  set-configs   set configurations into the qliksense context
+  set-configs   set configurations into the qliksense context as key-value pairs
   set-context   Sets the context in which the Kubernetes cluster and resources live in
-  set-secrets   set secrets configurations into the qliksense context
+  set-secrets   set secrets configurations into the qliksense context as key-value pairs
   view          view the qliksense operator CR
 
 Flags:
