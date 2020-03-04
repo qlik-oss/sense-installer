@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -16,7 +17,11 @@ import (
 )
 
 const (
-	Q_INIT_CRD_PATH = "manifests/base/manifests/qliksense-init"
+	Q_INIT_CRD_PATH   = "manifests/base/manifests/qliksense-init"
+	agreementTempalte = `
+	Please read the agreement at https://www.qlik.com/us/legal/license-terms
+	Accept the end user license agreement by providing acceptEULA=yes
+	`
 )
 
 func (q *Qliksense) ConfigApplyQK8s() error {
@@ -28,7 +33,10 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-
+	// check if acceptEULA is yes or not
+	if !qcr.IsEULA() {
+		return errors.New(agreementTempalte + "\nPlease do $ qliksense config set-configs qliksense.acceptEULA=yes\n")
+	}
 	if qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
 		return q.applyCR()

@@ -306,3 +306,16 @@ func (cr *QliksenseCR) GetImageRegistry() string {
 	}
 	return ""
 }
+
+func (cr *QliksenseCR) IsEULA() bool {
+	for k, nvs := range cr.Spec.Configs {
+		if k == "qliksense" {
+			for _, nv := range nvs {
+				if nv.Name == "acceptEULA" {
+					return nv.Value == "yes"
+				}
+			}
+		}
+	}
+	return false
+}
