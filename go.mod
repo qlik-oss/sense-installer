@@ -46,7 +46,7 @@ require (
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
-	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	golang.org/x/tools v0.0.0-20200304024140-c4206d458c3f // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
