@@ -28,6 +28,10 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
+	// create patch dependent resoruces
+	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+		return err
+	}
 
 	if qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller

@@ -72,7 +72,7 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
 	secretName := ""
 	if isSecretSet {
-		secretFolder := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.GetName(), QliksenseSecretsDir)
+		secretFolder := qliksenseCR.GetK8sSecretsFolder(q.QliksenseHome)
 		secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
 
 		secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.GetName(), ra.SvcName, "sense_installer")

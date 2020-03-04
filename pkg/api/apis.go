@@ -306,3 +306,7 @@ func (cr *QliksenseCR) GetImageRegistry() string {
 	}
 	return ""
 }
+
+func (cr *QliksenseCR) GetK8sSecretsFolder(qlikSenseHomeDir string) string {
+	return filepath.Join(qlikSenseHomeDir, qliksenseContextsDirName, cr.GetName(), qliksenseSecretsDirName)
+}
