@@ -71,7 +71,6 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 		return e2
 	}
 	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
-	api.LogDebugMessage("base64 encoded secret: %s\n", base64EncodedSecret)
 	secretName := ""
 	if isSecretSet {
 		secretFolder := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qliksenseCR.Metadata.Name, QliksenseSecretsDir)

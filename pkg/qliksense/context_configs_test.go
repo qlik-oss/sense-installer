@@ -13,6 +13,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
+
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"gopkg.in/yaml.v2"
 )
@@ -710,7 +712,6 @@ func Test_SetSecrets(t *testing.T) {
 			// extract the value for testing
 			testValueArr := strings.Split(tt.args.args[0], "=")
 			testValue := strings.ReplaceAll(testValueArr[1], "\"", "")
-			fmt.Printf("\nValue:: %s\n\nhello", testValue)
 
 			qliksenseCR, err := readCRFile()
 			if err != nil {
@@ -719,62 +720,29 @@ func Test_SetSecrets(t *testing.T) {
 				t.FailNow()
 			}
 
-			for svcName, _ := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
-				for _, v := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+			for svcName := range qliksenseCR.Spec.Secrets { // we are sure we only have one service
+				for _, v := range qliksenseCR.Spec.Secrets {
 					for _, item := range v { // we are sure we only have one entry
-						if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
-							// secret=true
-							secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
-							if api.FileExists(secretFilePath) {
-								secretFileContents, err := ioutil.ReadFile(secretFilePath)
-								if err != nil {
-									err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-									log.Printf("An error occurred during unmarshalling: %v", err)
-									t.FailNow()
-								}
-								api.LogDebugMessage("Secret file here: %v", string(secretFileContents))
-								k8sSecret, err := api.K8sSecretFromYaml(secretFileContents)
-								if err != nil {
-									err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
-									log.Printf("---------------An error occurred during unmarshalling: %v", err)
-									t.FailNow()
-								}
-								if k8sSecret.Data == nil {
-									err = fmt.Errorf("No Data in Secret: %v", err)
-									log.Printf("No Data in Secret: %v", err)
-									t.FailNow()
-								}
-								decodedValue, err := b64.StdEncoding.DecodeString(string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]))
-								decryptedVal, err := api.Decrypt(decodedValue, privKey)
-								if err != nil {
-									err := fmt.Errorf("Error occurred while testing encryption: %v", err)
-									log.Printf("No Data in Secret: %v", err)
-									t.FailNow()
-								}
-								if string(decryptedVal) != testValue {
-									t.FailNow()
-								}
-							}
-
-						} else {
-							// secret=false
-							if item.Value != "" {
-								decodedValue, err := b64.StdEncoding.DecodeString(item.Value)
-								if err != nil {
-									err := fmt.Errorf("Error occurred while decoding: %v", err)
-									log.Printf("decode error: %v", err)
-									t.FailNow()
-								}
-								decryptedVal, err := api.Decrypt(decodedValue, privKey)
-								if err != nil {
-									err := fmt.Errorf("Error occurred while testing decryption: %v", err)
-									log.Printf("decryption error: %v", err)
-									t.FailNow()
-								}
-								if string(decryptedVal) != testValue {
-									t.FailNow()
-								}
-							}
+						valToBeEncrypted, err := getValueToBeDecodedForSetSecrets(item, qliksenseCR, svcName)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while decoding: %v", err)
+							log.Printf("decode error: %v", err)
+							t.FailNow()
+						}
+						decodedValue, err := b64.StdEncoding.DecodeString(valToBeEncrypted)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while decoding: %v", err)
+							log.Printf("decode error: %v", err)
+							t.FailNow()
+						}
+						decryptedVal, err := api.Decrypt(decodedValue, privKey)
+						if err != nil {
+							err := fmt.Errorf("Error occurred while testing decryption: %v", err)
+							log.Printf("No Data in Secret: %v", err)
+							t.FailNow()
+						}
+						if string(decryptedVal) != testValue {
+							t.FailNow()
 						}
 					}
 
@@ -782,4 +750,34 @@ func Test_SetSecrets(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.QliksenseCR, svcName string) (string, error) {
+	if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
+		// secret=true
+		secretFilePath := filepath.Join(testDir, contexts, qliksenseCR.Metadata.Name, QliksenseSecretsDir, svcName+".yaml")
+		if api.FileExists(secretFilePath) {
+			secretFileContents, err := ioutil.ReadFile(secretFilePath)
+			if err != nil {
+				err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+				return "", err
+			}
+			k8sSecret, err := api.K8sSecretFromYaml(secretFileContents)
+			if err != nil {
+				err = fmt.Errorf("An error occurred during unmarshalling: %v", err)
+				return "", err
+			}
+			if k8sSecret.Data == nil {
+				err = fmt.Errorf("No Data in Secret: %v", err)
+				return "", err
+			}
+			return string(k8sSecret.Data[item.ValueFrom.SecretKeyRef.Key]), nil
+		}
+	}
+	// secret=false
+	if item.Value != "" {
+		return item.Value, nil
+	}
+	err := fmt.Errorf("Both Value and ValueFrom are empty")
+	return "", err
 }

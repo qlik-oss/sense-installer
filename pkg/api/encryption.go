@@ -69,8 +69,6 @@ func writeContentToFile(keyData []byte, fileName string) error {
 func Encrypt(pt []byte, pub *rsa.PublicKey) ([]byte, error) {
 	//hash := sha512.New()
 	//ct, err := rsa.EncryptOAEP(hash, rand.Reader, pub, pt, nil)
-	LogDebugMessage("\nEncryption: received pt: %s\n", pt)
-	LogDebugMessage("\nEncryption: received pub key: %+v\n", pub)
 	ct, err := rsa.EncryptPKCS1v15(rand.Reader, pub, pt)
 	if err != nil {
 		log.Println(err)
