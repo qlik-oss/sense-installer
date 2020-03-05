@@ -75,7 +75,7 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 		secretFolder := qliksenseCR.GetK8sSecretsFolder(q.QliksenseHome)
 		secretFileName := filepath.Join(secretFolder, ra.SvcName+".yaml")
 
-		secretName = fmt.Sprintf("%s.%s.%s", qliksenseCR.GetName(), ra.SvcName, "senseinstaller")
+		secretName = fmt.Sprintf("%s-%s-%s", qliksenseCR.GetName(), ra.SvcName, "senseinstaller")
 		api.LogDebugMessage("Constructed secret name: %s", secretName)
 
 		k8sSecret := v1.Secret{
