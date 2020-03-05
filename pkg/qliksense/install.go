@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
+	"sigs.k8s.io/kustomize/api/filesys"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
