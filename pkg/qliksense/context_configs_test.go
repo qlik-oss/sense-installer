@@ -161,15 +161,11 @@ apiVersion: config.qlik.com/v1
 kind: QliksenseConfig
 metadata:
   name: qliksenseConfig
-spec:
-  contexts:
-  - name: qlik-default
-	crFile: /root/.qliksense/contexts/qlik-default.yaml
-  - name: qlik1
-	crFile: /root/.qliksense/contexts/qlik1.yaml
-  - name: qlik2
-	crFile: /root/.qliksense/contexts/qlik2.yaml	
-  currentContext: qlik1
+  spec:	
+  contexts:	
+  - name: qlik-default	
+    crFile: /root/.qliksense/contexts/qlik-default.yaml	
+  currentContext: qlik-default
 `
 	configFile := filepath.Join(testDir, "config.yaml")
 	// tests/config.yaml exists
@@ -197,7 +193,6 @@ spec:
 
 	contextFile := filepath.Join(contextsDir, qlikDefaultContext+".yaml")
 	ioutil.WriteFile(contextFile, []byte(contextYaml), 0777)
-	setupDeleteContext()
 	tearDown := func() {
 		os.RemoveAll(testDir)
 	}
@@ -885,6 +880,7 @@ func TestDeleteContexts(t *testing.T) {
 		},
 	}
 	tearDown := setup()
+	setupDeleteContext()
 	defer tearDown()
 
 	for _, tt := range tests {
