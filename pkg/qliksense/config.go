@@ -41,6 +41,13 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 	if !qcr.IsEULA() {
 		return errors.New(agreementTempalte + "\nPlease do $ qliksense config set-configs qliksense.acceptEULA=yes\n")
 	}
+
+	// create patch dependent resoruces
+	fmt.Println("Installing resoruces used kuztomize patch")
+	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+		return err
+	}
+
 	if qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
 		return q.applyCR()
@@ -67,8 +74,6 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
 	// generate patches
-	b, _ := qapi.K8sToYaml(&qcr.KApiCr)
-	fmt.Println(string(b))
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
