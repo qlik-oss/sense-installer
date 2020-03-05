@@ -220,49 +220,6 @@ func readCRFile() (*api.QliksenseCR, error) {
 	return qliksenseCR, nil
 }
 
-func setupDeleteContext() {
-	contextYaml1 :=
-		`
-apiVersion: qlik.com/v1
-kind: Qliksense
-metadata:
-  name: qlik1
-spec:
-  profile: docker-desktop
-  rotateKeys: "yes"
-  releaseName: qlik1
-`
-	contextYaml2 :=
-		`
-apiVersion: qlik.com/v1
-kind: Qliksense
-metadata:
-  name: qlik2
-spec:
-  profile: docker-desktop
-  rotateKeys: "yes"
-  releaseName: qlik2
-`
-	contexts := "contexts"
-	contextsDir := filepath.Join(testDir, contexts, "qlik1")
-	if err := os.MkdirAll(contextsDir, 0777); err != nil {
-		err = fmt.Errorf("Not able to create directories")
-		log.Fatal(err)
-	}
-
-	contextsDir2 := filepath.Join(testDir, contexts, "qlik2")
-	if err := os.MkdirAll(contextsDir2, 0777); err != nil {
-		err = fmt.Errorf("Not able to create directories")
-		log.Fatal(err)
-	}
-
-	contextFile := filepath.Join(contextsDir, "qlik1.yaml")
-	ioutil.WriteFile(contextFile, []byte(contextYaml1), 0777)
-
-	contextFile2 := filepath.Join(contextsDir, "qlik2.yaml")
-	ioutil.WriteFile(contextFile2, []byte(contextYaml2), 0777)
-}
-
 func Test_retrieveCurrentContextInfo(t *testing.T) {
 
 	tearDown := setup()
@@ -828,6 +785,49 @@ func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.Ql
 	}
 	err := fmt.Errorf("Both Value and ValueFrom are empty")
 	return "", err
+}
+
+func setupDeleteContext() {
+	contextYaml1 :=
+		`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik1
+spec:
+  profile: docker-desktop
+  rotateKeys: "yes"
+  releaseName: qlik1
+`
+	contextYaml2 :=
+		`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik2
+spec:
+  profile: docker-desktop
+  rotateKeys: "yes"
+  releaseName: qlik2
+`
+	contexts := "contexts"
+	contextsDir := filepath.Join(testDir, contexts, "qlik1")
+	if err := os.MkdirAll(contextsDir, 0777); err != nil {
+		err = fmt.Errorf("Not able to create directories")
+		log.Fatal(err)
+	}
+
+	contextsDir2 := filepath.Join(testDir, contexts, "qlik2")
+	if err := os.MkdirAll(contextsDir2, 0777); err != nil {
+		err = fmt.Errorf("Not able to create directories")
+		log.Fatal(err)
+	}
+
+	contextFile := filepath.Join(contextsDir, "qlik1.yaml")
+	ioutil.WriteFile(contextFile, []byte(contextYaml1), 0777)
+
+	contextFile2 := filepath.Join(contextsDir, "qlik2.yaml")
+	ioutil.WriteFile(contextFile2, []byte(contextYaml2), 0777)
 }
 
 func TestDeleteContexts(t *testing.T) {
