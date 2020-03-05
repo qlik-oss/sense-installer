@@ -62,7 +62,7 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		return nil, err
 	}
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
-	re1 := regexp.MustCompile(`(\w{1,}).(\w{1,})=("*[\w\-_/:0-9]+"*)`)
+	re1 := regexp.MustCompile(`(\w{1,}).(\w{1,})=("*[\w\-?=_/:0-9]+"*)`)
 	for i, arg := range args {
 		LogDebugMessage("Arg received: %s", arg)
 		result := re1.FindStringSubmatch(arg)
