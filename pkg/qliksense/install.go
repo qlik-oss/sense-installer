@@ -3,8 +3,8 @@ package qliksense
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
-	"sigs.k8s.io/kustomize/api/filesys"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
@@ -85,6 +85,11 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 
+	// create patch dependent resoruces
+	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+		return err
+	}
+
 	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
 		return q.applyCR()
@@ -158,4 +163,24 @@ func (q *Qliksense) applyCR() error {
 		return err
 	}
 	return nil
+}
+
+func (q *Qliksense) createK8sResoruceBeforePatch(qcr *qapi.QliksenseCR) error {
+	for svc, nvs := range qcr.Spec.Secrets {
+		for _, nv := range nvs {
+			if isK8sSecretNeedToCreate(nv) {
+				fmt.Println(filepath.Join(qcr.GetK8sSecretsFolder(q.QliksenseHome), svc+".yaml"))
+				if secS, err := q.PrepareK8sSecret(filepath.Join(qcr.GetK8sSecretsFolder(q.QliksenseHome), svc+".yaml")); err != nil {
+					return err
+				} else {
+					return qapi.KubectlApply(secS, "")
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func isK8sSecretNeedToCreate(nv config.NameValue) bool {
+	return nv.ValueFrom != nil
 }
