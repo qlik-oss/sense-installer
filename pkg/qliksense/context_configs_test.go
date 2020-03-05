@@ -197,6 +197,7 @@ spec:
 
 	contextFile := filepath.Join(contextsDir, qlikDefaultContext+".yaml")
 	ioutil.WriteFile(contextFile, []byte(contextYaml), 0777)
+	setupDeleteContext()
 	tearDown := func() {
 		os.RemoveAll(testDir)
 	}
