@@ -59,7 +59,6 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 	// split args[0] into key and value
 	if len(args) == 0 {
 		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
-		log.Println(err)
 		return nil, err
 	}
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
@@ -70,13 +69,12 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
 		if len(result) != 4 {
 			err := fmt.Errorf("Please provide valid args for this command")
-			log.Println(err)
 			return nil, err
 		}
 		resultSvcKV[i] = &ServiceKeyValue{
 			SvcName: result[1],
 			Key:     result[2],
-			Value:   result[3],
+			Value:   strings.ReplaceAll(result[3], `"`, ""),
 		}
 	}
 	return resultSvcKV, nil

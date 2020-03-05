@@ -1,25 +1,26 @@
 package api
 
-import "github.com/qlik-oss/k-apis/pkg/config"
-
-// CommonConfig is exported
-type CommonConfig struct {
-	ApiVersion string    `json:"apiVersion" yaml:"apiVersion"`
-	Kind       string    `json:"kind" yaml:"kind"`
-	Metadata   *Metadata `json:"metadata" yaml:"metadata"`
-}
+import (
+	kapi_config "github.com/qlik-oss/k-apis/pkg/config"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // QliksenseConfig is exported
 type QliksenseConfig struct {
-	CommonConfig      `json:",inline" yaml:",inline"`
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty" yaml:"metadata,omitempty"`
 	Spec              *ContextSpec `json:"spec" yaml:"spec"`
 	QliksenseHomePath string       `json:"-" yaml:"-"`
 }
 
+/*type CommonConfig struct {
+	metav1.TypeMeta   `json:",inline" yaml:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty" yaml:"metadata,omitempty"`
+}
+*/
 // QliksenseCR is exported
 type QliksenseCR struct {
-	CommonConfig `json:",inline" yaml:",inline"`
-	Spec         *config.CRSpec `json:"spec,omitempty" yaml:"spec,omitempty"`
+	kapi_config.KApiCr `json:",inline" yaml:",inline"`
 }
 
 // ContextSpec is exported

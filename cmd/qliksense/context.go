@@ -13,9 +13,12 @@ func setContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set-context",
-		Short:   "Sets the context in which the Kubernetes cluster and resources live in",
-		Example: `qliksense config set-context <context_name>`,
+		Use:   "set-context",
+		Short: "Sets the context in which the Kubernetes cluster and resources live in",
+		Example: `
+qliksense config set-context <context_name>
+   - The above configuration will be displayed in the CR
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetContextConfig(args)
 		},
@@ -45,9 +48,12 @@ func setOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set",
-		Short:   "configure a key value pair into the current context",
-		Example: `qliksense config set <key>=<value>`,
+		Use:   "set",
+		Short: "configure a key value pair into the current context",
+		Example: `
+qliksense config set <key>=<value>
+    - The above configuration will be displayed in the CR
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetOtherConfigs(args)
 		},
@@ -61,9 +67,12 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set-configs",
-		Short:   "set configurations into the qliksense context",
-		Example: `qliksense config set-configs <key>=<value>`,
+		Use:   "set-configs",
+		Short: "set configurations into the qliksense context as key-value pairs",
+		Example: `
+qliksense config set-configs <service_name>.<attribute>="<value>"
+    - The above configuration will be displayed in the CR
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetConfigs(args)
 		},
@@ -78,9 +87,18 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 	)
 
 	cmd = &cobra.Command{
-		Use:     "set-secrets",
-		Short:   "set secrets configurations into the qliksense context",
-		Example: `qliksense config set-secrets <key>=<value> --secret=true`,
+		Use:   "set-secrets",
+		Short: "set secrets configurations into the qliksense context as key-value pairs",
+		Example: `
+qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=true
+        - Encrypt the secret value into a new Kubernetes secret resource
+        - The secret resource is placed in the location: <qliksense_home>/<contexts>/<context_name>/secrets/<service_name>.yaml
+        - Include it's key reference in the current context
+
+qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=false
+		- Encrypt the secret value and display it in the current context
+		- No secret resource is created
+        - The above configuration will be displayed in the CR `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetSecrets(args, secret)
 		},

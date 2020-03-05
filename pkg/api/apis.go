@@ -1,31 +1,30 @@
 package api
 
 import (
+	"crypto/rsa"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/jinzhu/copier"
-	"gopkg.in/yaml.v2"
 )
 
 const (
-	pushSecretFileName = "image-registry-push-secret.yaml"
-	pullSecretFileName = "image-registry-pull-secret.yaml"
+	pushSecretFileName       = "image-registry-push-secret.yaml"
+	pullSecretFileName       = "image-registry-pull-secret.yaml"
+	qliksenseContextsDirName = "contexts"
+	qliksenseSecretsDirName  = "secrets"
 )
 
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
 func NewQConfig(qsHome string) *QliksenseConfig {
 	configFile := filepath.Join(qsHome, "config.yaml")
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		fmt.Println("Cannot read config file from: "+configFile, err)
-		os.Exit(1)
-	}
 	qc := &QliksenseConfig{}
-	err = yaml.Unmarshal(data, qc)
+
+	err := ReadFromFile(qc, configFile)
 	if err != nil {
 		fmt.Println("yaml unmarshalling error ", err)
 		os.Exit(1)
@@ -73,17 +72,13 @@ func (qc *QliksenseConfig) SetCrLocation(contextName, filepath string) (*Qliksen
 }
 
 func getCRObject(crfile string) (*QliksenseCR, error) {
-	data, err := ioutil.ReadFile(crfile)
-	if err != nil {
-		fmt.Println("Cannot read config file from: "+crfile, err)
-		return nil, err
-	}
 	cr := &QliksenseCR{}
-	err = yaml.Unmarshal(data, cr)
+	err := ReadFromFile(cr, crfile)
 	if err != nil {
 		fmt.Println("cannot unmarshal cr ", err)
 		return nil, err
 	}
+
 	return cr, nil
 }
 
@@ -116,7 +111,7 @@ func (qc *QliksenseConfig) BuildRepoPath(version string) string {
 }
 
 func (qc *QliksenseConfig) BuildRepoPathForContext(contextName, version string) string {
-	return filepath.Join(qc.QliksenseHomePath, "contexts", contextName, "qlik-k8s", version)
+	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName, "qlik-k8s", version)
 }
 
 func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
@@ -128,13 +123,7 @@ func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
 	if crf == "" {
 		return errors.New("context name " + contextName + " not found")
 	}
-	by, err := yaml.Marshal(cr)
-	if err != nil {
-		fmt.Println("cannot marshal cr ", err)
-		return err
-	}
-	ioutil.WriteFile(crf, by, 0644)
-	return nil
+	return WriteToFile(cr, crf)
 }
 
 func (qc *QliksenseConfig) WriteCurrentContextCR(cr *QliksenseCR) error {
@@ -154,7 +143,7 @@ func (qc *QliksenseConfig) GetCurrentContextDir() (string, error) {
 	if qcr, err := qc.GetCurrentCR(); err != nil {
 		return "", err
 	} else {
-		return filepath.Join(qc.QliksenseHomePath, "contexts", qcr.Metadata.Name), nil
+		return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, qcr.GetObjectMeta().GetName()), nil
 	}
 }
 
@@ -162,14 +151,16 @@ func (qc *QliksenseConfig) GetCurrentContextSecretsDir() (string, error) {
 	if currentContextDir, err := qc.GetCurrentContextDir(); err != nil {
 		return "", err
 	} else {
-		return filepath.Join(currentContextDir, "secrets"), nil
+		return filepath.Join(currentContextDir, qliksenseSecretsDirName), nil
 	}
 }
 
 func (qc *QliksenseConfig) setDockerConfigJsonSecret(filename string, dockerConfigJsonSecret *DockerConfigJsonSecret) error {
 	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
 		return err
-	} else if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(); err != nil {
+	} else if publicKey, _, err := qc.GetCurrentContextEncryptionKeyPair(); err != nil {
+		return err
+	} else if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(publicKey); err != nil {
 		return err
 	} else if err := os.MkdirAll(secretsDir, os.ModePerm); err != nil {
 		return err
@@ -187,38 +178,117 @@ func (qc *QliksenseConfig) SetPullDockerConfigJsonSecret(dockerConfigJsonSecret 
 }
 
 func (qc *QliksenseConfig) GetPushDockerConfigJsonSecret() (*DockerConfigJsonSecret, error) {
-	return qc.GetDockerConfigJsonSecret(pushSecretFileName)
+	return qc.getDockerConfigJsonSecret(pushSecretFileName)
 }
 
-func (qc *QliksenseConfig) GetDockerConfigJsonSecret(name string) (*DockerConfigJsonSecret, error) {
+func (qc *QliksenseConfig) GetPullDockerConfigJsonSecret() (*DockerConfigJsonSecret, error) {
+	return qc.getDockerConfigJsonSecret(pullSecretFileName)
+}
+
+func (qc *QliksenseConfig) DeletePushDockerConfigJsonSecret() error {
+	return qc.deleteDockerConfigJsonSecret(pushSecretFileName)
+}
+
+func (qc *QliksenseConfig) DeletePullDockerConfigJsonSecret() error {
+	return qc.deleteDockerConfigJsonSecret(pullSecretFileName)
+}
+
+func (qc *QliksenseConfig) deleteDockerConfigJsonSecret(name string) error {
+	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
+		return err
+	} else {
+		return os.Remove(filepath.Join(secretsDir, name))
+	}
+}
+
+func (qc *QliksenseConfig) getDockerConfigJsonSecret(name string) (*DockerConfigJsonSecret, error) {
 	dockerConfigJsonSecret := &DockerConfigJsonSecret{}
 	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
 		return nil, err
 	} else if dockerConfigJsonSecretYaml, err := ioutil.ReadFile(filepath.Join(secretsDir, name)); err != nil {
 		return nil, err
-	} else if err := dockerConfigJsonSecret.FromYaml(dockerConfigJsonSecretYaml); err != nil {
+	} else if _, privateKey, err := qc.GetCurrentContextEncryptionKeyPair(); err != nil {
+		return nil, err
+	} else if err := dockerConfigJsonSecret.FromYaml(dockerConfigJsonSecretYaml, privateKey); err != nil {
 		return nil, err
 	}
 	return dockerConfigJsonSecret, nil
 }
 
-func (cr *QliksenseCR) AddLabelToCr(key, value string) {
-	if cr.Metadata.Labels == nil {
-		cr.Metadata.Labels = make(map[string]string)
+func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string, error) {
+	// Check env var: QLIKSENSE_KEY_LOCATION to determine location to store keypair
+	var secretKeyPairLocation string
+	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
+		LogDebugMessage("Env variable: QLIKSENSE_KEY_LOCATION= %s", os.Getenv("QLIKSENSE_KEY_LOCATION"))
+		secretKeyPairLocation = os.Getenv("QLIKSENSE_KEY_LOCATION")
+	} else {
+		// QLIKSENSE_KEY_LOCATION has not been set, hence storing key pair in default location:
+		// /.qliksense/secrets/contexts/<current-context>/secrets/
+		if qcr, err := qc.GetCurrentCR(); err != nil {
+			return "", err
+		} else {
+			secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, qcr.GetObjectMeta().GetName(), qliksenseSecretsDirName)
+		}
 	}
-	cr.Metadata.Labels[key] = value
+	LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
+	return secretKeyPairLocation, nil
+}
+
+func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey, *rsa.PrivateKey, error) {
+	secretKeyPairLocation, err := qc.getCurrentContextEncryptionKeyPairLocation()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publicKeyFilePath := filepath.Join(secretKeyPairLocation, QliksensePublicKey)
+	privateKeyFilePath := filepath.Join(secretKeyPairLocation, QliksensePrivateKey)
+	// try to create the dir if it doesn't exist
+	if !FileExists(publicKeyFilePath) || !FileExists(privateKeyFilePath) {
+		LogDebugMessage("Qliksense secretKeyLocation dir does not exist, creating it now: %s", secretKeyPairLocation)
+		if err := os.MkdirAll(secretKeyPairLocation, os.ModePerm); err != nil {
+			err = fmt.Errorf("Not able to create %s dir: %v", secretKeyPairLocation, err)
+			log.Println(err)
+			return nil, nil, err
+		}
+		// generating and storing key-pair
+		err1 := GenerateAndStoreSecretKeypair(secretKeyPairLocation)
+		if err1 != nil {
+			err1 = fmt.Errorf("Not able to generate and store key pair for encryption")
+			log.Println(err1)
+			return nil, nil, err1
+		}
+	}
+
+	if publicKeyBytes, err := ReadKeys(publicKeyFilePath); err != nil {
+		LogDebugMessage("Not able to read public key")
+		return nil, nil, err
+	} else if privateKeyBytes, err := ReadKeys(privateKeyFilePath); err != nil {
+		LogDebugMessage("Not able to read private key")
+		return nil, nil, err
+	} else if rsaPublicKey, err := DecodeToPublicKey(publicKeyBytes); err != nil {
+		return nil, nil, err
+	} else if rsaPrivateKey, err := DecodeToPrivateKey(privateKeyBytes); err != nil {
+		return nil, nil, err
+	} else {
+		return rsaPublicKey, rsaPrivateKey, nil
+	}
+}
+
+func (cr *QliksenseCR) AddLabelToCr(key, value string) {
+	m := cr.GetObjectMeta().GetLabels()
+	if m == nil {
+		m = make(map[string]string)
+	}
+	m[key] = value
+	cr.GetObjectMeta().SetLabels(m)
 }
 
 func (cr *QliksenseCR) GetLabelFromCr(key string) string {
-	val := ""
-	if cr.Metadata.Labels != nil {
-		val = cr.Metadata.Labels[key]
-	}
-	return val
+	return cr.GetObjectMeta().GetLabels()[key]
 }
 
 func (cr *QliksenseCR) GetString() (string, error) {
-	out, err := yaml.Marshal(cr)
+	out, err := K8sToYaml(cr)
 	if err != nil {
 		fmt.Println("cannot unmarshal cr ", err)
 		return "", err
@@ -235,4 +305,21 @@ func (cr *QliksenseCR) GetImageRegistry() string {
 		}
 	}
 	return ""
+}
+
+func (cr *QliksenseCR) GetK8sSecretsFolder(qlikSenseHomeDir string) string {
+	return filepath.Join(qlikSenseHomeDir, qliksenseContextsDirName, cr.GetName(), qliksenseSecretsDirName)
+}
+
+func (cr *QliksenseCR) IsEULA() bool {
+	for k, nvs := range cr.Spec.Configs {
+		if k == "qliksense" {
+			for _, nv := range nvs {
+				if nv.Name == "acceptEULA" {
+					return nv.Value == "yes"
+				}
+			}
+		}
+	}
+	return false
 }

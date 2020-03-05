@@ -3,13 +3,14 @@ package qliksense
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 type InstallCommandOptions struct {
 	AcceptEULA   string
-	Namespace    string
 	StorageClass string
 	MongoDbUri   string
 	RotateKeys   string
@@ -40,25 +41,51 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
 	}
-	if opts.Namespace != "" {
-		qcr.Spec.NameSpace = opts.Namespace
-	}
 	if opts.RotateKeys != "" {
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
 	qConfig.WriteCurrentContextCR(qcr)
 
+	//if the docker pull secret exists on disk, install it in the cluster
+	//if it doesn't exist on disk, remove it in the cluster
+	if dockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
+		if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(nil); err != nil {
+			return err
+		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
+			return err
+		}
+	} else {
+		deleteDockerConfigJsonSecret := qapi.DockerConfigJsonSecret{
+			Name: pullSecretName,
+		}
+		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(nil); err != nil {
+			return err
+		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), ""); err != nil {
+			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)
+		}
+	}
+
+	// check if acceptEULA is yes or not
+	if !qcr.IsEULA() {
+		return errors.New(agreementTempalte + "\n Please do $ qliksense install --acceptEULA=yes\n")
+	}
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")
-	if err := qapi.KubectlApply(q.GetOperatorControllerString(), qcr.Spec.NameSpace); err != nil {
+	if err := qapi.KubectlApply(q.GetOperatorControllerString(), ""); err != nil {
 		fmt.Println("cannot do kubectl apply on opeartor controller", err)
 		return err
 	}
 
-	if qcr.Spec.Git.Repository != "" {
+	// create patch dependent resoruces
+	fmt.Println("Installing resoruces used kuztomize patch")
+	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+		return err
+	}
+
+	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
-		return q.applyCR(qcr.Spec.NameSpace)
+		return q.applyCR()
 	}
 	if version != "" { // no need to fetch manifest root already set by some other way
 		if err := fetchAndUpdateCR(qConfig, version); err != nil {
@@ -81,10 +108,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 
-	return q.applyCR(qcr.Spec.NameSpace)
+	return q.applyCR()
 }
 
-func (q *Qliksense) applyCR(ns string) error {
+func (q *Qliksense) applyCR() error {
 	// install operator cr into cluster
 	//get the current context cr
 	fmt.Println("Install operator CR into cluster")
@@ -92,9 +119,29 @@ func (q *Qliksense) applyCR(ns string) error {
 	if err != nil {
 		return err
 	}
-	if err := qapi.KubectlApply(r, ns); err != nil {
+	if err := qapi.KubectlApply(r, ""); err != nil {
 		fmt.Println("cannot do kubectl apply on operator CR")
 		return err
 	}
 	return nil
+}
+
+func (q *Qliksense) createK8sResoruceBeforePatch(qcr *qapi.QliksenseCR) error {
+	for svc, nvs := range qcr.Spec.Secrets {
+		for _, nv := range nvs {
+			if isK8sSecretNeedToCreate(nv) {
+				fmt.Println(filepath.Join(qcr.GetK8sSecretsFolder(q.QliksenseHome), svc+".yaml"))
+				if secS, err := q.PrepareK8sSecret(filepath.Join(qcr.GetK8sSecretsFolder(q.QliksenseHome), svc+".yaml")); err != nil {
+					return err
+				} else {
+					return qapi.KubectlApply(secS, "")
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func isK8sSecretNeedToCreate(nv config.NameValue) bool {
+	return nv.ValueFrom != nil
 }

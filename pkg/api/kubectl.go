@@ -1,18 +1,63 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"strings"
 )
 
+// KubectlApply create resoruces in the provided namespace,
+// if namespace="" then use whatever the kubectl default is
 func KubectlApply(manifests, namespace string) error {
 	return kubectlOperation(manifests, "apply", namespace)
 }
 
+// KubectlDelete delete resoruces in the provided namespace,
+// if namespace="" then use whatever the kubectl default is
 func KubectlDelete(manifests, namespace string) error {
 	return kubectlOperation(manifests, "delete", namespace)
+}
+
+func GetKubectlNamespace() string {
+	namespace := ""
+	cmd := exec.Command("kubectl", "config", "current-context")
+	var out, out2 bytes.Buffer
+
+	cmd.Stdout = &out
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		fmt.Printf("kubectl config current-context %q\n", err)
+		return namespace
+	}
+	if out.String() == "" {
+		fmt.Println("kubectl config current-context does not return anything")
+		return namespace
+	}
+
+	cmd = exec.Command("kubectl", "config", "view", "-o", `jsonpath={.contexts[?(@.name == "`+strings.TrimSpace(out.String())+`")].context.namespace}`)
+	cmd.Stdout = &out2
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
+	if err != nil {
+		fmt.Printf("kubectl config view failed with %q\n", err)
+		return namespace
+	}
+	namespace = out2.String()
+	return namespace
+}
+
+func SetKubectlNamespace(ns string) {
+	cmd := exec.Command("kubectl", "config", "set-context", "--namespace="+ns, "--current")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		fmt.Printf("kubectl config set-context --namespace failed with %q\n", err)
+	}
 }
 
 func kubectlOperation(manifests string, oprName string, namespace string) error {
@@ -42,13 +87,12 @@ func kubectlOperation(manifests string, oprName string, namespace string) error 
 		cmd = exec.Command("kubectl", arguments...)
 	}
 
+	sterrBuffer := &bytes.Buffer{}
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = sterrBuffer
 	err = cmd.Run()
 	if err != nil {
-		fmt.Printf("kubectl apply failed with %s\n", err)
-		fmt.Println("temp CRD file: " + tempYaml.Name())
-		return err
+		return fmt.Errorf("kubectl %v failed with: %v, %v, temp k8s yaml file:%v\n", oprName, err, sterrBuffer.String(), tempYaml.Name())
 	}
 	os.Remove(tempYaml.Name())
 	return nil

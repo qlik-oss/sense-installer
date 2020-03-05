@@ -13,8 +13,6 @@ import (
 
 const (
 	RSA_KEY_LENGTH = 4096
-	privateKeyPath = "privKey"
-	publicKeyPath  = "pubKey"
 
 	QliksensePublicKey  = "qliksensePub"
 	QliksensePrivateKey = "qliksensePriv"
@@ -69,8 +67,8 @@ func writeContentToFile(keyData []byte, fileName string) error {
 
 // Encrypt encrypts data with public key
 func Encrypt(pt []byte, pub *rsa.PublicKey) ([]byte, error) {
-	// hash := sha512.New()
-	// ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, pub, msg, nil)
+	//hash := sha512.New()
+	//ct, err := rsa.EncryptOAEP(hash, rand.Reader, pub, pt, nil)
 	ct, err := rsa.EncryptPKCS1v15(rand.Reader, pub, pt)
 	if err != nil {
 		log.Println(err)

@@ -47,7 +47,9 @@ func Test_locateDockerRegistryBinary(t *testing.T) {
 }
 
 func Test_getSelfSignedCertAndKey(t *testing.T) {
-	selfSignedCert, key, err := getSelfSignedCertAndKey()
+	host := "andriy.registry.com"
+	validity := time.Hour * 24 * 365
+	selfSignedCert, key, err := getSelfSignedCertAndKey(host, validity)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -345,7 +347,7 @@ http:
 	)
 	var env []string
 	if auth {
-		if certificate, key, err := getSelfSignedCertAndKey(); err != nil {
+		if certificate, key, err := getSelfSignedCertAndKey("localhost", time.Hour*24); err != nil {
 			return nil, err
 		} else {
 			certPath := filepath.Join(tmp, "domain.crt")
@@ -464,7 +466,7 @@ func consumeAndLogOutputs(id string, cmd *exec.Cmd) (*bytes.Buffer, *bytes.Buffe
 	return consumeAndLogOutputStream(id+" stdout", stdout), consumeAndLogOutputStream(id+" stderr", stderr), nil
 }
 
-func getSelfSignedCertAndKey() (certificate, key []byte, err error) {
+func getSelfSignedCertAndKey(hostname string, validity time.Duration) (certificate, key []byte, err error) {
 	priv, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return nil, nil, err
@@ -477,13 +479,14 @@ func getSelfSignedCertAndKey() (certificate, key []byte, err error) {
 	template := x509.Certificate{
 		SerialNumber: serialNumber,
 		Subject: pkix.Name{
-			Organization: []string{"Acme Co"},
+			Organization: []string{"self-signed"},
 		},
 		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(time.Hour * 24),
+		NotAfter:              time.Now().Add(validity),
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
+		DNSNames:              []string{hostname},
 	}
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)

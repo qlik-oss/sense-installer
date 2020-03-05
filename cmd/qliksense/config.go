@@ -5,10 +5,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "do operations on/around CR",
-	Long:  `do operations on/around CR`,
+func configCmd(q *qliksense.Qliksense) *cobra.Command {
+	var configCmd = &cobra.Command{
+		Use:   "config",
+		Short: "do operations on/around CR",
+		Long:  `do operations on/around CR`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.ConfigViewCR()
+		},
+	}
+	return configCmd
 }
 
 func configApplyCmd(q *qliksense.Qliksense) *cobra.Command {
