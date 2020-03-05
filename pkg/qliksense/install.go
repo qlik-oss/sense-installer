@@ -78,6 +78,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 
 	// create patch dependent resoruces
+	fmt.Println("Installing resoruces used kuztomize patch")
 	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
 		return err
 	}
