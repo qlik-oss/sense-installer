@@ -88,6 +88,10 @@ func (q *Qliksense) AboutDir(configDirectory, profile string) (*VersionOutput, e
 	images, err := getImageList(kuzManifest)
 	if err != nil {
 		return nil, err
+	} else if operatorImages, err := getImageList([]byte(q.GetOperatorControllerString())); err != nil {
+		return nil, err
+	} else {
+		images = append(images, operatorImages...)
 	}
 
 	return &VersionOutput{

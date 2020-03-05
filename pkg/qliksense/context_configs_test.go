@@ -32,11 +32,11 @@ data:
   mongoDbUri: %s
 kind: Secret
 metadata:
-  name: testctx.qliksense.senseinstaller
+  name: testctx-qliksense-senseinstaller
 type: Opaque
 `
-var encText = "bHZRVVZ6dGJWRWxtNWF5SUtiVXZKZDdKTUZMemg4YUFxWGdieFlBUDZsaXM5QnRFMlV1RGczdm5SZEoxb012aHhSNjFpMTlhUTZWZTNLN3JSRVBDbFBjaDdXQXByWit6dzlaS3A1ZVZzM1daQk82b0cwWWowTG5rc0ZUUXByY0sramN5T3F0QmdiaFNyU1dyelVhcGFBSmhUWTRLUFNtVjBpeXExajZuMTBYVXNUcEFXajF0TXNudkc3d1drUVdoWUY5eVRDRWdLYmFSaVJ0b2xFTzdGUVh2Mm1VbG5mb3J6MFR4TERhWjlHZ3hQWVUzb0JNcmc0Z09xNmZPbld4Y2MwTjZKbVFLQXQvQVVuRkdkUlBzaGN1TEQ1TlRRaXdlc2pIakZzWGJBS1VoemhnaytLSzZUWUlFbFhidGZSVDN5WGNVV1FnMmpoRjY0TVRHWmhzZWg1ZGsvNVczQjVTaVBBWW9ha0t4OW9obkpqeWVYWXNVeHNWQ3dtbnBPTDAzRjQ2ZGRDblRyaHZ1ZWNWdnl2OEpNeFF3SFpwMER4Um5ZbUphMis2eTI5RlNIWTJVanVPR0syVWxOQUd5Q0JxWG1LMWZaZ1BLOVFFQVdiSk05MjREZlJQNjRwd21UQ0ZRNS95VVBCLzJSM29vajBjUC9NOXdpWmptMHAzWlpjclpiRkV3ZkhHcHJtVDJPWGhQQ3VMYWhMZ0FsMUd0U2pxVCtaTUpQMEJGaHdFZWEvU0R4Wi9KaE9IYW42Q1FPOUp6SWpaeE5KWHpYVFpzK09CbXJ2TVM0dm5oMjlhZmpPd2U3dDBmNTh0ZnNhbk8xVC9vc1N2dEQyVnpsT2hIMFBPWFBBSEJucG1lODdpWUJoYTVrUVM3L3ZQNEdsa1pJelVTVGl1N04wckhiYkk9"
-var decText = "mongodb://qlik-default-mongodb:27017/qliksense"
+var encText = "SFpVZ2t5SGsrN2lLQjlTYm9rbFUxSDFRcmVYdUxhTW9MUHlQOGtGditxMEcwZTlIZDl1dVRrV0tEYm5qUURSWFp3dStuNklueGk3anI2c1djSVdsbWlKTHdWQUJwdUg0a1NXd3llMUlMa2oxK3FRSFlMM2dQUExvN1pBYkVDeDROMUVvam12M0t0NmQwbkdhSXlWWEpmWWJUVVFDM1Y4L0ZTVXBVN0JUb0l4OVZWdmlPam5HTHk4RlF2a3RUaHJxWTUvZEh2N3pVUmhiOTc2Q2YwbEovZ3I2L2NwRk9RMUFXVXdodVhrTG9lYjVzNFdtTEZzNldqT3k0bWlKM1J6VllLaWVUSFJ2SE85eDB6dUthanRwSGEzWEZkaE5QNnpySVJJNTRFalUyblVYYUNlYXVnWnZEOUxjdWluOFhFcjExbkFINURCUDAycXhoZk5BejVoMlV2eFNWVmR0aW1QTDBhMVBJTUxGQTgyWUkrQkFOQkhkSUNnZGU5SkxIRFBoTzR6c0llaE1LRmhVQkNoOUhQa3kyRnhTeDJ3YWp3M1UycEsvcFJVZUxDazRUbkhmL25LN3h5ekdpV3dSUFFFZHdsWE5JbUhjVlVPV3gvNWh4WlJCUTZtb3pGYk1HbXR1Mkh5Z3RVV2gzNFYzd1BhS01TNFRsa0hyODFjRjVCWVpxenBFK1pKWnVyLy8zbzJsU0tFMjMxTG1pcGk1K0FqbXZvUVcyWHBocjFNVWJQY1pXUkJFRkkyQXBCM0FhQXFPa0k1MkRqNG43Mko5bCtaMzdydTk1aHk5K1lzY0FxMjZVbExYRlc0S3RUUkRLSjlMNnVmdlIrUUNudER3em5UTFRHUnEwZU5COWt6S0Q4MFlUdXozeHNXK3cxdjlHbDJaMnBZMTZWTCtEV1k9"
+var decText = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
 
 func setupTargetFileAndPrivateKey() ([]byte, []byte, string, error) {
 	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
@@ -662,18 +662,29 @@ func Test_SetSecrets(t *testing.T) {
 				QliksenseHome: testDir,
 			},
 			args: args{
-				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				args:        []string{"qliksense.mongoDbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
 				isSecretSet: false,
 			},
 			wantErr: false,
 		},
 		{
-			name: "valid secret secrets=true",
+			name: "test1 valid secret secrets=true",
 			fields: fields{
 				QliksenseHome: testDir,
 			},
 			args: args{
 				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				isSecretSet: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2 valid secret secrets=true",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{"qliksense.mongoDbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
 				isSecretSet: true,
 			},
 			wantErr: false,
@@ -715,7 +726,7 @@ func Test_SetSecrets(t *testing.T) {
 			}
 			// VERIFICATION PART BELOW
 			// extract the value for testing
-			testValueArr := strings.Split(tt.args.args[0], "=")
+			testValueArr := strings.SplitN(tt.args.args[0], "=", 2)
 			testValue := strings.ReplaceAll(testValueArr[1], "\"", "")
 
 			qliksenseCR, err := readCRFile()

@@ -92,6 +92,11 @@ func (q *Qliksense) ConfigViewCR() error {
 		return err
 	}
 	fmt.Println(r)
+	oth, err := q.getCurrentCrDependentResourceAsString()
+	if err != nil {
+		return err
+	}
+	fmt.Println(r + "\n" + oth)
 	return nil
 }
 
@@ -112,8 +117,18 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 		fmt.Println("cannot unmarshal cr ", err)
 		return "", err
 	}
+	return string(out), nil
+
+}
+
+func (q *Qliksense) getCurrentCrDependentResourceAsString() (string, error) {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCR(qConfig.Spec.CurrentContext)
+	if err != nil {
+		fmt.Println("cannot get the context cr", err)
+		return "", err
+	}
 	var crString strings.Builder
-	crString.Write(out)
 
 	for svcName, v := range qcr.Spec.Secrets {
 		for _, item := range v {
@@ -131,5 +146,6 @@ func (q *Qliksense) getCRString(contextName string) (string, error) {
 			}
 		}
 	}
+	crString.WriteString("\n---\n")
 	return crString.String(), nil
 }
