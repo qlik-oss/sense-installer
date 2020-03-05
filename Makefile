@@ -44,7 +44,7 @@ build: clean generate
 	$(MAKE) clean
 
 .PHONY: test
-test:
+test: clean generate
 ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	$(eval TMP := $(shell mktemp -d))
 	git clone https://github.com/docker/distribution.git $(TMP)/docker-distribution
@@ -52,6 +52,7 @@ ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	cp $(TMP)/docker-distribution/bin/registry pkg/qliksense/docker-registry
 endif
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
+	$(MAKE) clean
 
 xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
