@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
+	"sigs.k8s.io/kustomize/api/filesys"
+
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -48,8 +50,8 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	//if the docker pull secret exists on disk, install it in the cluster
 	//if it doesn't exist on disk, remove it in the cluster
-	if dockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
-		if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(nil); err != nil {
+	if pullDockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
+		if dockerConfigJsonSecretYaml, err := pullDockerConfigJsonSecret.ToYaml(nil); err != nil {
 			return err
 		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
 			return err
@@ -72,7 +74,15 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")
-	if err := qapi.KubectlApply(q.GetOperatorControllerString(), ""); err != nil {
+	operatorControllerString := q.GetOperatorControllerString()
+	if imageRegistry := qcr.GetImageRegistry(); imageRegistry != "" {
+		operatorControllerString, err = kustomizeForImageRegistry(operatorControllerString, pullSecretName,
+			"qlik/qliksense-operator", fmt.Sprintf("%v/qliksense-operator", imageRegistry))
+		if err != nil {
+			return err
+		}
+	}
+	if err := qapi.KubectlApply(operatorControllerString, ""); err != nil {
 		fmt.Println("cannot do kubectl apply on opeartor controller", err)
 		return err
 	}
@@ -109,6 +119,38 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 
 	return q.applyCR()
+}
+
+func kustomizeForImageRegistry(resources, dockerConfigJsonSecretName, name, newName string) (string, error) {
+	fSys := filesys.MakeFsInMemory()
+	if err := fSys.WriteFile("/resources.yaml", []byte(resources)); err != nil {
+		return "", err
+	} else if err := fSys.WriteFile("/add-image-pull-secret.json", []byte(fmt.Sprintf(`
+[
+  {"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "%v"}]}
+]
+`, dockerConfigJsonSecretName))); err != nil {
+		return "", err
+	} else if err := fSys.WriteFile("/kustomization.yaml", []byte(fmt.Sprintf(`
+resources:
+- resources.yaml
+patchesJson6902:
+- path: add-image-pull-secret.json
+  target:
+    group: apps
+    version: v1
+    kind: Deployment
+    name: qliksense-operator  
+images:
+- name: %s
+  newName: %s
+`, name, newName))); err != nil {
+		return "", err
+	} else if out, err := executeKustomizeBuildForFileSystem("/", fSys); err != nil {
+		return "", err
+	} else {
+		return string(out), nil
+	}
 }
 
 func (q *Qliksense) applyCR() error {

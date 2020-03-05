@@ -13,12 +13,15 @@ import (
 )
 
 func executeKustomizeBuild(directory string) ([]byte, error) {
+	return executeKustomizeBuildForFileSystem(directory, filesys.MakeFsOnDisk())
+}
+
+func executeKustomizeBuildForFileSystem(directory string, fSys filesys.FileSystem) ([]byte, error) {
 	log.SetOutput(&nullWriter{})
 	defer func() {
 		log.SetOutput(os.Stderr)
 	}()
 
-	fSys := filesys.MakeFsOnDisk()
 	options := &krusty.Options{
 		DoLegacyResourceSort: false,
 		LoadRestrictions:     types.LoadRestrictionsNone,
