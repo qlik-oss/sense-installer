@@ -33,6 +33,10 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
+	// create patch dependent resoruces
+	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+		return err
+	}
 	// check if acceptEULA is yes or not
 	if !qcr.IsEULA() {
 		return errors.New(agreementTempalte + "\nPlease do $ qliksense config set-configs qliksense.acceptEULA=yes\n")
