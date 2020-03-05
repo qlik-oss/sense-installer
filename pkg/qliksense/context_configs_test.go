@@ -49,38 +49,38 @@ spec:
 	}
 	contextYaml :=
 		`
-	apiVersion: qlik.com/v1
-	kind: Qliksense
-	metadata:
-	  name: qlik-default
-	spec:
-	  profile: docker-desktop
-	  rotateKeys: "yes"
-	  releaseName: qlik-default
-	`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+	name: qlik-default
+spec:
+	profile: docker-desktop
+	rotateKeys: "yes"
+	releaseName: qlik-default
+`
 	contextYaml2 :=
 		`
-	apiVersion: qlik.com/v1
-	kind: Qliksense
-	metadata:
-	  name: qlik1
-	spec:
-	  profile: docker-desktop
-	  rotateKeys: "yes"
-	  releaseName: qlik1
-	`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+	name: qlik1
+spec:
+	profile: docker-desktop
+	rotateKeys: "yes"
+	releaseName: qlik1
+`
 
 	contextYaml3 :=
 		`
-	apiVersion: qlik.com/v1
-	kind: Qliksense
-	metadata:
-	  name: qlik2
-	spec:
-	  profile: docker-desktop
-	  rotateKeys: "yes"
-	  releaseName: qlik2
-	`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+	name: qlik2
+spec:
+	profile: docker-desktop
+	rotateKeys: "yes"
+	releaseName: qlik2
+`
 	contextfile := "./tests/contexts"
 	createYaml("qlik-default", contextYaml, contextfile)
 	createYaml("qlik1", contextYaml2, contextfile)
@@ -428,7 +428,7 @@ func TestDeleteContexts(t *testing.T) {
 				return
 			}
 			var arg []string
-			arg[0] = tt.args.contextName
+			arg = append(arg, tt.args.contextName)
 			if err := q.DeleteContextConfig(arg); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
