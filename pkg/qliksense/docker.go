@@ -48,7 +48,12 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 		return err
 	}
 
-	for _, image := range versionOut.Images {
+	images := versionOut.Images
+	if err := q.appendOperatorImages(&images); err != nil {
+		return err
+	}
+
+	for _, image := range images {
 		if err := pullImage(image, imagesDir); err != nil {
 			fmt.Printf("%v\n", err)
 			return err
@@ -62,6 +67,15 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 		}
 	}
 	return nil
+}
+
+func (q *Qliksense) appendOperatorImages(images *[]string) error {
+	if operatorImages, err := getImageList([]byte(q.GetOperatorControllerString())); err != nil {
+		return err
+	} else {
+		*images = append(*images, operatorImages...)
+		return nil
+	}
 }
 
 func pullImage(image, imagesDir string) error {
@@ -134,7 +148,12 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 		return err
 	}
 
-	for _, image := range versionOut.Images {
+	images := versionOut.Images
+	if err := q.appendOperatorImages(&images); err != nil {
+		return err
+	}
+
+	for _, image := range images {
 		if err = pushImage(image, imagesDir, dockerConfigJsonSecret); err != nil {
 			fmt.Printf("%v\n", err)
 			return err

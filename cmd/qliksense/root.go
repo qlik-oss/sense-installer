@@ -24,8 +24,10 @@ import (
 // qliksense <command>
 
 const (
-	qlikSenseHomeVar = "QLIKSENSE_HOME"
-	qlikSenseDirVar  = ".qliksense"
+	qlikSenseHomeVar        = "QLIKSENSE_HOME"
+	qlikSenseDirVar         = ".qliksense"
+	keepPatchFilesFlagName  = "keep-config-repo-patches"
+	keepPatchFilesFlagUsage = "Keep config repo patch files (for debugging)"
 )
 
 func initAndExecute() error {
@@ -156,6 +158,9 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add set-image-registry command as a sub-command to the app config sub-command
 	configCmd.AddCommand(setImageRegistryCmd(p))
 
+
+	// add clean-config-repo-patches command as a sub-command to the app config sub-command
+	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
 
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
