@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -54,13 +53,18 @@ func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 }
 
 func getQliksenseInitCrd(qcr *qapi.QliksenseCR) (string, error) {
+	var repoPath string
+	var err error
 
-	if qcr.Spec.GetManifestsRoot() == "" {
-		return "", errors.New("Cannot find manifests root. Please use `qliksense fetch <version>`")
+	if qcr.Spec.GetManifestsRoot() != "" {
+		repoPath = qcr.Spec.GetManifestsRoot()
+	} else {
+		if repoPath, err = downloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master"); err != nil {
+			return "", err
+		}
 	}
 
-	qInitMsPath := filepath.Join(qcr.Spec.GetManifestsRoot(), Q_INIT_CRD_PATH)
-
+	qInitMsPath := filepath.Join(repoPath, Q_INIT_CRD_PATH)
 	qInitByte, err := executeKustomizeBuild(qInitMsPath)
 	if err != nil {
 		fmt.Println("cannot generate crds for qliksense-init", err)

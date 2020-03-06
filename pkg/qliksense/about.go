@@ -58,12 +58,12 @@ func (nw *nullWriter) Write(p []byte) (n int, err error) {
 }
 
 const (
-	defaultProfile = "docker-desktop"
-	defaultGitUrl  = "https://github.com/qlik-oss/qliksense-k8s"
+	defaultProfile          = "docker-desktop"
+	defaultConfigRepoGitUrl = "https://github.com/qlik-oss/qliksense-k8s"
 )
 
 func (q *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
-	configDirectory, isTemporary, profile, err := q.getConfigDirectory(defaultGitUrl, gitRef, profile)
+	configDirectory, isTemporary, profile, err := q.getConfigDirectory(defaultConfigRepoGitUrl, gitRef, profile)
 	if err != nil {
 		return nil, err
 	} else if isTemporary {
