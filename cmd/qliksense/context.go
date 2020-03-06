@@ -108,6 +108,22 @@ qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=false
 	return cmd
 }
 
+func deleteContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
+	var (
+		cmd *cobra.Command
+	)
+
+	cmd = &cobra.Command{
+		Use:     "delete-context",
+		Short:   "deletes a specific context locally (not in-cluster)",
+		Example: `qliksense config delete-contexts <context_name>`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.DeleteContextConfig(args)
+		},
+	}
+	return cmd
+}
+
 func setImageRegistryCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd          *cobra.Command
@@ -158,3 +174,4 @@ qliksense config set-image-registry https://your.private.registry.example.com:50
 	f.StringVar(&password, "password", "", "Password used for both pushing and pulling images")
 	return cmd
 }
+
