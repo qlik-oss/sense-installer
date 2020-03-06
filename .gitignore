@@ -5,3 +5,4 @@ pkg/qliksense/crds
 pkg/qliksense/packrd
 pkg/qliksense/qliksense-packr.go
 pkg/qliksense/docker-registry
+/pkg/qliksense/tests

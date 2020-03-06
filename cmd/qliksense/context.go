@@ -2,6 +2,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
+
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
@@ -175,3 +178,18 @@ qliksense config set-image-registry https://your.private.registry.example.com:50
 	return cmd
 }
 
+func cleanConfigRepoPatchesCmd(q *qliksense.Qliksense) *cobra.Command {
+	return &cobra.Command{
+		Use:     "clean-config-repo-patches",
+		Short:   "Clean config repo patch files",
+		Example: "qliksense config clean-config-repo-patches",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qConfig := qapi.NewQConfig(q.QliksenseHome)
+			if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
+				return fmt.Errorf("error removing temporary changes to the config: %v\n", err)
+			}
+			fmt.Println("done")
+			return nil
+		},
+	}
+}
