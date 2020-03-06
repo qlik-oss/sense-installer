@@ -287,8 +287,14 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 		default:
 			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
 			qliksenseContextFile := filepath.Join(qliksenseContextsDir1, args[0])
+			qliksenseSecretsDir1 := filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir)
+			qliksenseSecretsFile := filepath.Join(qliksenseSecretsDir1, args[0])
 			if err := os.RemoveAll(qliksenseContextFile); err != nil {
 				err = fmt.Errorf("Not able to delete %s dir: %v", qliksenseContextsDir1, err)
+				log.Println(err)
+				return err
+			} else if err := os.RemoveAll(qliksenseSecretsFile); err != nil {
+				err = fmt.Errorf("No Secrets Folder Detected")
 				log.Println(err)
 				return err
 			} else {
