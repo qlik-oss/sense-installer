@@ -6,7 +6,7 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) UpgradeQK8s() error {
+func (q *Qliksense) UpgradeQK8s(keepPatchFiles bool) error {
 
 	// step1: get CR
 	// step2: run kustomize
@@ -14,6 +14,13 @@ func (q *Qliksense) UpgradeQK8s() error {
 
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if !keepPatchFiles {
+		defer func() {
+			if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
+				fmt.Printf("error removing temporary changes to the config: %v\n", err)
+			}
+		}()
+	}
 
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {

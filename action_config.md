@@ -12,6 +12,8 @@ it will support following commands:
 - `qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=false` - set secrets configurations into the qliksense context as key-value pairs and show encrypted value as part of CR
 - `qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=true` - set secrets configurations into the qliksense context as key-value pairs and show a key reference to the created Kubernetes secret resource as part of the CR
 - `qliksense config view` - view the qliksense operator CR
+- `qliksense config delete-context` - deletes a specific context locally (not in-cluster). Deletes context in spec of `config.yaml` and locally deletes entire folder of specified context (does not delete in-cluster secrets)
+
 
 the global file that abstracts all the contexts is `config.yaml`, located at:  `~/.qliksense/config.yaml`:
 ```yaml

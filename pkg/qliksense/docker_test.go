@@ -141,8 +141,8 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 				t.Fatalf("unexpected error reading version file: %v", err)
 			} else if err = yaml.Unmarshal(versionOutBytes, &versionOut); err != nil {
 				t.Fatalf("unexpected error unmarshalling version file: %v", err)
-			} else if len(versionOut.Images) != 2 || versionOut.Images[0] != "alpine:latest" || !strings.Contains(versionOut.Images[1], "qlik/qliksense-operator:") {
-				t.Fatal(`did not find "alpine:latest"" or "qlik/qliksense-operator:" in the version file`)
+			} else if len(versionOut.Images) != 1 || versionOut.Images[0] != "alpine:latest" {
+				t.Fatal(`did not find "alpine:latest"" in the version file`)
 			} else if infos, err := ioutil.ReadDir(path.Join(tmpQlikSenseHome, "images", "index", "alpine", "latest")); err != nil || len(infos) == 0 {
 				t.Fatal("expected images/index/alpine/latest directory to be non-empty")
 			} else if blobInfos, err := ioutil.ReadDir(path.Join(tmpQlikSenseHome, "images", "blobs", "sha256")); err != nil || len(blobInfos) == 0 {
