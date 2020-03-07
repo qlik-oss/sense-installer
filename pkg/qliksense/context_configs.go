@@ -370,6 +370,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 	if !configFileTrack {
 		api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 	}
+	// set the encrypted default mongo
+	q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
 
 	return nil
 }
