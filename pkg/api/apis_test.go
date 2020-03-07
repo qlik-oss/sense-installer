@@ -47,7 +47,6 @@ metadata:
 spec:
   profile: docker-desktop
   manifestsRoot: /Users/mqb/.qliksense/contexts/contx1/qlik-k8s/v0.0.1/manifests
-  namespace: myqliksense
   storageClassName: efs
   configs:
     qliksense:
@@ -57,7 +56,8 @@ spec:
     qliksense:
     - name: mongoDbUri
       # this is rsa encrypted value, the pub and pri keys are in setuPublicAndPrivateKey() method
-      value: dnlpOC9xRnQ3NlFYWk9FZnVDWW1BbSsvR3AyaTFRZDF5bW05bmNyRFM4QzlRT3BoRVEwMmpRNlVHUmkvdzFyVG9oQmlQS1k3NDlMWDlyc3BuUDhzNHBCL0YyRDNrdlZaVDdSazVabW56Z0QrRk96N1djVExSVDQ0aHllMjB4ajFiTzF6bW1sdGdhN2dTK01hSWEveW9ZUnlDclhHZ0xxS0lycWtEMUt5WE9MS20wK0VZa3NlMllqZzVQS3ZzOWhWN1ZoditsbUU3eUoxMHlSUTdUMWlLUWhtNDhBWW5iMmR0UWwyTTNTdGs1cURHWlZLZ1U4cHJTT01pOXRwTmxmUTRSZ0tlWnVmWGEyY094MDNWcllNYW9xemM4YjNwRXVmWGttSktFMld3akFKSjhuUUJjeWc3UkZIbElmOEJXRGFwR2haVTJRaUJLaTBweWxFYklrZXlsQ05wd1I1M3ZnSncrRzFkSnd3T0RUbm5YSk1ZSXphMVFOcllWclFxemxEUGVhTERmN3VWNis3SG9BTDlSK09aR1dlRHh2MjRGV1Z0Z3pjTS9YUVJxQ3kzeSt3cjVFdmtOMkV3RXhQakNvc2V4QzZkbC9nUWVja0F1VFVXUnhEeVJ3SG90dlY5cC9TM0VNUXJJcHNwLzhxQVNVNWN3aC83dHRGRzZpRTlzZVUyVHNTdFJqSkt3a3UrK1dZN3Jjb3Bsa0tvaWc0aXNJOHFQMFUraDNFWlo2eWE5Ym8rWlpCYldjMmI0R0JRSnVsQ2ZYSTZvd3ZtR0phbnpOM2hQWlhqRUF1dDZGaEN0Lzd5WlFTaDgrTGJvZUVXTnBlWTlKTUJMbUE0a0ZsQzdObGwxOGdSd1BlNGg0Qi94aDdJWTBXUFQ2OG9QZU8rNmlLOWp5YmRTZ3M0RTQ9
+      # actual value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
+      value: n/pDi7Z/A3i16cAHFFwMp19/egNKc8WZxm6MKHLT/B1DMv3U6pDXWyXT5fYYDV1wDTO3Vk43yECST1UgZYmMpgUOwgSfGgqTVi2VqS0JQsnwI+Twwhnvha8RJANX8b/XIoSFVWaOgy7+RP35ZkvOqHdCfC2aT8JMIHgBQqqCbsNgimCuRSxi0klR000ic/Tp5PYSz5mD+WLrkPw2FbS0OVBsQ/hIp5GZrmVpvEOZdbT63Sz+n/G4Br6GTv2LkZcU7JBuKQm2wfB+mRjJmJnNrPawLfn2UZ89Rz0BLwIy+6b24/RoIUgoNowfGkJreGiwItGK8fjCcx11oavK/yAo6pYZXCcru46pmHbxxle1OlkdTKkG6EVtJuKjSZXtVmBHZYRFzsR7HnAiXnL7QzSEcS7ieZlQvTmNLfpidJhK199oSbyKREqXGl2S8DzPKM9RLccVbQTy6X8qWimP3MYCnO4K0KoQnNQAgfuV8ZxnvdDecByLDPIpmFMGy0Xm9pUZWxmSoDBq+p5WBI2HdCX2gCYVv5yxS2iBqO5SMKo8iOglHtPI9NIMvloERdN1vZtxSRkY5uDEfrU9ysYwfayEXxvXmdWv0HxlotcgUinP02j7k+OfIapTmY/jGfvF4euyCGRKuJ9JlSD9pIiRdAcekjL6hCxXLJLdajCV4sL/YDo=
 `
 	ctx1Dir := filepath.Join(homeDir, "contexts", "contx1")
 	crFile := filepath.Join(ctx1Dir, "contx1.yaml")
@@ -113,89 +113,95 @@ func TestGetDecryptedCr(t *testing.T) {
 	}
 
 	setuPublicAndPrivateKey(dir)
-	b, _ := K8sToYaml(qcr)
-	t.Log(string(b))
-	_, err = qct.GetDecryptedCr(qcr)
+	newCr, err := qct.GetDecryptedCr(qcr)
 	if err != nil {
 		t.Fail()
 		t.Log(err)
 	}
-	// b, _ = K8sToYaml(ncr)
-	// t.Log(string(b))
+
+	decryptedValue := newCr.Spec.GetFromSecrets("qliksense", "mongoDbUri")
+	orignalValue := qcr.Spec.GetFromSecrets("qliksense", "mongoDbUri")
+
+	if decryptedValue != "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false" {
+		t.Fail()
+		b, _ := K8sToYaml(newCr)
+		t.Log(b)
+	}
+
+	if decryptedValue == orignalValue {
+		t.Fail()
+	}
 	td()
 }
 func setuPublicAndPrivateKey(homeDir string) ([]byte, []byte, error) {
-	privKeyBytes := []byte(`
------BEGIN RSA PRIVATE KEY-----
-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
+	privKeyBytes := []byte(`-----BEGIN RSA PRIVATE KEY-----
+MIIJJwIBAAKCAgEAwUCimKCidbF3UxEHPy8K+hvhklRB9JYhj5sJy0if4lTVibkK
+1MrYCykOnmC40pPU9GLY1b8HxAg9tvyRn0YHUxOra6vVQaVcOVJhTM8D18d+lSr3
+Lp1yiX+UGT4nzWI9+R1CCbwXrqeQVoZs6QZKynEXMkFI9/wNMOwPOvQFOSTuoEoC
+O+zyTyUWEkNbUq825ELUQdIsjgmlWUOONudxsAr7ESRXW9QTHVh6uWmr3VRKZHby
+1JdU3I/wjdlGg5M2dDuXy5nQO9w/nYLjJXiw+zzOetZ/+t7/VOkOpNTeJQhwTM1W
+F7Y2VLetbi9FHgyzHatrduh07+XEiTbgDf3GIx2bp2p6oh0G3N2zpiLcK/aZj8ro
+uWWydfFfsU3MZ4FfJDP8I6b9awxjmKYqIr6hiPQCJaLBED8mwK+I5evIbnKv6E6u
+K+BApWA/R7ElragoFYbqQ1VpvntVMtJt9Dy5ZrI+IQARdXD3bb34oh0IPBhClnvv
+MUc1cWxDoXEX6oJ4I+LzxE87Zkwnan9qOwengolMVKFwPx1o37qrbmrXID21kKt7
+FL6xN4HxHLkItr1fKzdyWDFRHgASTAWfx5BIwvPuUW0vZHkvO80VyV2L63whVhPn
+PASmFkbviomrBttYfpr2aGQqF/qR1Nlxe834MFxk1pS9LMa/WnzvFr0gWakCAwEA
+AQKCAgARSp9B2N2wejibDiL/3E23I1eDqFZedDB8kPrHXbAwqDaTJCN79spt9TaB
+pVXkQaYEV/Pe7EDdoX8kKGU/QxzUqiXkdHOYdBtUZbKfFMbbP9ZrsnR7j0r4UpoF
+yDH3hprU93E5PcNAtW2M0GpeT1nR01yn+n908PCdOAIE3GC7RDq1zOl2QzVLL55R
+9ATv2Q2oTvJ/ETc7XlGVMx4+e2cIwXLFjeLjLI6pSYlxnarrGuetJZeEviWxto9n
+odFVZI6yx8JFTXX8ZTCr/1IjwDDVyhMPmrHI2Lsv9cqBpSpbVe32cUkKxhsGaYjz
+GvesQKamOPhco2ATNxPm0yopFlPsGKMfVl0BK0J6BqFh1BvU/SYJmXfnFuUNO3vV
+4u2Saa0q1iddxV0rXDwIqUfn+S6rwzK0G7y8bH2yvpB2VwiG3TFPnULep4wsefNq
+Fj92kqFBjacGpQLEEslUY0CMgeZ2+NuBQSUTscP3wBRsottMR6YXJtINdvfHBx+e
+EcN71z8D00w3mYqIQ7qb4Ml6HOqknunn58g43L9sACMUMTlEBXa9pUnScNYgWBAz
+W2q2mH37cIydM2JRZPpA8B4yTHt5ugJmChwyNFM7941arjKrebH+6AzLkofGedOP
+zg+vZQuPEXWs+3MBBnkWoyJW3Y0fbQdjsuQTtnd+7iyoxoBroQKCAQEA4dIiFlIS
+MDfRhQQWSiDvaw9aneDEJ3uo63ZRH5tm/IynLgtjYgEm/ZxlBCQgqRKLYELBxhu8
+SaF0uPK8pmpFJt0mIwSlsdeVhuE2obQeKUCczaqrKeaHS3PdWLjTlwph81BGRkHy
+qfqtNylyyMxrdEbnR51EtsWgFq6anTUAui1Q09JMuMNZRMOzDs1F4gExgD22rc0V
+c9YQ+jHJRxBGtNKMpMEqc8cvaxBidbItrN9SMTSWog7uYPBuEuaJ6K9vpgyJMOzJ
+SYcQEFGqgIqIDCg+ABE4d/4YROMKZ1DV/bJCind9brUHSx6XALsF0nC5c1Q9TnUL
+qI2khOwts4KYKwKCAQEA2xRC6Az97Vkdzu7BjLJ1FKmx4S2nEEgVS12ds82U+5Xf
+BHKAJnjqlqmmpzzJG+d77IYktz0+mey1QCNkqlm2fhuKs8LZMnpZRf0l8VcoBsUP
+/xKz7wfiE7RRFZtLJhPp4hhe43GzX5/JFMWMnC6UykwQbj4t1E/GNM/Suqwvg12M
+wktAJ6nqLgfhjQSO4xWo+nPzcbX+fNtrPCZVrBhYXihhcwRRNImWUCGJ6J4LMdPY
+Y9Z59qhOvE9cReH/Xw1av46omyiSyAqlgPyZ/kzA2IJSqYCjiQR/2+RD/g13jpcJ
+jatXLVZ8MJSL5OTS40G/HHTNNpNHbKKh0GOyxBA3ewKCAQBAn8UXhCcmW2L/YPsL
+/b7mcX9qPP+FmRLvR23R0MQ5M/tH5wRq8I969n3GIJykJeVzB8eybQ+GNslTgEvS
+iAkAJTubu+G7MkndTqg2wHf9MDtvdA8Fr646Po8yq7oJuHPtkKR7yLWsRUu6xIbP
+xgheP0hCq1QVxhqZQyCGKrvpi7xc0gsYuPbcAfFFJCOCmPrUi1SzCkTAYJt9LjA+
+wP6rErIjGBCRD4iXaBn1OqdtmH9KC5WsDP/VCBlIGWeQCly2NVIxiSHVg+xp7yUP
+IhXq/L05gbQaSsIhPKQmivCiaJg4The8TdwneDqYf+0bmxzHT203/bD3bImPbJNr
+ksz/AoIBAEwu4Y1cZzkQUmNRd5D7xecnk6ngfEYXKwCIT3zlMrfCSEl9n77BMaKu
+4Dsr0iuX9eosQ7xM2eYhAG6LYEg05lc4MKWOToVVMpI6E+W3Dz47bPKgiF3I+f8s
+Jz5CQIG/TwfGvciOE3hfUkec4ua09BzdEqGjkcBQ9XYMBxXPJr6h2379OBQS7FKR
+fwfQ2/dv4tElXTTfut2kV8gU9Jnh5Wjo1epvR+XjKpg28YQo4W+0YX1magcyRB8L
+4eSTUIC3XiVa8Jr0IwbZXPBb5xkdi7o+p4w2JahSHjxTRqmj+T1mnHXdbXVgq9Mg
+9Pzl7cgFZvX4UBx4XtASRf73jITNtt0CggEADH9K+O7FrIOSQly0sMvsRCMtejp3
+o+MDh1Q+vEg2kEgNXjS4ZFVljUpM2kg1OdUz7feS4dLXUJiIQ8ZWtZPedcq7wjHd
+02he5+s06l0jPifN3tX1ADfXGpXg5R2fbkrIzakkPP5/RO/aDxIUo7qhklNsVTXO
+VlGGfWLdk0ekA4upKm02Q1+YOlbIcAicEYYY8K7IffUwnohzKwL9yfuGi1VKTXpE
+4fzdegsHI03FSqR7V+LvtBpIupQ7RO4kuBmCEyI4E9FVknchg4te4gO3qwd9y0rJ
+Gu7HNIOrwOHzviI7J6Nd/l9MmeKqklHSgJvko/f5TmiXuQQ8xDZf84rcjQ==
 -----END RSA PRIVATE KEY-----
 `)
 
-	publicKeyBytes := []byte(`
------BEGIN RSA PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwCj1Wb2q9quzvePpcq+V
-nVUUhULWFWsI8lE+Pf5NZD/H+jLzvv6EG2PTidYXj8GninyRBx3eS+0tSn01THgU
-wqwdpJ5szdL9HGuZZZlSgaYw1KBJXzF5TUi5KfKrQesYUgPorjt/38Ub5IEHX4h3
-b2IwXX8QIOQyIDWZMCyYUm4rVARVBePrMPi2CfyrV5Picgphc9QrajNDNjPEl/AQ
-Z/eH9BYImzjvdjg283irqlU1b5emTIu1G3NFwQRgIhVOATVamZaQOHKaInnM6RdO
-2T6RXC54Jsv+5djDHBrG5XsL8bZS5qcdTs7PjDHizDJGzMjd66p60kdwh4ERX7v6
-uaDz0o+HfIV4/PgS+PIAVCfT8b+X5XFaATCpOnvCBT/BVKWlV7HGL4d2BDG2KrDS
-yZj7Bi+EFZnRql8c1lkDik9/a6FMGvSUCVmnPXsryY5AJtyzmSi4g40v46wr0Fcr
-3JsY/sDbQ6OjJdh52jwX1F4i21RIj7M2hu4H+30PEMauI9M+5twQ+DSmjv13zu+Z
-Vw/I+6S1yV8Ls4atOWNrfJcuTFy/zEswWpMuiVti5em/r1qeiEWYA3nmPu7d2IFP
-4nBK3UojALvFU74OhCcTuETXPmw0NypaQE8V7Q78kHmbh+c9i8EoR3yx6lASJ17z
-fXuR9dSdHCGH0HDT5oFsmZECAwEAAQ==
+	publicKeyBytes := []byte(`-----BEGIN RSA PUBLIC KEY-----
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAwUCimKCidbF3UxEHPy8K
++hvhklRB9JYhj5sJy0if4lTVibkK1MrYCykOnmC40pPU9GLY1b8HxAg9tvyRn0YH
+UxOra6vVQaVcOVJhTM8D18d+lSr3Lp1yiX+UGT4nzWI9+R1CCbwXrqeQVoZs6QZK
+ynEXMkFI9/wNMOwPOvQFOSTuoEoCO+zyTyUWEkNbUq825ELUQdIsjgmlWUOONudx
+sAr7ESRXW9QTHVh6uWmr3VRKZHby1JdU3I/wjdlGg5M2dDuXy5nQO9w/nYLjJXiw
++zzOetZ/+t7/VOkOpNTeJQhwTM1WF7Y2VLetbi9FHgyzHatrduh07+XEiTbgDf3G
+Ix2bp2p6oh0G3N2zpiLcK/aZj8rouWWydfFfsU3MZ4FfJDP8I6b9awxjmKYqIr6h
+iPQCJaLBED8mwK+I5evIbnKv6E6uK+BApWA/R7ElragoFYbqQ1VpvntVMtJt9Dy5
+ZrI+IQARdXD3bb34oh0IPBhClnvvMUc1cWxDoXEX6oJ4I+LzxE87Zkwnan9qOwen
+golMVKFwPx1o37qrbmrXID21kKt7FL6xN4HxHLkItr1fKzdyWDFRHgASTAWfx5BI
+wvPuUW0vZHkvO80VyV2L63whVhPnPASmFkbviomrBttYfpr2aGQqF/qR1Nlxe834
+MFxk1pS9LMa/WnzvFr0gWakCAwEAAQ==
 -----END RSA PUBLIC KEY-----
 `)
-
 	secretKeyPairDir := filepath.Join(homeDir, "secrets", "contexts", "contx1", "secrets")
 	if err := os.MkdirAll(secretKeyPairDir, 0777); err != nil {
 		err = fmt.Errorf("Not able to create directories")

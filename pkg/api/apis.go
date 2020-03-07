@@ -327,6 +327,7 @@ func (cr *QliksenseCR) IsEULA() bool {
 	return false
 }
 
+// GetDecryptedCr it decrypts all the encrypted value and return a new CR
 func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error) {
 	newCr := &QliksenseCR{}
 	copier.Copy(newCr, cr)
