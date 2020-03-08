@@ -121,15 +121,13 @@ func TestGetDecryptedCr(t *testing.T) {
 
 	decryptedValue := newCr.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	orignalValue := qcr.Spec.GetFromSecrets("qliksense", "mongoDbUri")
-
 	if decryptedValue != "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false" {
 		t.Fail()
 		b, _ := K8sToYaml(newCr)
 		t.Log(b)
 	}
-
 	if decryptedValue == orignalValue {
-		//t.Fail()
+		t.Fail()
 	}
 	td()
 }
