@@ -1,4 +1,4 @@
-# Qlik Sense installation and operations CLI
+# Qlik Sense installation and operations CLIdsdsds
 
 - [Qlik Sense installation and operations CLI](#qlik-sense-installation-and-operations-cli)
   - [About](#about)
