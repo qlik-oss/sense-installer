@@ -328,6 +328,9 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 						fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
 					} else {
 						fmt.Fprintln(out, chalk.Red.Color("Error: Context not found"))
+						err := fmt.Errorf("")
+						log.Println(err)
+						return err
 					}
 				}
 			}
