@@ -18,7 +18,7 @@ type InstallCommandOptions struct {
 	RotateKeys   string
 }
 
-func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) error {
+func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, keepPatchFiles bool) error {
 
 	// step1: fetch 1.0.0 # pull down qliksense-k8s@1.0.0
 	// step2: operator view | kubectl apply -f # operator manifest (CRD)
@@ -27,6 +27,13 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if !keepPatchFiles {
+		defer func() {
+			if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
+				fmt.Printf("error removing temporary changes to the config: %v\n", err)
+			}
+		}()
+	}
 
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
@@ -50,27 +57,15 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	//if the docker pull secret exists on disk, install it in the cluster
 	//if it doesn't exist on disk, remove it in the cluster
-	if pullDockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
-		if dockerConfigJsonSecretYaml, err := pullDockerConfigJsonSecret.ToYaml(nil); err != nil {
-			return err
-		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
-			return err
-		}
-	} else {
-		deleteDockerConfigJsonSecret := qapi.DockerConfigJsonSecret{
-			Name: pullSecretName,
-		}
-		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(nil); err != nil {
-			return err
-		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), ""); err != nil {
-			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)
-		}
+	if err := installOrRemoveImagePullSecret(qConfig); err != nil {
+		return err
 	}
 
 	// check if acceptEULA is yes or not
 	if !qcr.IsEULA() {
 		return errors.New(agreementTempalte + "\n Please do $ qliksense install --acceptEULA=yes\n")
 	}
+
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")
@@ -95,7 +90,12 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
-		return q.applyCR()
+		// get decrypted cr
+		if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+			return err
+		} else {
+			return q.applyCR(dcr)
+		}
 	}
 	if version != "" { // no need to fetch manifest root already set by some other way
 		if err := fetchAndUpdateCR(qConfig, version); err != nil {
@@ -113,34 +113,57 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 
 	// install generated manifests into cluster
 	fmt.Println("Installing generated manifests into cluster")
-	if err := q.applyConfigToK8s(qcr); err != nil {
+
+	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+		return err
+	} else if err := q.applyConfigToK8s(dcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
+	} else {
+		return q.applyCR(dcr)
 	}
+}
 
-	return q.applyCR()
+func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
+	if pullDockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
+		if dockerConfigJsonSecretYaml, err := pullDockerConfigJsonSecret.ToYaml(nil); err != nil {
+			return err
+		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
+			return err
+		}
+	} else {
+		deleteDockerConfigJsonSecret := qapi.DockerConfigJsonSecret{
+			Name: pullSecretName,
+		}
+		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(nil); err != nil {
+			return err
+		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), ""); err != nil {
+			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)
+		}
+	}
+	return nil
 }
 
 func kustomizeForImageRegistry(resources, dockerConfigJsonSecretName, name, newName string) (string, error) {
 	fSys := filesys.MakeFsInMemory()
 	if err := fSys.WriteFile("/resources.yaml", []byte(resources)); err != nil {
 		return "", err
-	} else if err := fSys.WriteFile("/add-image-pull-secret.json", []byte(fmt.Sprintf(`
-[
-  {"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "%v"}]}
-]
+	} else if err := fSys.WriteFile("/addImagePullSecrets.yaml", []byte(fmt.Sprintf(`
+apiVersion: builtin
+kind: PatchTransformer
+metadata:
+  name: notImportantHere
+patch: '[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": [{"name": "%v"}]}]'
+target:
+  name: .*-operator
+  kind: Deployment
 `, dockerConfigJsonSecretName))); err != nil {
 		return "", err
 	} else if err := fSys.WriteFile("/kustomization.yaml", []byte(fmt.Sprintf(`
 resources:
 - resources.yaml
-patchesJson6902:
-- path: add-image-pull-secret.json
-  target:
-    group: apps
-    version: v1
-    kind: Deployment
-    name: qliksense-operator  
+transformers:
+- addImagePullSecrets.yaml
 images:
 - name: %s
   newName: %s
@@ -153,11 +176,11 @@ images:
 	}
 }
 
-func (q *Qliksense) applyCR() error {
+func (q *Qliksense) applyCR(cr *qapi.QliksenseCR) error {
 	// install operator cr into cluster
 	//get the current context cr
 	fmt.Println("Install operator CR into cluster")
-	r, err := q.getCurrentCRString()
+	r, err := cr.GetString()
 	if err != nil {
 		return err
 	}

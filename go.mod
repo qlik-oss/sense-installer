@@ -39,7 +39,7 @@ require (
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/qlik-oss/k-apis v0.0.15
+	github.com/qlik-oss/k-apis v0.0.17
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
@@ -48,7 +48,7 @@ require (
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
-	golang.org/x/tools v0.0.0-20200304193943-95d2e580d8eb // indirect
+	golang.org/x/tools v0.0.0-20200306191617-51e69f71924f // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8

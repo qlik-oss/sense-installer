@@ -58,46 +58,33 @@ func (nw *nullWriter) Write(p []byte) (n int, err error) {
 }
 
 const (
-	defaultProfile = "docker-desktop"
-	defaultGitUrl  = "https://github.com/qlik-oss/qliksense-k8s"
+	defaultProfile          = "docker-desktop"
+	defaultConfigRepoGitUrl = "https://github.com/qlik-oss/qliksense-k8s"
 )
 
 func (q *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
-	configDirectory, isTemporary, profile, err := q.getConfigDirectory(defaultGitUrl, gitRef, profile)
+	configDirectory, isTemporary, profile, err := q.getConfigDirectory(defaultConfigRepoGitUrl, gitRef, profile)
 	if err != nil {
 		return nil, err
-	}
-	if isTemporary {
+	} else if isTemporary {
 		defer os.RemoveAll(configDirectory)
 	}
-
 	return q.AboutDir(configDirectory, profile)
 }
 
 func (q *Qliksense) AboutDir(configDirectory, profile string) (*VersionOutput, error) {
-	chartVersion, err := getChartVersion(filepath.Join(configDirectory, "transformers", "qseokversion.yaml"), "qliksense")
-	if err != nil {
+	if chartVersion, err := getChartVersion(filepath.Join(configDirectory, "transformers", "qseokversion.yaml"), "qliksense"); err != nil {
 		return nil, err
-	}
-
-	kuzManifest, err := executeKustomizeBuildWithStdoutProgress(filepath.Join(configDirectory, "manifests", profile))
-	if err != nil {
+	} else if kuzManifest, err := executeKustomizeBuildWithStdoutProgress(filepath.Join(configDirectory, "manifests", profile)); err != nil {
 		return nil, err
-	}
-
-	images, err := getImageList(kuzManifest)
-	if err != nil {
-		return nil, err
-	} else if operatorImages, err := getImageList([]byte(q.GetOperatorControllerString())); err != nil {
+	} else if images, err := getImageList(kuzManifest); err != nil {
 		return nil, err
 	} else {
-		images = append(images, operatorImages...)
+		return &VersionOutput{
+			QliksenseVersion: chartVersion,
+			Images:           images,
+		}, nil
 	}
-
-	return &VersionOutput{
-		QliksenseVersion: chartVersion,
-		Images:           images,
-	}, nil
 }
 
 func (q *Qliksense) getConfigDirectory(gitUrl, gitRef, profileEntered string) (dir string, isTemporary bool, profile string, err error) {
