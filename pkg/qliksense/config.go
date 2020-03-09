@@ -46,9 +46,17 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 
 	if qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
-		return q.applyCR()
+		if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+			return err
+		} else {
+			return q.applyCR(dcr)
+		}
 	}
-	return q.applyConfigToK8s(qcr)
+	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+		return err
+	} else {
+		return q.applyConfigToK8s(dcr)
+	}
 }
 
 func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {

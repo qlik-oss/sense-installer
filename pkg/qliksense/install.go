@@ -90,7 +90,12 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 
 	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
 		// fetching and applying manifest will be in the operator controller
-		return q.applyCR()
+		// get decrypted cr
+		if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+			return err
+		} else {
+			return q.applyCR(dcr)
+		}
 	}
 	if version != "" { // no need to fetch manifest root already set by some other way
 		if err := fetchAndUpdateCR(qConfig, version); err != nil {
@@ -108,12 +113,15 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 
 	// install generated manifests into cluster
 	fmt.Println("Installing generated manifests into cluster")
-	if err := q.applyConfigToK8s(qcr); err != nil {
+
+	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+		return err
+	} else if err := q.applyConfigToK8s(dcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
+	} else {
+		return q.applyCR(dcr)
 	}
-
-	return q.applyCR()
 }
 
 func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
@@ -168,11 +176,11 @@ images:
 	}
 }
 
-func (q *Qliksense) applyCR() error {
+func (q *Qliksense) applyCR(cr *qapi.QliksenseCR) error {
 	// install operator cr into cluster
 	//get the current context cr
 	fmt.Println("Install operator CR into cluster")
-	r, err := q.getCurrentCRString()
+	r, err := cr.GetString()
 	if err != nil {
 		return err
 	}
