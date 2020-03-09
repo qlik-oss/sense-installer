@@ -8,6 +8,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/qlik-oss/k-apis/pkg/config"
+
+	b64 "encoding/base64"
 
 	"github.com/jinzhu/copier"
 )
@@ -322,4 +327,37 @@ func (cr *QliksenseCR) IsEULA() bool {
 		}
 	}
 	return false
+}
+
+// GetDecryptedCr it decrypts all the encrypted value and return a new CR
+func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error) {
+	newCr := &QliksenseCR{}
+	copier.Copy(newCr, cr)
+	_, rsaPrivateKey, err := qc.GetCurrentContextEncryptionKeyPair()
+	if err != nil {
+		return nil, err
+	}
+	finalSecrets := map[string]config.NameValues{}
+	for k, nvs := range newCr.Spec.Secrets {
+		newNvs := config.NameValues{}
+		for _, nv := range nvs {
+			if nv.Value != "" {
+				b, err := b64.StdEncoding.DecodeString(strings.TrimSpace(nv.Value))
+				if err != nil {
+					return nil, err
+				}
+				db, err := Decrypt(b, rsaPrivateKey)
+				if err != nil {
+					return nil, err
+				}
+				newNvs = append(newNvs, config.NameValue{
+					Name:  nv.Name,
+					Value: string(db),
+				})
+			}
+		}
+		finalSecrets[k] = newNvs
+	}
+	newCr.Spec.Secrets = finalSecrets
+	return newCr, nil
 }

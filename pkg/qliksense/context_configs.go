@@ -10,6 +10,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
+
 	b64 "encoding/base64"
 
 	ansi "github.com/mattn/go-colorable"
@@ -207,6 +209,9 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			qliksenseCR.Spec.Profile = argsString[1]
 			api.LogDebugMessage("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
 		case "git.repository":
+			if qliksenseCR.Spec.Git == nil {
+				qliksenseCR.Spec.Git = &config.Repo{}
+			}
 			qliksenseCR.Spec.Git.Repository = argsString[1]
 			api.LogDebugMessage("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
 		case "storageClassName":
@@ -422,6 +427,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 	if !configFileTrack {
 		api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 	}
+	// set the encrypted default mongo
+	q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
 
 	return nil
 }
