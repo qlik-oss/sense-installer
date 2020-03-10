@@ -288,12 +288,10 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 			fmt.Fprintln(out, chalk.Red.Color("Error: Cannot delete current context -"), chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext))
 			fmt.Fprintln(out, chalk.Yellow.Color("Please switch contexts to be able to delete this context."))
 			err := fmt.Errorf("")
-			log.Println(err)
 			return err
 		case DefaultQliksenseContext:
 			fmt.Fprintln(out, chalk.Red.Color("Error: Cannot delete default qliksense context"))
 			err := fmt.Errorf("")
-			log.Println(err)
 			return err
 		default:
 			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
