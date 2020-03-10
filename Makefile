@@ -50,6 +50,7 @@ ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	git clone https://github.com/docker/distribution.git $(TMP)/docker-distribution
 	cd $(TMP)/docker-distribution; git checkout -b v2.7.1; make
 	cp $(TMP)/docker-distribution/bin/registry pkg/qliksense/docker-registry
+	-rm -rf $(TMP)/docker-distribution
 endif
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
 	$(MAKE) clean
@@ -71,14 +72,12 @@ $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 generate: get-crds packr2
 	go generate ./...
 
-HAS_PACKR2 := $(shell packr2)
 packr2:
-ifndef HAS_PACKR2
-	go get -u github.com/gobuffalo/packr/v2/packr2
+ifeq ($(shell ${WHICH} packr2 2>${DEVNUL}),)
+	go get -u github.com/gobuffalo/packr/v2/packr2@v2.7.1
 endif
 
 clean: clean-packr
-	-rm -rf /tmp/operator
 	-rm -fr pkg/qliksense/crds
 
 clean-packr: packr2
@@ -93,3 +92,4 @@ get-crds:
 	cp $(TMP)/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
 	cp $(TMP)/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
 	cp $(TMP)/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
+	-rm -rf $(TMP)/operator
