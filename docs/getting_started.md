@@ -7,7 +7,14 @@
 
 ## Download
 
-- Download the appropriate executable for your platform from the [releases page](https://github.com/qlik-oss/sense-installer/releases) and rename it to `qliksense`. All the examplease down below uses `qliksense`.
+- Download the appropriate executable for your platform from the [releases page](https://github.com/qlik-oss/sense-installer/releases) and rename it to `qliksense`. All the examples below uses `qliksense`.
+
+### Linux
+
+```console
+curl -fsSL https://raw.githubusercontent.com/qlik-oss/sense-installer/ibiqlik/installscript/scripts/install.sh -o install-sense-cli.sh
+sh install-sense-cli.sh
+```
 
 ## Quick start
 

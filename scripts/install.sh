@@ -20,7 +20,7 @@ do_install() {
 	echo "\n==> Executing qliksense install script\n"
 
 	if ! command_exists kubectl; then
-		echo "\n==> ERROR: kubectl is required for qliksense-installer to work"
+		echo "\n==> ERROR: kubectl is required for $FILE_NAME to work"
 		echo "See https://github.com/qlik-oss/sense-installer#requirements for more information\n"
 		exit 1
 	fi
@@ -32,12 +32,15 @@ do_install() {
 
 	user="$(id -un 2>/dev/null || true)"
 
-	sh_c='sh -c'
-	if [ "$user" != 'root' ]; then
+	SUDO='sh -c'
+	if [ "$(id -u)" != "0" ]; then
+		root_msg="\tNext operation might ask for root password to place\n\t$FILE_NAME in $BIN_DIR and set executable permission\n"
 		if command_exists sudo; then
-			sh_c='sudo -E sh -c'
+			echo $root_msg
+			SUDO='sudo -E sh -c'
 		elif command_exists su; then
-			sh_c='su -c'
+			echo $root_msg
+			SUDO='su -c'
 		else
 			cat >&2 <<-'EOF'
 			Error: this installer needs the ability to run commands as root.
@@ -59,7 +62,7 @@ do_install() {
 		if ! grep -q "Status: 200" $releases; then
 			echo "==> ERROR: cannot get qliksense-installer"
 			echo "GitHub:" $(grep "message" $releases | cut -d '"' -f 4) "\n"
-			echo "Use: GITHUB_TOKEN=token install-sense.sh"
+			echo "Use: GITHUB_TOKEN=token install-sense-cli.sh"
 			exit 1
 		fi
 
@@ -67,15 +70,15 @@ do_install() {
 
 		echo "==> Installing to $BIN_DIR/$FILE_NAME\n"
 		if [ -n "$GITHUB_TOKEN" ]; then
-			$sh_c "curl -fSL -H \"Authorization: token $GITHUB_TOKEN\" $download_url -o $BIN_DIR/$FILE_NAME"
+			$SUDO "curl -fSL -H \"Authorization: token $GITHUB_TOKEN\" $download_url -o $BIN_DIR/$FILE_NAME"
 		else
-			$sh_c "curl -fSL $download_url -o $BIN_DIR/$FILE_NAME"
+			$SUDO "curl -fSL $download_url -o $BIN_DIR/$FILE_NAME"
 		fi
-		$sh_c "chmod +x $BIN_DIR/$FILE_NAME"
+		$SUDO "chmod +x $BIN_DIR/$FILE_NAME"
 	fi
 
 	if command_exists $FILE_NAME; then
-		echo "\n==> Success: You can now start using kubectl-qliksense\n"
+		echo "\n==> Success: You can now start using $FILE_NAME\n"
 	else
 		echo "\n==> ERROR: Something went wrong, try again"
 	fi
