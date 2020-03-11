@@ -150,7 +150,7 @@ func (q *Qliksense) SetConfigs(args []string) error {
 func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-
+	fmt.Println(q.QliksenseHome)
 	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -220,6 +220,13 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 		case "manifestsRoot":
 			qliksenseCR.Spec.ManifestsRoot = argsString[1]
 		case "rotateKeys":
+			rotateKeys, err := validateInput(argsString[1])
+			if err != nil {
+				return err
+			}
+			qliksenseCR.Spec.RotateKeys = rotateKeys
+			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
+		case "gitOps":
 			rotateKeys, err := validateInput(argsString[1])
 			if err != nil {
 				return err
