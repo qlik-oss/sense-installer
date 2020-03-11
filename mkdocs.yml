@@ -1,0 +1,18 @@
+site_name: Qlik Sense installer
+repo_url: 'https://github.com/qlik-oss/sense-installer'
+strict: true
+theme:
+  name: "material"
+  palette:
+    primary: 'green'
+    accent: 'indigo'
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+nav:
+  - Overview: index.md
+  - getting_started.md
+  - concepts.md
+  - air_gap.md
+  - Releases ⧉: https://github.com/qlik-oss/sense-installer/releases
