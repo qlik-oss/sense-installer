@@ -13,6 +13,7 @@ jobs:
       with:
         go-version: 1.13
     - uses: actions/checkout@v2
+    - run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set GOPATH
         # temporary fix
         # see https://github.com/actions/setup-go/issues/14
@@ -21,4 +22,5 @@ jobs:
         echo "##[add-path]$(dirname $GITHUB_WORKSPACE)/bin"
       shell: bash
     - run: make test
-    - run: make xbuild-all
+    - run: make build
+    # - run: make xbuild-all
