@@ -21,7 +21,6 @@ import (
 
 const (
 	testDir            = "./tests"
-	deleteTests	   = "./deleteTests"
 	qlikDefaultContext = "qlik-default"
 	secrets            = "secrets"
 	contexts           = "contexts"
@@ -795,7 +794,7 @@ func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.Ql
 }
 
 func setupDeleteContext() func() {
-	if err := os.Mkdir(deleteTests, 0777); err != nil {
+	if err := os.Mkdir(testDir, 0777); err != nil {
 		log.Printf("\nError occurred: %v", err)
 	}
 	config :=
@@ -814,7 +813,7 @@ spec:
     crFile: /root/.qliksense/contexts/qlik2.yaml
   currentContext: qlik1
 `
-	configFile := filepath.Join(deleteTests, "config.yaml")
+	configFile := filepath.Join(testDir, "config.yaml")
 	// tests/config.yaml exists
 	ioutil.WriteFile(configFile, []byte(config), 0777)
 	contextYaml :=
@@ -831,7 +830,7 @@ spec:
 	qlikDefaultContext := "qlik-default"
 	// create contexts/qlik-default/ under tests/
 	contexts := "contexts"
-	contextsDir1 := filepath.Join(deleteTests, contexts, qlikDefaultContext)
+	contextsDir1 := filepath.Join(testDir, contexts, qlikDefaultContext)
 	if err := os.MkdirAll(contextsDir1, 0777); err != nil {
 		err = fmt.Errorf("Not able to create directories")
 		log.Fatal(err)
@@ -858,13 +857,13 @@ spec:
   rotateKeys: "yes"
   releaseName: qlik2`
 
-	contextsDir := filepath.Join(deleteTests, contexts, "qlik1")
+	contextsDir := filepath.Join(testDir, contexts, "qlik1")
 	if err := os.MkdirAll(contextsDir, 0777); err != nil {
 		err = fmt.Errorf("Not able to create directories")
 		log.Fatal(err)
 	}
 
-	contextsDir2 := filepath.Join(deleteTests, contexts, "qlik2")
+	contextsDir2 := filepath.Join(testDir, contexts, "qlik2")
 	if err := os.MkdirAll(contextsDir2, 0777); err != nil {
 		err = fmt.Errorf("Not able to create directories")
 		log.Fatal(err)
@@ -880,7 +879,7 @@ spec:
 	ioutil.WriteFile(contextFile1, []byte(contextYaml), 0777)
 
 	tearDown := func() {
-		os.RemoveAll(deleteTests)
+		os.RemoveAll(testDir)
 	}
 	return tearDown
 }
@@ -898,7 +897,7 @@ func TestDeleteContexts(t *testing.T) {
 		{
 			name: "valid context",
 			args: args{
-				qlikSenseHome: deleteTests,
+				qlikSenseHome: testDir,
 				contextName:   "qlik2",
 			},
 			wantErr: false,
@@ -906,7 +905,7 @@ func TestDeleteContexts(t *testing.T) {
 		{
 			name: "default context",
 			args: args{
-				qlikSenseHome: deleteTests,
+				qlikSenseHome: testDir,
 				contextName:   "qlik-default",
 			},
 			wantErr: true,
@@ -914,7 +913,7 @@ func TestDeleteContexts(t *testing.T) {
 		{
 			name: "non-existent context",
 			args: args{
-				qlikSenseHome: deleteTests,
+				qlikSenseHome: testDir,
 				contextName:   "qlik3",
 			},
 			wantErr: true,
@@ -922,7 +921,7 @@ func TestDeleteContexts(t *testing.T) {
 		{
 			name: "current context",
 			args: args{
-				qlikSenseHome: deleteTests,
+				qlikSenseHome: testDir,
 				contextName:   "qlik1",
 			},
 			wantErr: true,
