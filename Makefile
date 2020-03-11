@@ -67,7 +67,7 @@ xbuild: $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EX
 $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 	mkdir -p $(dir $@)
 	GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
-	upx.exe --lzma $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
+	upx --lzma $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 
 generate: get-crds packr2
 	go generate ./...
@@ -85,7 +85,7 @@ clean-packr: packr2
 
 get-crds:
 	$(eval TMP := $(shell mktemp -d))
-	git clone git@github.com:qlik-oss/qliksense-operator.git -b ms-3 $(TMP)/operator
+	git clone https://github.com/qlik-oss/qliksense-operator.git -b ms-3 $(TMP)/operator
 	mkdir -p pkg/qliksense/crds/cr
 	mkdir -p pkg/qliksense/crds/crd
 	mkdir -p pkg/qliksense/crds/crd-deploy
