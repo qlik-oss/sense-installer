@@ -1,0 +1,5 @@
+# Ignore all files and folders that start with .; .circleci, .github, .git, etc.
+# Warning! This will ignore files in subfolders as well. 
+# If you needs files starting with . then change condition below to be specific
+# for each file and folder that needs to be ignored
+.* export-ignore
