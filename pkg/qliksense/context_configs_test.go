@@ -273,11 +273,7 @@ func TestSetUpQliksenseContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := New(tt.args.qlikSenseHome)
-			if err != nil {
-				t.Errorf("unable to create a qliksense instance")
-				return
-			}
+			q := New(tt.args.qlikSenseHome)
 			if err := q.SetUpQliksenseContext(tt.args.contextName, tt.args.isDefaultContext); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -306,11 +302,7 @@ func TestSetUpQliksenseDefaultContext(t *testing.T) {
 	defer tearDown()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := New(tt.args.qlikSenseHome)
-			if err != nil {
-				t.Errorf("unable to create a qliksense instance")
-				return
-			}
+			q := New(tt.args.qlikSenseHome)
 			if err := q.SetUpQliksenseDefaultContext(); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseDefaultContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -836,7 +828,7 @@ spec:
 		log.Fatal(err)
 	}
 	contextYaml1 :=
-`
+		`
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -846,8 +838,8 @@ spec:
   rotateKeys: "yes"
   releaseName: qlik1`
 
-  contextYaml2 :=	
-`
+	contextYaml2 :=
+		`
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -932,11 +924,7 @@ func TestDeleteContexts(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := New(tt.args.qlikSenseHome)
-			if err != nil {
-				t.Errorf("unable to create a qliksense instance")
-				return
-			}
+			q := New(tt.args.qlikSenseHome)
 			var arg []string
 			arg = append(arg, tt.args.contextName)
 			if err := q.DeleteContextConfig(arg); (err != nil) != tt.wantErr {
