@@ -843,6 +843,7 @@ github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/procfs v0.0.5 h1:3+auTFlqw+ZaQYJARz6ArODtkaIwtvBTx3N2NehQlL8=
 github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
+github.com/qlik-oss/k-apis v0.0.16/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/k-apis v0.0.17 h1:tOdrEe9gfb9CXq0+uowFnXIsI781qz/zgeN8xqupXYw=
 github.com/qlik-oss/k-apis v0.0.17/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/k-apis v0.0.18-0.20200311195637-dcaa6d59d09e h1:/yzUZYToUi5LfkpnvtDQk0x/oOMUt//UTtWiGCiLjyU=

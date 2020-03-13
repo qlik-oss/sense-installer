@@ -13,7 +13,6 @@ import (
 	"github.com/qlik-oss/k-apis/pkg/config"
 
 	b64 "encoding/base64"
-
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/ttacon/chalk"
@@ -316,10 +315,12 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 		out := ansi.NewColorableStdout()
 		switch args[0] {
 		case qliksenseConfig.Spec.CurrentContext:
-			fmt.Fprintln(out, chalk.Red.Color("Error: Cannot delete current context -"), chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext))
 			fmt.Fprintln(out, chalk.Yellow.Color("Please switch contexts to be able to delete this context."))
+			err := fmt.Errorf(chalk.Red.Color("Cannot delete current context - %s"), chalk.White.Color(chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext)))
+			return err
 		case DefaultQliksenseContext:
-			fmt.Fprintln(out, chalk.Red.Color("Error: Cannot delete default qliksense context"))
+			err := fmt.Errorf(chalk.Red.Color("Cannot delete default qliksense context"))
+			return err
 		default:
 			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
 			qliksenseContextFile := filepath.Join(qliksenseContextsDir1, args[0])
@@ -352,7 +353,8 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 						fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
 						fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
 					} else {
-						fmt.Fprintln(out, chalk.Red.Color("Error: Context not found"))
+						err := fmt.Errorf(chalk.Red.Color("Context not found"))
+						return err
 					}
 				}
 			}
