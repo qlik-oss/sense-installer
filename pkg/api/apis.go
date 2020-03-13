@@ -22,6 +22,7 @@ const (
 	pullSecretFileName       = "image-registry-pull-secret.yaml"
 	qliksenseContextsDirName = "contexts"
 	qliksenseSecretsDirName  = "secrets"
+	qliksenseEjsonDirName    = "ejson"
 )
 
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
@@ -237,6 +238,18 @@ func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string,
 	}
 	LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
 	return secretKeyPairLocation, nil
+}
+
+func (qc *QliksenseConfig) GetCurrentContextEjsonKeyDir() (string, error) {
+	if qcr, err := qc.GetCurrentCR(); err != nil {
+		return "", err
+	} else {
+		ejsonKeyDir := filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, qcr.GetObjectMeta().GetName(), qliksenseEjsonDirName)
+		if err := os.MkdirAll(ejsonKeyDir, os.ModePerm); err != nil {
+			return "", err
+		}
+		return ejsonKeyDir, nil
+	}
 }
 
 func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey, *rsa.PrivateKey, error) {

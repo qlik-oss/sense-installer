@@ -42,10 +42,7 @@ func initAndExecute() error {
 	// create dirs and appropriate files for setting up contexts
 	api.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 
-	qliksenseClient, err := qliksense.New(qlikSenseHome)
-	if err != nil {
-		return err
-	}
+	qliksenseClient := qliksense.New(qlikSenseHome)
 	qliksenseClient.SetUpQliksenseDefaultContext()
 	cmd := rootCmd(qliksenseClient)
 	//levenstein checks
@@ -151,13 +148,11 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add the list config command as a sub-command to the app config sub-command
 	configCmd.AddCommand(listContextConfigCmd(p))
 
-
 	// add the delete-context config command as a sub-command to the app config command
 	configCmd.AddCommand(deleteContextConfigCmd(p))
 
 	// add set-image-registry command as a sub-command to the app config sub-command
 	configCmd.AddCommand(setImageRegistryCmd(p))
-
 
 	// add clean-config-repo-patches command as a sub-command to the app config sub-command
 	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
