@@ -226,13 +226,38 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			}
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
-		case "gitOps":
-			rotateKeys, err := validateInput(argsString[1])
-			if err != nil {
+		case "gitops.enabled":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			if strings.EqualFold(argsString[1], "false") {
+				qliksenseCR.Spec.GitOps.Enabled = false
+			} else if strings.EqualFold(argsString[1], "true") {
+				qliksenseCR.Spec.GitOps.Enabled = true
+			} else {
+				err := fmt.Errorf("Please use a boolean value")
+				log.Println(err)
 				return err
 			}
-			qliksenseCR.Spec.RotateKeys = rotateKeys
-			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
+			api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
+		case "gitops.schedule":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
+			api.LogDebugMessage("Current gitOps schedule is : %s ", qliksenseCR.Spec.GitOps.Schedule)
+		case "gitops.watchbranch":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			qliksenseCR.Spec.GitOps.WatchBranch = argsString[1]
+			api.LogDebugMessage("Current gitOps watchbranch is : %s ", qliksenseCR.Spec.GitOps.WatchBranch)
+		case "gitops.image":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			qliksenseCR.Spec.GitOps.Image = argsString[1]
+			api.LogDebugMessage("Current gitOps watchbranch is : %s ", qliksenseCR.Spec.GitOps.Image)
 		default:
 			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
 			log.Println(err)

@@ -845,6 +845,8 @@ github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/qlik-oss/k-apis v0.0.17 h1:tOdrEe9gfb9CXq0+uowFnXIsI781qz/zgeN8xqupXYw=
 github.com/qlik-oss/k-apis v0.0.17/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
+github.com/qlik-oss/k-apis v0.0.18-0.20200311195637-dcaa6d59d09e h1:/yzUZYToUi5LfkpnvtDQk0x/oOMUt//UTtWiGCiLjyU=
+github.com/qlik-oss/k-apis v0.0.18-0.20200311195637-dcaa6d59d09e/go.mod h1:KOFzKVIdRqp47ytnHg3+9zb8fTlnrQjO6aKiwcrCJUE=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9 h1:iqeqTS4zjp6rPEaxmFB7pemA2CMjOEN5dYSXZaQ82uw=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9/go.mod h1:OCt7FTrRVHj4kmR2xLJJUIqu00BTr6GeF09hSmM17Kw=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
@@ -970,6 +972,8 @@ github.com/vbatts/tar-split v0.11.1 h1:0Odu65rhcZ3JZaPHxl7tCI3V/C/Q9Zf82UFravl02
 github.com/vbatts/tar-split v0.11.1/go.mod h1:LEuURwDEiWjRjwu46yU3KVGuUdVv/dcnpcEPSzR8z6g=
 github.com/vbauerster/mpb/v4 v4.11.1 h1:ZOYQSVHgmeanXsbyC44aDg76tBGCS/54Rk8VkL8dJGA=
 github.com/vbauerster/mpb/v4 v4.11.1/go.mod h1:vMLa1J/ZKC83G2lB/52XpqT+ZZtFG4aZOdKhmpRL1uM=
+github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0 h1:3UeQBvD0TFrlVjOeLOBz+CPAI8dnbqNSVwUwRrkp7vQ=
+github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0/go.mod h1:IXCdmsXIht47RaVFLEdVnh1t+pgYtTAhQGj73kz+2DM=
 github.com/xanzy/ssh-agent v0.2.1 h1:TCbipTQL2JiiCprBWx9frJ2eJlCYT00NmctrHxVAr70=
 github.com/xanzy/ssh-agent v0.2.1/go.mod h1:mLlQY/MoOhWBj+gOGMQkOeiEvkx+8pJSI+0Bx9h2kr4=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=
