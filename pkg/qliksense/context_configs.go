@@ -150,7 +150,6 @@ func (q *Qliksense) SetConfigs(args []string) error {
 func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-	fmt.Println(q.QliksenseHome)
 	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
 		log.Println(err)
 		return nil, "", err
