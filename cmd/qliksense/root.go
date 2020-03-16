@@ -151,13 +151,11 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add the list config command as a sub-command to the app config sub-command
 	configCmd.AddCommand(listContextConfigCmd(p))
 
-
 	// add the delete-context config command as a sub-command to the app config command
 	configCmd.AddCommand(deleteContextConfigCmd(p))
 
 	// add set-image-registry command as a sub-command to the app config sub-command
 	configCmd.AddCommand(setImageRegistryCmd(p))
-
 
 	// add clean-config-repo-patches command as a sub-command to the app config sub-command
 	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
@@ -169,6 +167,14 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(crdsCmd)
 	crdsCmd.AddCommand(crdsViewCmd(p))
 	crdsCmd.AddCommand(crdsInstallCmd(p))
+
+	// add preflight command
+	preflightCmd := preflightCmd(p)
+	cmd.AddCommand(preflightCmd)
+	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
+	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
+	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
+
 	return cmd
 }
 
