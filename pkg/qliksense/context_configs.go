@@ -3,6 +3,7 @@ package qliksense
 import (
 	"crypto/rsa"
 	"fmt"
+	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
 	"os"
@@ -229,11 +230,23 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
 			}
-			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
-			api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
+			if strings.EqualFold(argsString[1], "yes") || strings.EqualFold(argsString[1], "no") {
+				qliksenseCR.Spec.GitOps.Enabled = argsString[1]
+				api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
+			} else {
+				err := fmt.Errorf("Please use yes or no")
+				log.Println(err)
+				return err
+			}
 		case "gitops.schedule":
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			var sch cron.ScheduleParser
+			if _, err := sch.Parse(argsString[1]); err != nil {
+				err := fmt.Errorf("Please enter valid cron schedule")
+				log.Println(err)
+				return err
 			}
 			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
 			api.LogDebugMessage("Current gitOps schedule is : %s ", qliksenseCR.Spec.GitOps.Schedule)
