@@ -106,7 +106,6 @@ func (q *Qliksense) ConfigViewCR() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(r)
 	oth, err := q.getCurrentCrDependentResourceAsString()
 	if err != nil {
 		return err
