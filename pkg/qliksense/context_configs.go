@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 
@@ -237,7 +238,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 				log.Println(err)
 				return err
 			}
-			api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
+			api.LogDebugMessage("Current gitOps enabled status : %s ", strconv.FormatBool(qliksenseCR.Spec.GitOps.Enabled))
 		case "gitops.schedule":
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
@@ -255,9 +256,9 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
 			}
 			qliksenseCR.Spec.GitOps.Image = argsString[1]
-			api.LogDebugMessage("Current gitOps watchbranch is : %s ", qliksenseCR.Spec.GitOps.Image)
+			api.LogDebugMessage("Current gitOps image is : %s ", qliksenseCR.Spec.GitOps.Image)
 		default:
-			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
 			log.Println(err)
 			return err
 		}
