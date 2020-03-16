@@ -242,10 +242,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
 			}
-			var sch cron.ScheduleParser
-			if _, err := sch.Parse(argsString[1]); err != nil {
-				err := fmt.Errorf("Please enter valid cron schedule")
-				log.Println(err)
+			if _, err := cron.ParseStandard(argsString[1]); err != nil {
+				err := fmt.Errorf("Please enter string with standard cron scheduling syntax ")
 				return err
 			}
 			qliksenseCR.Spec.GitOps.Schedule = argsString[1]

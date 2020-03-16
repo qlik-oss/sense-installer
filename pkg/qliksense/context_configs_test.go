@@ -326,7 +326,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs", "gitops.enabled=true"},
+				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs", "gitops.enabled=yes", "gitops.schedule=30 * * * *"},
 			},
 			wantErr: false,
 		},
@@ -336,7 +336,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"someconfig=somevalue", "gitops.enabled=bar"},
+				args: []string{"someconfig=somevalue, gitops.schedule=bar"},
 			},
 			wantErr: true,
 		},
