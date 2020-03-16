@@ -7,13 +7,13 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
 
 	b64 "encoding/base64"
+
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/ttacon/chalk"
@@ -229,16 +229,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
 			}
-			if strings.EqualFold(argsString[1], "false") {
-				qliksenseCR.Spec.GitOps.Enabled = false
-			} else if strings.EqualFold(argsString[1], "true") {
-				qliksenseCR.Spec.GitOps.Enabled = true
-			} else {
-				err := fmt.Errorf("Please use a boolean value")
-				log.Println(err)
-				return err
-			}
-			api.LogDebugMessage("Current gitOps enabled status : %s ", strconv.FormatBool(qliksenseCR.Spec.GitOps.Enabled))
+			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
+			api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
 		case "gitops.schedule":
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
