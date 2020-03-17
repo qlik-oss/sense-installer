@@ -336,7 +336,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"someconfig=somevalue, gitops.schedule=bar"},
+				args: []string{"someconfig=somevalue, gitops.schedule=bar", "gitops.enabled=bar"},
 			},
 			wantErr: true,
 		},
