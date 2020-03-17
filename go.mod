@@ -39,13 +39,12 @@ require (
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/qlik-oss/k-apis v0.0.20
+	github.com/qlik-oss/k-apis v0.0.21
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
-	github.com/wsxiaoys/terminal v0.0.0-20160513160801-0940f3fc43a0
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
