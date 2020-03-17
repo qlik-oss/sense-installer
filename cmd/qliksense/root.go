@@ -227,9 +227,12 @@ func copy(src, dst string) (int64, error) {
 }
 
 func levenstein(cmd *cobra.Command) bool {
-	cmd.SuggestionsMinimumDistance = 4
+	cmd.SuggestionsMinimumDistance = 3
 	if len(os.Args) > 1 {
 		args := os.Args[1]
+		if args == "help" {
+			return false
+		}
 		for _, ctx := range cmd.Commands() {
 			val := *ctx
 			if args == val.Name() {
