@@ -187,6 +187,12 @@ func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) 
 	return qliksenseCR, qliksenseContextsFile, nil
 }
 
+func (q *Qliksense) generateCRSpec() (map[string]string, error) {
+	crdPath = q.CrdBox.Path("crd/qlik.com_qliksenses_crd.yaml")
+
+}
+
+
 // SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
@@ -203,6 +209,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 	}
 
 	crd_string := q.GetOperatorCRDString()
+
 	fmt.Print(crd_string)
 	for _, arg := range args {
 		argsString := strings.Split(arg, "=")

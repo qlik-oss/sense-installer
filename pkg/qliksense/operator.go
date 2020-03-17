@@ -22,6 +22,7 @@ func (q *Qliksense) ViewOperatorController() error {
 func (q *Qliksense) GetOperatorCRDString() string {
 	result := ""
 	for _, v := range q.getFileList("crd") {
+		fmt.Println(v)
 		result = q.getYamlFromPackrFile(v)
 	}
 
@@ -38,6 +39,7 @@ func (q *Qliksense) GetOperatorControllerString() string {
 
 func (q *Qliksense) getYamlFromPackrFile(packrFile string) string {
 	s, err := q.CrdBox.FindString(packrFile)
+	fmt.Println(q.CrdBox.Path)
 	if err != nil {
 		fmt.Printf("Cannot read file %s", packrFile)
 	}
