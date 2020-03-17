@@ -3,6 +3,7 @@ package qliksense
 import (
 	"crypto/rsa"
 	"fmt"
+	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"github.com/qlik-oss/k-apis/pkg/config"
 
 	b64 "encoding/base64"
+
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/ttacon/chalk"
@@ -149,7 +151,6 @@ func (q *Qliksense) SetConfigs(args []string) error {
 func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-
 	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
 		log.Println(err)
 		return nil, "", err
@@ -225,8 +226,42 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			}
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
+		case "gitops.enabled":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			if strings.EqualFold(argsString[1], "yes") || strings.EqualFold(argsString[1], "no") {
+				qliksenseCR.Spec.GitOps.Enabled = argsString[1]
+				api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
+			} else {
+				err := fmt.Errorf("Please use yes or no")
+				log.Println(err)
+				return err
+			}
+		case "gitops.schedule":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			if _, err := cron.ParseStandard(argsString[1]); err != nil {
+				err := fmt.Errorf("Please enter string with standard cron scheduling syntax ")
+				return err
+			}
+			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
+			api.LogDebugMessage("Current gitOps schedule is : %s ", qliksenseCR.Spec.GitOps.Schedule)
+		case "gitops.watchbranch":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			qliksenseCR.Spec.GitOps.WatchBranch = argsString[1]
+			api.LogDebugMessage("Current gitOps watchbranch is : %s ", qliksenseCR.Spec.GitOps.WatchBranch)
+		case "gitops.image":
+			if qliksenseCR.Spec.GitOps == nil {
+				qliksenseCR.Spec.GitOps = &config.GitOps{}
+			}
+			qliksenseCR.Spec.GitOps.Image = argsString[1]
+			api.LogDebugMessage("Current gitOps image is : %s ", qliksenseCR.Spec.GitOps.Image)
 		default:
-			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
 			log.Println(err)
 			return err
 		}
