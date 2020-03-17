@@ -202,6 +202,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 		return err
 	}
 
+	crd_string := q.GetOperatorCRDString()
+	fmt.Print(crd_string)
 	for _, arg := range args {
 		argsString := strings.Split(arg, "=")
 		switch argsString[0] {
