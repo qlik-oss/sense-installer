@@ -3,15 +3,13 @@ package qliksense
 import (
 	"crypto/rsa"
 	"fmt"
-	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/tabwriter"
-
-	"github.com/qlik-oss/k-apis/pkg/config"
 
 	b64 "encoding/base64"
 
@@ -187,9 +185,27 @@ func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) 
 	return qliksenseCR, qliksenseContextsFile, nil
 }
 
-func (q *Qliksense) generateCRSpec() (map[string]string, error) {
-	crdPath = q.CrdBox.Path("crd/qlik.com_qliksenses_crd.yaml")
+func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR) bool {
+	cr := reflect.ValueOf(crSpec.Spec)
+	keyValid := reflect.Indirect(cr).FieldByName(key)
+	if !keyValid.IsValid() {
+		//not in main spec
+		fmt.Println(key, "is an invalid key")
+		return false
+	}
+	// checks if there is a sub object
+	if keySub != "" {
+		if !keyValid.IsNil() {
+			if !reflect.Indirect(keyValid).FieldByName(keySub).IsValid() {
+				fmt.Println(keySub, "is an invalid key")
+				return false
+			}
+		} else {
 
+		}
+	}
+
+	return  true
 }
 
 
@@ -208,24 +224,55 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 		return err
 	}
 
-	crd_string := q.GetOperatorCRDString()
-
-	fmt.Print(crd_string)
 	for _, arg := range args {
 		argsString := strings.Split(arg, "=")
-		switch argsString[0] {
+		key := strings.ToLower(argsString[0])
+		value := argsString[1]
+		// check if key is for git or gitops (sub objects)
+		keySplit := strings.Split(key, ".")
+		key = keySplit[0]
+		keySub := ""
+
+		if len(keySplit)==2 {
+			keySub = keySplit[1]
+		}
+		fmt.Println(key, keySub, value)
+		valid := validateCR(key, keySub, value, qliksenseCR)
+		if !valid {
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
+			log.Println(err)
+			return err
+		} else if keySub == "" {
+			if key == "rotatekeys" {
+				if rotateKeys, err := validateInput(value); err != nil {
+					return err
+				}
+				//set spec
+			}
+			// set spec for all others (default)
+		} else {
+			// verify gitops enabled and gitops schedule
+			// set spec for all others (default)
+		}
+
+		
+		/*switch argsString[0] {
 		case "profile":
 			qliksenseCR.Spec.Profile = argsString[1]
 			api.LogDebugMessage("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
+
 		case "git.repository":
 			if qliksenseCR.Spec.Git == nil {
 				qliksenseCR.Spec.Git = &config.Repo{}
 			}
 			qliksenseCR.Spec.Git.Repository = argsString[1]
 			api.LogDebugMessage("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
+
 		case "storageClassName":
 			qliksenseCR.Spec.StorageClassName = argsString[1]
 			api.LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+
+
 		case "manifestsRoot":
 			qliksenseCR.Spec.ManifestsRoot = argsString[1]
 		case "rotateKeys":
@@ -235,6 +282,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			}
 			qliksenseCR.Spec.RotateKeys = rotateKeys
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
+
+
 		case "gitops.enabled":
 			if qliksenseCR.Spec.GitOps == nil {
 				qliksenseCR.Spec.GitOps = &config.GitOps{}
@@ -273,7 +322,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
 			log.Println(err)
 			return err
-		}
+		}*/
 	}
 	// write modified content into context.yaml
 	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
