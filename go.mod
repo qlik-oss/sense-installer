@@ -40,8 +40,10 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/nicksnyder/go-i18n v1.10.1 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/qlik-oss/k-apis v0.0.17
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31

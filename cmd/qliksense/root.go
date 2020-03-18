@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +18,7 @@ import (
 	"github.com/ttacon/chalk"
 )
 
-// To run this project in ddebug mode, run:
+// To run this project in debug mode, run:
 // export QLIKSENSE_DEBUG=true
 // qliksense <command>
 
@@ -170,10 +169,11 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add preflight command
 	preflightCmd := preflightCmd(p)
-	cmd.AddCommand(preflightCmd)
 	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
 	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
 	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
+
+	cmd.AddCommand(preflightCmd)
 
 	return cmd
 }
@@ -181,32 +181,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 func initConfig() {
 	viper.SetEnvPrefix("QLIKSENSE")
 	viper.AutomaticEnv()
-}
-
-func downloadFile(url string, filepath string) error {
-	var (
-		out  *os.File
-		err  error
-		resp *http.Response
-	)
-	// Create the file
-	if out, err = os.Create(filepath); err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Get the data
-	if resp, err = http.Get(url); err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Write the body to file
-	if _, err = io.Copy(out, resp.Body); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func copy(src, dst string) (int64, error) {
