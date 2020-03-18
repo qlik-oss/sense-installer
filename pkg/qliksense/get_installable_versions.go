@@ -13,7 +13,7 @@ type LsRemoteCmdOptions struct {
 	Limit           int
 }
 
-func (q *Qliksense) LsRemote(opts *LsRemoteCmdOptions) error {
+func (q *Qliksense) GetInstallableVersions(opts *LsRemoteCmdOptions) error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
