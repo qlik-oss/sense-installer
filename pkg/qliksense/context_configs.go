@@ -147,6 +147,27 @@ func (q *Qliksense) SetConfigs(args []string) error {
 	return nil
 }
 
+// SetConfigs - set-configs <key>=<value> commands
+func (q *Qliksense) UnsetConfigs(args []string) error {
+	// retieve current context from config.yaml
+	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	if err != nil {
+		return err
+	}
+
+	resultArgs, err := api.ProcessUnsetConfigArgs(args)
+	if err != nil {
+		return err
+	}
+	for _, ra := range resultArgs {
+		qliksenseCR.Spec.AddToConfigs(ra.SvcName, ra.Key, ra.Value)
+	}
+	// write modified content into context.yaml
+	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
+	return nil
+}
+
 func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) {
 	var qliksenseConfig api.QliksenseConfig
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
@@ -225,6 +246,49 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 				return err
 			}
 			qliksenseCR.Spec.RotateKeys = rotateKeys
+			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
+		default:
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")
+			log.Println(err)
+			return err
+		}
+	}
+	// write modified content into context.yaml
+	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+
+	return nil
+}
+
+// SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
+func (q *Qliksense) UnsetOtherConfigs(args []string) error {
+	// retieve current context from config.yaml
+	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	if err != nil {
+		return err
+	}
+
+	// modify appropriate fields
+	if len(args) == 0 {
+		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
+		log.Println(err)
+		return err
+	}
+
+	for _, arg := range args {
+		switch arg {
+		case "profile":
+			qliksenseCR.Spec.Profile = ""
+			api.LogDebugMessage("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
+		case "git.repository":
+			qliksenseCR.Spec.Git.Repository = ""
+			api.LogDebugMessage("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
+		case "storageClassName":
+			qliksenseCR.Spec.StorageClassName = ""
+			api.LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
+		case "manifestsRoot":
+			qliksenseCR.Spec.ManifestsRoot = ""
+		case "rotateKeys":
+			qliksenseCR.Spec.RotateKeys = ""
 			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
 		default:
 			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot or git.repository arguments to configure the current context")

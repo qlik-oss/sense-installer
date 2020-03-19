@@ -80,6 +80,31 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 	return resultSvcKV, nil
 }
 
+// ProcessUnsetConfigArgs processes args and returns an service, key, nil slice
+func ProcessUnsetConfigArgs(args []string) ([]*ServiceKeyValue, error) {
+	if len(args) == 0 {
+		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
+		return nil, err
+	}
+	resultSvcKV := make([]*ServiceKeyValue, len(args))
+	re1 := regexp.MustCompile(`(\w{1,}).(\w{1,})`)
+	for i, arg := range args {
+		LogDebugMessage("Arg received: %s", arg)
+		result := re1.FindStringSubmatch(arg)
+		// check if result array's length is == 3 (index 0 - is the full match & indices 1,2,- are the fields we need)
+		if len(result) != 3 {
+			err := fmt.Errorf("Please provide valid args for this command")
+			return nil, err
+		}
+		resultSvcKV[i] = &ServiceKeyValue{
+			SvcName: result[1],
+			Key:     result[2],
+			Value:   "",
+		}
+	}
+	return resultSvcKV, nil
+}
+
 func ExecuteTaskWithBlinkingStdoutFeedback(task func() (interface{}, error), feedback string) (result interface{}, err error) {
 	taskDone := make(chan bool)
 	go func() {

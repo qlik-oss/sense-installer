@@ -64,6 +64,25 @@ qliksense config set <key>=<value>
 	return cmd
 }
 
+func unsetOtherConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
+	var (
+		cmd *cobra.Command
+	)
+
+	cmd = &cobra.Command{
+		Use:   "un-set",
+		Short: "remove a key value pair in the current context",
+		Example: `
+qliksense config unset <key>
+    - The above configuration will be removed in the CR
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.UnsetOtherConfigs(args)
+		},
+	}
+	return cmd
+}
+
 func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
@@ -78,6 +97,24 @@ qliksense config set-configs <service_name>.<attribute>="<value>"
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.SetConfigs(args)
+		},
+	}
+	return cmd
+}
+func unsetConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
+	var (
+		cmd *cobra.Command
+	)
+
+	cmd = &cobra.Command{
+		Use:   "unset-configs",
+		Short: "unset configurations in the qliksense context as key-value pairs",
+		Example: `
+qliksense config unset-configs <service_name>.<attribute>="<value>"
+    - The above configuration will be removed in the CR
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.UnsetConfigs(args)
 		},
 	}
 	return cmd
