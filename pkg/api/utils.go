@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
 )
 
@@ -128,7 +126,7 @@ func DownloadFile(url, baseFolder, installerName string) error {
 	)
 	// Create the file
 	fileName := filepath.Join(baseFolder, installerName)
-	fmt.Printf("Preflight installer Filename: %s\n", fileName)
+	LogDebugMessage("Installer Filename: %s\n", fileName)
 	if out, err = os.Create(fileName); err != nil {
 		return err
 	}
@@ -157,110 +155,113 @@ func DownloadFile(url, baseFolder, installerName string) error {
 	return nil
 }
 
-func UntarPackage(destination, fileToUntar string) error {
-
+func ExplodePackage(destination, fileToUntar string) error {
 	LogDebugMessage("Destination: %s\n", destination)
 	LogDebugMessage("fileToUntar: %s\n", fileToUntar)
 
 	if strings.HasSuffix(fileToUntar, "zip") {
 		LogDebugMessage("This is a windows file : %s", fileToUntar)
-
-		zipReader, _ := zip.OpenReader(fileToUntar)
-		for _, file := range zipReader.Reader.File {
-
-			zippedFile, err := file.Open()
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer zippedFile.Close()
-			extractedFilePath := filepath.Join(
-				destination,
-				file.Name,
-			)
-			outputFile, err := os.OpenFile(
-				extractedFilePath,
-				os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-				file.Mode(),
-			)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer outputFile.Close()
-
-			_, err = io.Copy(outputFile, zippedFile)
-			if err != nil {
-				log.Fatal(err)
-			}
-			log.Printf("File extracted: %s, Extracted file path: %s\n", file.Name, extractedFilePath)
+		err := UntarZipFile(destination, fileToUntar)
+		if err != nil {
+			return nil
 		}
 	} else if strings.HasSuffix(fileToUntar, "tar.gz") {
 		LogDebugMessage("This is a mac/linux file: %s", fileToUntar)
-
-		lFile, err := os.Open(fileToUntar)
+		err := UntarGzFile(destination, fileToUntar)
 		if err != nil {
-			err = errors.Wrapf(err, "unable to read the local file %s", fileToUntar)
-			log.Fatal(err)
-			return err
-		}
-		LogDebugMessage("\n\nlFile: %s\n\n", lFile)
-
-		gzReader, err := gzip.NewReader(lFile)
-		if err != nil {
-			err = errors.Wrap(err, "unable to load the file into a gz reader")
-			log.Fatal(err)
-			return err
-		}
-		LogDebugMessage("\n\ngzReader: %s\n\n", gzReader)
-		defer gzReader.Close()
-
-		tarReader := tar.NewReader(gzReader)
-		for {
-			header, err := tarReader.Next()
-			switch {
-			case err == io.EOF:
-				return nil
-			case err != nil:
-				err = errors.Wrap(err, "error during untar")
-				log.Fatal(err)
-				return err
-			case header == nil:
-				continue
-			}
-
-			fileInLoop := filepath.Join(destination, header.Name)
-			switch header.Typeflag {
-			case tar.TypeDir:
-				if _, err := os.Stat(fileInLoop); err != nil {
-					if err := os.MkdirAll(fileInLoop, 0755); err != nil {
-						err = errors.Wrapf(err, "error creating directory %s", fileInLoop)
-						logrus.Error(err)
-						return err
-					}
-				}
-			case tar.TypeReg:
-				fileAtLoc, err := os.OpenFile(fileInLoop, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
-				if err != nil {
-					err = errors.Wrapf(err, "error opening file %s", fileInLoop)
-					logrus.Error(err)
-					return err
-				}
-
-				if _, err := io.Copy(fileAtLoc, tarReader); err != nil {
-					err = errors.Wrapf(err, "error writing file %s", fileInLoop)
-					logrus.Error(err)
-					return err
-				}
-				fileAtLoc.Close()
-			}
+			return nil
 		}
 	}
-	/*
+	return nil
+}
 
+func UntarGzFile(destination, fileToUntar string) error {
+	lFile, err := os.Open(fileToUntar)
+	if err != nil {
+		err = errors.Wrapf(err, "unable to read the local file %s", fileToUntar)
+		log.Fatal(err)
+		return err
+	}
 
+	gzReader, err := gzip.NewReader(lFile)
+	if err != nil {
+		err = errors.Wrap(err, "unable to load the file into a gz reader")
+		log.Fatal(err)
+		return err
+	}
+	defer gzReader.Close()
 
+	tarReader := tar.NewReader(gzReader)
+	for {
+		header, err := tarReader.Next()
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			err = errors.Wrap(err, "error during untar")
+			log.Fatal(err)
+			return err
+		case header == nil:
+			continue
+		}
 
+		fileInLoop := filepath.Join(destination, header.Name)
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if _, err := os.Stat(fileInLoop); err != nil {
+				if err := os.MkdirAll(fileInLoop, 0755); err != nil {
+					err = errors.Wrapf(err, "error creating directory %s", fileInLoop)
+					log.Fatal(err)
+					return err
+				}
+			}
+		case tar.TypeReg:
+			fileAtLoc, err := os.OpenFile(fileInLoop, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				err = errors.Wrapf(err, "error opening file %s", fileInLoop)
+				log.Fatal(err)
+				return err
+			}
 
-		} */
+			if _, err := io.Copy(fileAtLoc, tarReader); err != nil {
+				err = errors.Wrapf(err, "error writing file %s", fileInLoop)
+				log.Fatal(err)
+				return err
+			}
+			fileAtLoc.Close()
+		}
+	}
+	return nil
+}
 
+func UntarZipFile(destination, fileToUntar string) error {
+	zipReader, _ := zip.OpenReader(fileToUntar)
+	for _, file := range zipReader.Reader.File {
+
+		zippedFile, err := file.Open()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer zippedFile.Close()
+		extractedFilePath := filepath.Join(
+			destination,
+			file.Name,
+		)
+		outputFile, err := os.OpenFile(
+			extractedFilePath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			file.Mode(),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer outputFile.Close()
+
+		_, err = io.Copy(outputFile, zippedFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("File extracted: %s, Extracted file path: %s\n", file.Name, extractedFilePath)
+	}
 	return nil
 }
