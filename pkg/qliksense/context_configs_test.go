@@ -370,6 +370,60 @@ func TestSetOtherConfigs(t *testing.T) {
 	}
 }
 
+func TestUnsetOtherConfigs(t *testing.T) {
+	type args struct {
+		q    *Qliksense
+		args []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "valid case",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{"profile", "rotateKeys", "storageClassName"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid configs",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{"someconfig"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "empty configs",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{},
+			},
+			wantErr: true,
+		},
+	}
+	tearDown := setup()
+	defer tearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//set arguments to be removed
+			_ = tt.args.q.SetOtherConfigs([]string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs"})
+			if err := tt.args.q.UnsetOtherConfigs(tt.args.args); (err != nil) != tt.wantErr {
+				t.Errorf("SetOtherConfigs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestSetConfigs(t *testing.T) {
 	type args struct {
 		q    *Qliksense
@@ -396,6 +450,40 @@ func TestSetConfigs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.args.q.SetConfigs(tt.args.args); (err != nil) != tt.wantErr {
+				t.Errorf("SetConfigs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestUnsetConfigs(t *testing.T) {
+	type args struct {
+		q    *Qliksense
+		args []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "valid case",
+			args: args{
+				q: &Qliksense{
+					QliksenseHome: testDir,
+				},
+				args: []string{"qliksense.acceptEULA", "qliksense.mongoDbUri"},
+			},
+			wantErr: false,
+		},
+	}
+	tearDown := setup()
+	defer tearDown()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//set arguments to be removed
+			_ = tt.args.q.SetConfigs([]string{"qliksense.acceptEULA=\"yes\"", "qliksense.mongoDbUri=\"mongo://mongo:3307\""})
+			if err := tt.args.q.UnsetConfigs(tt.args.args); (err != nil) != tt.wantErr {
 				t.Errorf("SetConfigs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
