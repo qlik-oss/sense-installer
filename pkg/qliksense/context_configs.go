@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"crypto/aes"
 	"crypto/rsa"
 	"fmt"
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -188,9 +187,14 @@ func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) 
 	return qliksenseCR, qliksenseContextsFile, nil
 }
 
+func caseInsenstiveFieldByName(v reflect.Value, name string) reflect.Value {
+	name = strings.ToLower(name)
+	return v.FieldByNameFunc(func(n string) bool { return strings.ToLower(n) == name })
+}
+
 func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR) (bool, *api.QliksenseCR) {
 	cr := reflect.ValueOf(crSpec.Spec)
-	keyValid := reflect.Indirect(cr).FieldByName(key)
+	keyValid := caseInsenstiveFieldByName(reflect.Indirect(cr), key)
 	if !keyValid.IsValid() {
 		//not in main spec
 		fmt.Println(key, "is an invalid key")
@@ -205,7 +209,7 @@ func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR
 	// checks if it is git or gitops
 	if keySub != "" {
 		if !keyValid.IsNil() {
-			if !reflect.Indirect(keyValid).FieldByName(keySub).IsValid() {
+			if !caseInsenstiveFieldByName(reflect.Indirect(keyValid), keySub).IsValid() {
 				fmt.Println(keySub, "is an invalid key")
 				return false, crSpec
 			} else {
@@ -217,7 +221,7 @@ func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR
 						return false, crSpec
 					}
 				case "enabled":
-					if !strings.EqualFold(value, "yes") || !strings.EqualFold(value, "no") {
+					if !strings.EqualFold(value, "yes") && !strings.EqualFold(value, "no") {
 						fmt.Println("Please use yes or no for key enabled")
 						return false, crSpec
 					}
@@ -240,6 +244,7 @@ func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
 	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+
 	if err != nil {
 		return err
 	}
@@ -263,21 +268,27 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 		if len(keySplit)==2 {
 			keySub = strings.ToLower(keySplit[1])
 		}
-		fmt.Println(key, keySub, value)
+
 		valid := true
 		valid, qliksenseCR = validateCR(key, keySub, value, qliksenseCR)
+		field := caseInsenstiveFieldByName(reflect.Indirect(reflect.ValueOf(qliksenseCR.Spec)), key)
 		if !valid {
 			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
-			log.Println(err)
 			return err
 		} else if strings.EqualFold("", keySub) {
-
-			// set spec for all others (default)
+			// set spec for everything excluding git and gitops
+			if field.CanSet() {
+				field.SetString(value)
+			}
 		} else {
-
 			// set spec for git or gitops
+			subField := caseInsenstiveFieldByName(reflect.Indirect(field), keySub)
+			if subField.CanSet() {
+				subField.SetString(value)
+			}
 		}
-		
+
+		fmt.Println(chalk.Green.Color("Successfully added to Custom Resource Spec"))
 	}
 	// write modified content into context.yaml
 	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
