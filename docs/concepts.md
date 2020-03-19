@@ -85,8 +85,8 @@ to enable gitops the following section should be in the CR
 spec:
   git:
     repository: https://github.com/ffoysal/qliksense-k8s
-    accessToken: token-to-access-gitrepo
-    userName: "blblbl"
+    accessToken: git-token
+    userName: git-username
   gitOps:
     enabled: "yes"
     schedule: "*/5 * * * *"

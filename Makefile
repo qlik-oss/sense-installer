@@ -92,7 +92,7 @@ clean-packr: packr2
 
 get-crds:
 	$(eval TMP := $(shell mktemp -d))
-	git clone https://github.com/qlik-oss/qliksense-operator.git -b ms-3 $(TMP)/operator
+	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP)/operator
 	mkdir -p pkg/qliksense/crds/cr
 	mkdir -p pkg/qliksense/crds/crd
 	mkdir -p pkg/qliksense/crds/crd-deploy
