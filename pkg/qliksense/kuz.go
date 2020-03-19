@@ -6,6 +6,7 @@ import (
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/konfig"
 	"sigs.k8s.io/kustomize/api/krusty"
