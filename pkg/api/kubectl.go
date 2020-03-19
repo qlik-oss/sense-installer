@@ -97,3 +97,21 @@ func kubectlOperation(manifests string, oprName string, namespace string) error 
 	os.Remove(tempYaml.Name())
 	return nil
 }
+
+func KubectlDirectOps(opr []string, namespace string) error {
+	arguments := []string{}
+	if namespace != "" {
+		arguments = append(arguments, "-n", namespace)
+	}
+	arguments = append(arguments, opr...)
+
+	cmd := exec.Command("kubectl", arguments...)
+	LogDebugMessage("Kubectl command: %s %v\n", "kubectl", arguments)
+	sterrBuffer := &bytes.Buffer{}
+	cmd.Stderr = sterrBuffer
+	//cmd.Stdout = os.Stdout
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("kubectl %v failed with: %v, %v\n", opr, err, sterrBuffer.String())
+	}
+	return nil
+}

@@ -229,6 +229,7 @@ func UntarGzFile(destination, fileToUntar string) error {
 				return err
 			}
 			fileAtLoc.Close()
+			fileAtLoc.Chmod(os.ModePerm)
 		}
 	}
 	return nil
@@ -261,7 +262,7 @@ func UntarZipFile(destination, fileToUntar string) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("File extracted: %s, Extracted file path: %s\n", file.Name, extractedFilePath)
+		LogDebugMessage("File extracted: %s, Extracted file path: %s\n", file.Name, extractedFilePath)
 	}
 	return nil
 }

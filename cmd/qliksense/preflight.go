@@ -8,13 +8,12 @@ import (
 	"runtime"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
-
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
-
 	"github.com/spf13/cobra"
 )
 
 const (
+	// preflight and support bundle releases have the same version
 	preflightRelease         = "v0.9.26"
 	preflightLinuxFile       = "preflight_linux_amd64.tar.gz"
 	preflightMacFile         = "preflight_darwin_amd64.tar.gz"
@@ -22,6 +21,7 @@ const (
 	supportbundleWindowsFile = "support-bundle_windows_amd64.zip"
 	supportbundleLinuxFile   = "support-bundle_linux_amd64.tar.gz"
 	supportbundleMacFile     = "support-bundle_darwin_amd64.tar.gz"
+	PreflightChecksDirName   = "preflight_checks"
 )
 
 var preflightBaseURL = fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/%s/", preflightRelease)
@@ -61,14 +61,13 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func DownloadPreflightAndSupportBundle(q *qliksense.Qliksense) error {
-	const PREFLIGHTCHECKSDIRNAME = "preflight_checks"
 	const preflightExecutable = "preflight"
 	const supportbundleExecutable = "support-bundle"
 
-	preflightInstallDir := filepath.Join(q.QliksenseHome, PREFLIGHTCHECKSDIRNAME)
+	preflightInstallDir := filepath.Join(q.QliksenseHome, PreflightChecksDirName)
 	platform := runtime.GOOS
 
-	exists, err := CheckInstalled(preflightInstallDir, preflightExecutable, supportbundleExecutable)
+	exists, err := CheckInstalled(preflightInstallDir, filepath.Join(preflightInstallDir, preflightExecutable), filepath.Join(preflightInstallDir, supportbundleExecutable))
 	if err != nil {
 		err = fmt.Errorf("There has been an error when trying to determine the existence of preflight and support-bundle installers")
 		log.Println(err)
