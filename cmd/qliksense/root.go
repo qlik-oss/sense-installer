@@ -45,12 +45,13 @@ func initAndExecute() error {
 	qliksenseClient := qliksense.New(qlikSenseHome)
 	qliksenseClient.SetUpQliksenseDefaultContext()
 	cmd := rootCmd(qliksenseClient)
-	//levenstein checks
-	if levenstein(cmd) == false {
-		if err := cmd.Execute(); err != nil {
-			return err
-		}
+
+	if err := cmd.Execute(); err != nil {
+		//levenstein checks (auto-suggestions)
+		levenstein(cmd)
+		return err
 	}
+
 	return nil
 }
 
@@ -104,6 +105,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// For qliksense overrides/commands
 
+	cmd.AddCommand(getInstallableVersionsCmd(p))
 	cmd.AddCommand(pullQliksenseImages(p))
 	cmd.AddCommand(pushQliksenseImages(p))
 	cmd.AddCommand(about(p))
@@ -226,18 +228,11 @@ func copy(src, dst string) (int64, error) {
 	return nBytes, err
 }
 
-func levenstein(cmd *cobra.Command) bool {
-	cmd.SuggestionsMinimumDistance = 4
+func levenstein(cmd *cobra.Command) {
+	cmd.SuggestionsMinimumDistance = 2
 	if len(os.Args) > 1 {
 		args := os.Args[1]
-		for _, ctx := range cmd.Commands() {
-			val := *ctx
-			if args == val.Name() {
-				//found command
-				return false
-			}
-		}
-		suggest := cmd.SuggestionsFor(os.Args[1])
+		suggest := cmd.SuggestionsFor(args)
 		if len(suggest) > 0 {
 			arg := []string{}
 			for _, cm := range os.Args {
@@ -246,8 +241,6 @@ func levenstein(cmd *cobra.Command) bool {
 			arg[1] = suggest[0]
 			out := ansi.NewColorableStdout()
 			fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
-			return true
 		}
 	}
-	return false
 }

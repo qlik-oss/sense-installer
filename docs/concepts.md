@@ -75,3 +75,22 @@ When you perform `qliksense install` or `qliksene config apply`, qliksense opera
 - Install kubernetes resources
 - Push generated patches into a new branch in the provided git repo. _Gives you ability to merge patches into your master branch_
 - Create a CronJob to monitor master branch. Any changes pushed to master branch will be applied into the cluster. _This is a light weight `git-ops` model_
+
+## Enable GitOps
+
+to enable gitops the following section should be in the CR
+
+```yaml
+....
+spec:
+  git:
+    repository: https://github.com/ffoysal/qliksense-k8s
+    accessToken: git-token
+    userName: git-username
+  gitOps:
+    enabled: "yes"
+    schedule: "*/5 * * * *"
+    watchBranch: pr-branch-24868a33
+    image: qlik-docker-oss.bintray.io/qliksense-repo-watcher
+....
+```
