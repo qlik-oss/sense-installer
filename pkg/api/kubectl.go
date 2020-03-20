@@ -109,6 +109,7 @@ func KubectlDirectOps(opr []string, namespace string) error {
 	LogDebugMessage("Kubectl command: %s %v\n", "kubectl", arguments)
 	sterrBuffer := &bytes.Buffer{}
 	cmd.Stderr = sterrBuffer
+	cmd.Stdout = os.Stdout
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("kubectl %v failed with: %v, %v\n", opr, err, sterrBuffer.String())
 	}
