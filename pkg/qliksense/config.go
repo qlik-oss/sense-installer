@@ -59,14 +59,21 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 	}
 }
 
+func (q *Qliksense) configEjson() error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if ejsonKeyDir, err := qConfig.GetCurrentContextEjsonKeyDir(); err != nil {
+		return err
+	} else if err := os.Unsetenv("EJSON_KEY"); err != nil {
+		return err
+	} else if err := os.Setenv("EJSON_KEYDIR", ejsonKeyDir); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	if qcr.Spec.RotateKeys != "None" {
-		if err := os.Unsetenv("EJSON_KEY"); err != nil {
-			fmt.Printf("error unsetting EJSON_KEY environment variable: %v\n", err)
-			return err
-		}
-		if err := os.Setenv("EJSON_KEYDIR", q.QliksenseEjsonKeyDir); err != nil {
-			fmt.Printf("error setting EJSON_KEYDIR environment variable: %v\n", err)
+		if err := q.configEjson(); err != nil {
 			return err
 		}
 	}
@@ -99,7 +106,6 @@ func (q *Qliksense) ConfigViewCR() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(r)
 	oth, err := q.getCurrentCrDependentResourceAsString()
 	if err != nil {
 		return err

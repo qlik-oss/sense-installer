@@ -273,11 +273,7 @@ func TestSetUpQliksenseContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := New(tt.args.qlikSenseHome)
-			if err != nil {
-				t.Errorf("unable to create a qliksense instance")
-				return
-			}
+			q := New(tt.args.qlikSenseHome)
 			if err := q.SetUpQliksenseContext(tt.args.contextName, tt.args.isDefaultContext); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -306,11 +302,7 @@ func TestSetUpQliksenseDefaultContext(t *testing.T) {
 	defer tearDown()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			q, err := New(tt.args.qlikSenseHome)
-			if err != nil {
-				t.Errorf("unable to create a qliksense instance")
-				return
-			}
+			q := New(tt.args.qlikSenseHome)
 			if err := q.SetUpQliksenseDefaultContext(); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseDefaultContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -334,7 +326,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs"},
+				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs", "gitops.enabled=yes", "gitops.schedule=30 * * * *"},
 			},
 			wantErr: false,
 		},
@@ -344,7 +336,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"someconfig=somevalue"},
+				args: []string{"someconfig=somevalue, gitops.schedule=bar", "gitops.enabled=bar"},
 			},
 			wantErr: true,
 		},
@@ -791,4 +783,154 @@ func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.Ql
 	}
 	err := fmt.Errorf("Both Value and ValueFrom are empty")
 	return "", err
+}
+
+func setupDeleteContext() func() {
+	if err := os.Mkdir(testDir, 0777); err != nil {
+		log.Printf("\nError occurred: %v", err)
+	}
+	config :=
+		`
+apiVersion: config.qlik.com/v1
+kind: QliksenseConfig
+metadata:
+  name: qliksenseConfig
+spec:
+  contexts:
+  - name: qlik-default
+    crFile: /root/.qliksense/contexts/qlik-default.yaml
+  - name: qlik1
+    crFile: /root/.qliksense/contexts/qlik1.yaml
+  - name: qlik2
+    crFile: /root/.qliksense/contexts/qlik2.yaml
+  currentContext: qlik1
+`
+	configFile := filepath.Join(testDir, "config.yaml")
+	// tests/config.yaml exists
+	ioutil.WriteFile(configFile, []byte(config), 0777)
+	contextYaml :=
+		`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik-default
+spec:
+  profile: docker-desktop
+  rotateKeys: "yes"
+  releaseName: qlik-default
+  `
+	qlikDefaultContext := "qlik-default"
+	// create contexts/qlik-default/ under tests/
+	contexts := "contexts"
+	contextsDir1 := filepath.Join(testDir, contexts, qlikDefaultContext)
+	if err := os.MkdirAll(contextsDir1, 0777); err != nil {
+		err = fmt.Errorf("Not able to create directories")
+		log.Fatal(err)
+	}
+	contextYaml1 :=
+		`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik1
+spec:
+  profile: docker-desktop
+  rotateKeys: "yes"
+  releaseName: qlik1`
+
+	contextYaml2 :=
+		`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik2
+spec:
+  profile: docker-desktop
+  rotateKeys: "yes"
+  releaseName: qlik2`
+
+	contextsDir := filepath.Join(testDir, contexts, "qlik1")
+	if err := os.MkdirAll(contextsDir, 0777); err != nil {
+		err = fmt.Errorf("Not able to create directories")
+		log.Fatal(err)
+	}
+
+	contextsDir2 := filepath.Join(testDir, contexts, "qlik2")
+	if err := os.MkdirAll(contextsDir2, 0777); err != nil {
+		err = fmt.Errorf("Not able to create directories")
+		log.Fatal(err)
+	}
+
+	contextFile := filepath.Join(contextsDir, "qlik1.yaml")
+	ioutil.WriteFile(contextFile, []byte(contextYaml1), 0777)
+
+	contextFile2 := filepath.Join(contextsDir2, "qlik2.yaml")
+	ioutil.WriteFile(contextFile2, []byte(contextYaml2), 0777)
+
+	contextFile1 := filepath.Join(contextsDir1, "qlik-default.yaml")
+	ioutil.WriteFile(contextFile1, []byte(contextYaml), 0777)
+
+	tearDown := func() {
+		os.RemoveAll(testDir)
+	}
+	return tearDown
+}
+
+func TestDeleteContexts(t *testing.T) {
+	type args struct {
+		qlikSenseHome string
+		contextName   string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "valid context",
+			args: args{
+				qlikSenseHome: testDir,
+				contextName:   "qlik2",
+			},
+			wantErr: false,
+		},
+		{
+			name: "default context",
+			args: args{
+				qlikSenseHome: testDir,
+				contextName:   "qlik-default",
+			},
+			wantErr: true,
+		},
+		{
+			name: "non-existent context",
+			args: args{
+				qlikSenseHome: testDir,
+				contextName:   "qlik3",
+			},
+			wantErr: true,
+		},
+		{
+			name: "current context",
+			args: args{
+				qlikSenseHome: testDir,
+				contextName:   "qlik1",
+			},
+			wantErr: true,
+		},
+	}
+	tearDown := setupDeleteContext()
+	defer tearDown()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := New(tt.args.qlikSenseHome)
+			var arg []string
+			arg = append(arg, tt.args.contextName)
+			if err := q.DeleteContextConfig(arg); (err != nil) != tt.wantErr {
+				t.Errorf("DeleteContext() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+
 }

@@ -28,7 +28,9 @@ func (q *Qliksense) UpgradeQK8s(keepPatchFiles bool) error {
 		return err
 	}
 	qcr.Spec.RotateKeys = "no"
-	if err := q.applyConfigToK8s(qcr); err != nil {
+	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
+		return err
+	} else if err := q.applyConfigToK8s(dcr); err != nil {
 		fmt.Println("cannot do kubectl apply on manifests")
 		return err
 	}
