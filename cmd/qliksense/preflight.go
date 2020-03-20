@@ -30,9 +30,7 @@ func preflightCmd(q *qliksense.Qliksense) *cobra.Command {
 		Long:  `perform preflight checks on the cluster`,
 		Example: `qliksense preflight <preflight_check_to_run>
 Usage:
-qliksense preflight --all
 qliksense preflight dns
-qliksense preflight mongo
 `,
 	}
 	return configCmd

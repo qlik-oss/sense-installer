@@ -10,6 +10,7 @@
     - [How qliksense CLI works](#how-qliksense-cli-works)
       - [Witout Git Repo](#Without-git-repo)
       - [With Git Repo](#With-a-git-repo)
+    - [Preflight checks](#Preflight-checks)
     - [Air Gapped](#air-gaped)
   
 ## About
@@ -146,5 +147,45 @@ qliksense config set git.repository="https://github.com/my-org/qliksense-k8s"
 
 qliksense config set git.accessToken=blablalaala
 ```
+## Preflight checks
+Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met. 
+The suite consists of a set of `collectors` which run the specifications of every test and `analyzers` which analyze the results of every test run by the collector.
+We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
+### DNS check 
+Run the following command to view help about the commands supported by preflight at any moment:
+```console
+qliksense preflight
+perform preflight checks on the cluster
+
+Usage:
+  qliksense preflight [command]
+
+Examples:
+qliksense preflight <preflight_check_to_run>
+
+Usage:
+qliksense preflight dns
+
+Available Commands:
+  dns         perform preflight dns check
+```
+
+Run the following command to perform preflight DNS check. The expected output is also shown below.
+```console
+qliksense preflight dns
+
+Downloaded Preflight
+
+--- PASS Required Kubernetes Version
+      --- Good to go.
+   --- PASS qnginx001 Status
+      --- deployment found
+   --- PASS DNS check
+      --- DNS check passed
+--- PASS   cluster-preflight-checks
+PASS
+
+PREFLIGHT DNS CHECK PASSED
+```
 ## Air gaped
