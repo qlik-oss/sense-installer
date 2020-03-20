@@ -163,6 +163,7 @@ func determinePlatformSpecificUrls(platform string) (string, string, error) {
 func (q *Qliksense) CheckDns() error {
 	// retrieve namespace
 	namespace := api.GetKubectlNamespace()
+
 	api.LogDebugMessage("Namespace: %s\n", namespace)
 
 	tmpl, err := template.New("test").Parse(dnsCheckYAML)
@@ -192,6 +193,7 @@ func (q *Qliksense) CheckDns() error {
 	const preflightFileName = "preflight"
 
 	fmt.Println("Creating resources to run preflight checks")
+
 	// kubectl create deployment
 	opr := fmt.Sprintf("create deployment %s --image=nginx", appName)
 	err = initiateK8sOps(opr, namespace)
@@ -235,6 +237,7 @@ func (q *Qliksense) CheckDns() error {
 
 	// call preflight
 	preflightCommand := filepath.Join(q.QliksenseHome, PreflightChecksDirName, preflightFileName)
+
 	err = invokePreflight(preflightCommand, tempYaml)
 	if err != nil {
 		fmt.Println(err)

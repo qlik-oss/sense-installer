@@ -44,14 +44,13 @@ func initAndExecute() error {
 	qliksenseClient := qliksense.New(qlikSenseHome)
 	qliksenseClient.SetUpQliksenseDefaultContext()
 	cmd := rootCmd(qliksenseClient)
-
 	if err := cmd.Execute(); err != nil {
 		//levenstein checks (auto-suggestions)
 		levenstein(cmd)
 		return err
 	}
 
-	return nil
+		return nil
 }
 
 func setUpPaths() (string, error) {
@@ -220,9 +219,11 @@ func levenstein(cmd *cobra.Command) {
 			for _, cm := range os.Args {
 				arg = append(arg, cm)
 			}
-			arg[1] = suggest[0]
-			out := ansi.NewColorableStdout()
-			fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+			if !strings.EqualFold(arg[1], suggest[0]) {
+				arg[1] = suggest[0]
+				out := ansi.NewColorableStdout()
+				fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+			}
 		}
 	}
 }
