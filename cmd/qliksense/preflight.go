@@ -13,15 +13,12 @@ import (
 )
 
 const (
-	// preflight and support bundle releases have the same version
-	preflightRelease         = "v0.9.26"
-	preflightLinuxFile       = "preflight_linux_amd64.tar.gz"
-	preflightMacFile         = "preflight_darwin_amd64.tar.gz"
-	preflightWindowsFile     = "preflight_windows_amd64.zip"
-	supportbundleWindowsFile = "support-bundle_windows_amd64.zip"
-	supportbundleLinuxFile   = "support-bundle_linux_amd64.tar.gz"
-	supportbundleMacFile     = "support-bundle_darwin_amd64.tar.gz"
-	PreflightChecksDirName   = "preflight_checks"
+	// preflight releases have the same version
+	preflightRelease       = "v0.9.26"
+	preflightLinuxFile     = "preflight_linux_amd64.tar.gz"
+	preflightMacFile       = "preflight_darwin_amd64.tar.gz"
+	preflightWindowsFile   = "preflight_windows_amd64.zip"
+	PreflightChecksDirName = "preflight_checks"
 )
 
 var preflightBaseURL = fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/%s/", preflightRelease)
@@ -48,9 +45,9 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Long:    `perform preflight dns check to check DNS connectivity status in the cluster`,
 		Example: `qliksense preflight dns`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			err := DownloadPreflightAndSupportBundle(q)
+			err := DownloadPreflight(q)
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight/support-bundle: %+v", err)
+				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
 				log.Println(err)
 				return err
 			}
@@ -60,26 +57,25 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 	return preflightDnsCmd
 }
 
-func DownloadPreflightAndSupportBundle(q *qliksense.Qliksense) error {
+func DownloadPreflight(q *qliksense.Qliksense) error {
 	const preflightExecutable = "preflight"
-	const supportbundleExecutable = "support-bundle"
 
 	preflightInstallDir := filepath.Join(q.QliksenseHome, PreflightChecksDirName)
 	platform := runtime.GOOS
 
-	exists, err := CheckInstalled(preflightInstallDir, filepath.Join(preflightInstallDir, preflightExecutable), filepath.Join(preflightInstallDir, supportbundleExecutable))
+	exists, err := CheckInstalled(preflightInstallDir, preflightExecutable)
 	if err != nil {
-		err = fmt.Errorf("There has been an error when trying to determine the existence of preflight and support-bundle installers")
+		err = fmt.Errorf("There has been an error when trying to determine if preflight installer exists")
 		log.Println(err)
 		return err
 	}
 	if exists {
-		// preflight and support-bundle exist, no need to download again.
-		api.LogDebugMessage("Preflight and support-bundle already exist, proceeding to perform checks")
+		// preflight exist, no need to download again.
+		api.LogDebugMessage("Preflight already exist, proceeding to perform checks")
 		return nil
 	}
 
-	// Create the Preflight-check directory, download and install preflight and support-bundle
+	// Create the Preflight-check directory, download and install preflight
 	if !api.DirExists(preflightInstallDir) {
 		api.LogDebugMessage("%s does not exist, creating now\n", preflightInstallDir)
 		if err := os.Mkdir(preflightInstallDir, os.ModePerm); err != nil {
@@ -90,7 +86,7 @@ func DownloadPreflightAndSupportBundle(q *qliksense.Qliksense) error {
 	}
 	api.LogDebugMessage("Preflight-checks install Dir: %s exists", preflightInstallDir)
 
-	preflightUrl, preflightFile, supportbundleUrl, supportBundleFile, err := DeterminePlatformSpecificPaths(platform, preflightInstallDir)
+	preflightUrl, preflightFile, err := DeterminePlatformSpecificUrls(platform)
 	if err != nil {
 		err = fmt.Errorf("There was an error when trying to determine platform specific paths")
 		return err
@@ -103,26 +99,16 @@ func DownloadPreflightAndSupportBundle(q *qliksense.Qliksense) error {
 	}
 	fmt.Println("Downloaded Preflight")
 
-	// Download support-bundle
-	err = DownloadAndExplode(supportbundleUrl, preflightInstallDir, supportBundleFile)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Downloaded Support bundle")
-
 	return nil
 }
 
-func CheckInstalled(preflightInstallDir, preflightInstaller, supportbundleInstaller string) (bool, error) {
+func CheckInstalled(preflightInstallDir, preflightExecutable string) (bool, error) {
 	installerExists := true
+	preflightInstaller := filepath.Join(preflightInstallDir, preflightExecutable)
 	if api.DirExists(preflightInstallDir) {
 		if !api.FileExists(preflightInstaller) {
 			installerExists = false
 			api.LogDebugMessage("Preflight install directory exists, but preflight installer does not exist")
-		}
-		if !api.FileExists(supportbundleInstaller) {
-			installerExists = false
-			api.LogDebugMessage("Preflight install directory exists, but support-bundle installer does not exist")
 		}
 	} else {
 		installerExists = false
@@ -148,31 +134,27 @@ func DownloadAndExplode(url, installDir, file string) error {
 	return nil
 }
 
-func DeterminePlatformSpecificPaths(platform, preflightInstallDir string) (string, string, string, string, error) {
+func DeterminePlatformSpecificUrls(platform string) (string, string, error) {
 
-	var preflightUrl, preflightFile, supportbundleUrl, supportBundleFile string
+	var preflightUrl, preflightFile string
 
 	if runtime.GOARCH != `amd64` {
 		err := fmt.Errorf("%s architecture is not supported", runtime.GOARCH)
-		return "", "", "", "", err
+		return "", "", err
 	}
 
 	switch platform {
 	case "windows":
 		preflightFile = preflightWindowsFile
-		supportBundleFile = supportbundleWindowsFile
 	case "darwin":
 		preflightFile = preflightMacFile
-		supportBundleFile = supportbundleMacFile
 	case "linux":
 		preflightFile = preflightLinuxFile
-		supportBundleFile = supportbundleLinuxFile
 	default:
 		err := fmt.Errorf("Unable to download the preflight executable for the underlying platform\n")
-		return "", "", "", "", err
+		return "", "", err
 	}
 	preflightUrl = fmt.Sprintf("%s%s", preflightBaseURL, preflightFile)
-	supportbundleUrl = fmt.Sprintf("%s%s", preflightBaseURL, supportBundleFile)
 
-	return preflightUrl, preflightFile, supportbundleUrl, supportBundleFile, nil
+	return preflightUrl, preflightFile, nil
 }

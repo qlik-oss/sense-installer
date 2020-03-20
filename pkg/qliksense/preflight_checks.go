@@ -164,6 +164,11 @@ func (q *Qliksense) checkDns() error {
 	// calling preflight here..
 	preflightCommand := filepath.Join(q.QliksenseHome, PreflightChecksDirName, preflightFileName)
 	trackSuccess, err := invokePreflight(preflightCommand, tempYaml)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	if trackSuccess {
 		fmt.Println("PREFLIGHT DNS CHECK PASSED")
 	} else {
@@ -205,8 +210,8 @@ func invokePreflight(preflightCommand string, yamlFile *os.File) (bool, error) {
 	trackPrg := false
 
 	// We are only checking the overall "PASS" or "FAIL"
-	// We are going to look for the first occurance of PASS or FAIL from the back...
-	// there are also some space like deceiving characters
+	// We are going to look for the first occurance of PASS or FAIL from the end
+	// there are also some space-like deceiving characters
 	for i := len(outputArr) - 1; i >= 0; i-- {
 		if strings.TrimSpace(outputArr[i]) != "" {
 			if outputArr[i] == "PASS" {
