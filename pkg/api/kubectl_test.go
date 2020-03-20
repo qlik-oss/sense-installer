@@ -19,7 +19,7 @@ func TestGetKubectlNamespace(t *testing.T) {
 }
 
 func TestKubectlDirectOps(t *testing.T) {
-	//t.Skip()
+	t.Skip()
 	SetKubectlNamespace("test")
 	ns := GetKubectlNamespace()
 	opr := fmt.Sprintf("version")
