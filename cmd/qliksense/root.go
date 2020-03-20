@@ -44,13 +44,12 @@ func initAndExecute() error {
 	qliksenseClient := qliksense.New(qlikSenseHome)
 	qliksenseClient.SetUpQliksenseDefaultContext()
 	cmd := rootCmd(qliksenseClient)
-	//levenstein checks (auto-suggestions)
-	levenstein(cmd)
 	if err := cmd.Execute(); err != nil {
 
 		return err
 	}
-
+		//levenstein checks (auto-suggestions)
+		levenstein(cmd)
 	return nil
 }
 
