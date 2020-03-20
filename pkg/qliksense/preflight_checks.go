@@ -4,16 +4,28 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"text/template"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
-	"github.com/spf13/cobra"
 )
+
+const (
+	// preflight releases have the same version
+	preflightRelease       = "v0.9.26"
+	preflightLinuxFile     = "preflight_linux_amd64.tar.gz"
+	preflightMacFile       = "preflight_darwin_amd64.tar.gz"
+	preflightWindowsFile   = "preflight_windows_amd64.zip"
+	PreflightChecksDirName = "preflight_checks"
+)
+
+var preflightBaseURL = fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/%s/", preflightRelease)
 
 const dnsCheckYAML = `
 apiVersion: troubleshoot.replicated.com/v1beta1
@@ -70,24 +82,109 @@ spec:
               message: DNS check passed
 `
 
-// PerformDnsCheck
-func PerformDnsCheck(q *Qliksense) *cobra.Command {
-	var (
-		cmd *cobra.Command
-	)
+func (q *Qliksense) DownloadPreflight() error {
+	const preflightExecutable = "preflight"
 
-	cmd = &cobra.Command{
-		Use:     "preflight dns",
-		Short:   "Perform preflight check on dns ",
-		Example: `qliksense preflight --dns`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.checkDns()
-		},
+	preflightInstallDir := filepath.Join(q.QliksenseHome, PreflightChecksDirName)
+	platform := runtime.GOOS
+
+	exists, err := checkInstalled(preflightInstallDir, preflightExecutable)
+	if err != nil {
+		err = fmt.Errorf("There has been an error when trying to determine if preflight installer exists")
+		log.Println(err)
+		return err
 	}
-	return cmd
+	if exists {
+		// preflight exist, no need to download again.
+		api.LogDebugMessage("Preflight already exist, proceeding to perform checks")
+		return nil
+	}
+
+	// Create the Preflight-check directory, download and install preflight
+	if !api.DirExists(preflightInstallDir) {
+		api.LogDebugMessage("%s does not exist, creating now\n", preflightInstallDir)
+		if err := os.Mkdir(preflightInstallDir, os.ModePerm); err != nil {
+			err = fmt.Errorf("Not able to create %s dir: %v", preflightInstallDir, err)
+			log.Println(err)
+			return nil
+		}
+	}
+	api.LogDebugMessage("Preflight-checks install Dir: %s exists", preflightInstallDir)
+
+	preflightUrl, preflightFile, err := determinePlatformSpecificUrls(platform)
+	if err != nil {
+		err = fmt.Errorf("There was an error when trying to determine platform specific paths")
+		return err
+	}
+
+	// Download Preflight
+	err = downloadAndExplode(preflightUrl, preflightInstallDir, preflightFile)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Downloaded Preflight")
+
+	return nil
 }
 
-func (q *Qliksense) checkDns() error {
+func checkInstalled(preflightInstallDir, preflightExecutable string) (bool, error) {
+	installerExists := true
+	preflightInstaller := filepath.Join(preflightInstallDir, preflightExecutable)
+	if api.DirExists(preflightInstallDir) {
+		if !api.FileExists(preflightInstaller) {
+			installerExists = false
+			api.LogDebugMessage("Preflight install directory exists, but preflight installer does not exist")
+		}
+	} else {
+		installerExists = false
+	}
+	return installerExists, nil
+}
+
+func downloadAndExplode(url, installDir, file string) error {
+	err := api.DownloadFile(url, installDir, file)
+	if err != nil {
+		return err
+	}
+	api.LogDebugMessage("Downloaded File: %s", file)
+
+	fileToUntar := filepath.Join(installDir, file)
+	api.LogDebugMessage("File to explode: %s", file)
+
+	err = api.ExplodePackage(installDir, fileToUntar)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func determinePlatformSpecificUrls(platform string) (string, string, error) {
+
+	var preflightUrl, preflightFile string
+
+	if runtime.GOARCH != `amd64` {
+		err := fmt.Errorf("%s architecture is not supported", runtime.GOARCH)
+		return "", "", err
+	}
+
+	switch platform {
+	case "windows":
+		preflightFile = preflightWindowsFile
+	case "darwin":
+		preflightFile = preflightMacFile
+	case "linux":
+		preflightFile = preflightLinuxFile
+	default:
+		err := fmt.Errorf("Unable to download the preflight executable for the underlying platform\n")
+		return "", "", err
+	}
+	preflightUrl = fmt.Sprintf("%s%s", preflightBaseURL, preflightFile)
+
+	return preflightUrl, preflightFile, nil
+}
+
+func (q *Qliksense) CheckDns() error {
 	// retrieve namespace
 	namespace := api.GetKubectlNamespace()
 	api.LogDebugMessage("Namespace here: %s", namespace)
@@ -145,7 +242,7 @@ func (q *Qliksense) checkDns() error {
 	api.LogDebugMessage("create service executed")
 
 	defer func() {
-		// Deleting service..
+		// delete service
 		opr = fmt.Sprintf("delete service %s", appName)
 		// we want to delete the k8s resource here, we dont care a lot about an error here
 		_ = initiateK8sOps(opr, namespace)
@@ -161,7 +258,7 @@ func (q *Qliksense) checkDns() error {
 	}
 	api.LogDebugMessage("kubectl wait executed")
 
-	// calling preflight here..
+	// call preflight
 	preflightCommand := filepath.Join(q.QliksenseHome, PreflightChecksDirName, preflightFileName)
 	trackSuccess, err := invokePreflight(preflightCommand, tempYaml)
 	if err != nil {
