@@ -1,13 +1,21 @@
 package api
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func checkExists(filename string) os.FileInfo {
@@ -108,4 +116,153 @@ func ExecuteTaskWithBlinkingStdoutFeedback(task func() (interface{}, error), fee
 			printProgress(false)
 		}
 	}
+}
+
+func DownloadFile(url, baseFolder, installerName string) error {
+	var (
+		out  *os.File
+		err  error
+		resp *http.Response
+	)
+	// Create the file
+	fileName := filepath.Join(baseFolder, installerName)
+	LogDebugMessage("Installer Filename: %s\n", fileName)
+	if out, err = os.Create(fileName); err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Get the data
+	if resp, err = http.Get(url); err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("unable to download the file from URL: %s, status: %s", url, resp.Status)
+		log.Println(err)
+		return err
+	}
+
+	// Write the body to file
+	if _, err = io.Copy(out, resp.Body); err != nil {
+		return err
+	}
+	err = os.Chmod(fileName, os.ModePerm)
+	if err != nil {
+		log.Println(err)
+	}
+	return nil
+}
+
+func ExplodePackage(destination, fileToUntar string) error {
+	LogDebugMessage("Destination: %s\n", destination)
+	LogDebugMessage("fileToUntar: %s\n", fileToUntar)
+
+	if strings.HasSuffix(fileToUntar, "zip") {
+		LogDebugMessage("This is a windows file : %s", fileToUntar)
+		err := UnZipFile(destination, fileToUntar)
+		if err != nil {
+			return nil
+		}
+	} else if strings.HasSuffix(fileToUntar, "tar.gz") {
+		LogDebugMessage("This is a mac/linux file: %s", fileToUntar)
+		err := UntarGzFile(destination, fileToUntar)
+		if err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func UntarGzFile(destination, fileToUntar string) error {
+	lFile, err := os.Open(fileToUntar)
+	if err != nil {
+		err = errors.Wrapf(err, "unable to read the local file %s", fileToUntar)
+		log.Fatal(err)
+		return err
+	}
+
+	gzReader, err := gzip.NewReader(lFile)
+	if err != nil {
+		err = errors.Wrap(err, "unable to load the file into a gz reader")
+		log.Fatal(err)
+		return err
+	}
+	defer gzReader.Close()
+
+	tarReader := tar.NewReader(gzReader)
+	for {
+		header, err := tarReader.Next()
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			err = errors.Wrap(err, "error during untar")
+			log.Fatal(err)
+			return err
+		case header == nil:
+			continue
+		}
+
+		fileInLoop := filepath.Join(destination, header.Name)
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if _, err := os.Stat(fileInLoop); err != nil {
+				if err := os.MkdirAll(fileInLoop, 0755); err != nil {
+					err = errors.Wrapf(err, "error creating directory %s", fileInLoop)
+					log.Fatal(err)
+					return err
+				}
+			}
+		case tar.TypeReg:
+			fileAtLoc, err := os.OpenFile(fileInLoop, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				err = errors.Wrapf(err, "error opening file %s", fileInLoop)
+				log.Fatal(err)
+				return err
+			}
+
+			if _, err := io.Copy(fileAtLoc, tarReader); err != nil {
+				err = errors.Wrapf(err, "error writing file %s", fileInLoop)
+				log.Fatal(err)
+				return err
+			}
+			fileAtLoc.Close()
+			fileAtLoc.Chmod(os.ModePerm)
+		}
+	}
+	return nil
+}
+
+func UnZipFile(destination, fileToUnzip string) error {
+	zipReader, _ := zip.OpenReader(fileToUnzip)
+	for _, file := range zipReader.Reader.File {
+
+		zippedFile, err := file.Open()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer zippedFile.Close()
+		extractedFilePath := filepath.Join(
+			destination,
+			file.Name,
+		)
+		outputFile, err := os.OpenFile(
+			extractedFilePath,
+			os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+			file.Mode(),
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer outputFile.Close()
+
+		_, err = io.Copy(outputFile, zippedFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		LogDebugMessage("File extracted: %s, Extracted file path: %s\n", file.Name, extractedFilePath)
+	}
+	return nil
 }
