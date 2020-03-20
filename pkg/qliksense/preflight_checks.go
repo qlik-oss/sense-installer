@@ -46,30 +46,6 @@ spec:
         timeout: 30s
 
   analyzers:
-    - clusterVersion:
-        outcomes:
-          - fail:
-              when: "<= 1.13.0"
-              message: The application requires at Kubernetes 1.13.0 or later, and recommends 1.15.0.
-              uri: https://www.kubernetes.io
-          - warn:
-              when: "< 1.13.1"
-              message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
-              uri: https://kubernetes.io
-          - pass:
-              when: ">= 1.13.0"
-              message: Good to go.
-    - deploymentStatus:
-        checkName: check for deploymentStatus
-        name: qnginx001
-        namespace: {{ . }}
-        outcomes:
-          - fail:
-              when: "= 0"
-              message: deployment not found
-          - pass:
-              when: "> 0"
-              message: deployment found
     - textAnalyze:
         checkName: DNS check
         collectorName: spin-up-pod-check-dns
