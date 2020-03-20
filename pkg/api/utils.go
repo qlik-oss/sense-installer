@@ -161,7 +161,7 @@ func ExplodePackage(destination, fileToUntar string) error {
 
 	if strings.HasSuffix(fileToUntar, "zip") {
 		LogDebugMessage("This is a windows file : %s", fileToUntar)
-		err := UntarZipFile(destination, fileToUntar)
+		err := UnZipFile(destination, fileToUntar)
 		if err != nil {
 			return nil
 		}
@@ -235,8 +235,8 @@ func UntarGzFile(destination, fileToUntar string) error {
 	return nil
 }
 
-func UntarZipFile(destination, fileToUntar string) error {
-	zipReader, _ := zip.OpenReader(fileToUntar)
+func UnZipFile(destination, fileToUnzip string) error {
+	zipReader, _ := zip.OpenReader(fileToUnzip)
 	for _, file := range zipReader.Reader.File {
 
 		zippedFile, err := file.Open()
