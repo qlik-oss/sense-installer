@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +18,7 @@ import (
 	"github.com/ttacon/chalk"
 )
 
-// To run this project in ddebug mode, run:
+// To run this project in debug mode, run:
 // export QLIKSENSE_DEBUG=true
 // qliksense <command>
 
@@ -45,14 +44,13 @@ func initAndExecute() error {
 	qliksenseClient := qliksense.New(qlikSenseHome)
 	qliksenseClient.SetUpQliksenseDefaultContext()
 	cmd := rootCmd(qliksenseClient)
-
 	if err := cmd.Execute(); err != nil {
 		//levenstein checks (auto-suggestions)
 		levenstein(cmd)
 		return err
 	}
 
-	return nil
+		return nil
 }
 
 func setUpPaths() (string, error) {
@@ -166,38 +164,21 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(crdsCmd)
 	crdsCmd.AddCommand(crdsViewCmd(p))
 	crdsCmd.AddCommand(crdsInstallCmd(p))
+
+	// add preflight command
+	preflightCmd := preflightCmd(p)
+	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
+	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
+	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
+
+	cmd.AddCommand(preflightCmd)
+
 	return cmd
 }
 
 func initConfig() {
 	viper.SetEnvPrefix("QLIKSENSE")
 	viper.AutomaticEnv()
-}
-
-func downloadFile(url string, filepath string) error {
-	var (
-		out  *os.File
-		err  error
-		resp *http.Response
-	)
-	// Create the file
-	if out, err = os.Create(filepath); err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Get the data
-	if resp, err = http.Get(url); err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Write the body to file
-	if _, err = io.Copy(out, resp.Body); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func copy(src, dst string) (int64, error) {
@@ -238,9 +219,11 @@ func levenstein(cmd *cobra.Command) {
 			for _, cm := range os.Args {
 				arg = append(arg, cm)
 			}
-			arg[1] = suggest[0]
-			out := ansi.NewColorableStdout()
-			fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+			if !strings.EqualFold(arg[1], suggest[0]) {
+				arg[1] = suggest[0]
+				out := ansi.NewColorableStdout()
+				fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+			}
 		}
 	}
 }

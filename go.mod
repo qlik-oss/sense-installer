@@ -39,6 +39,7 @@ require (
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/pkg/errors v0.8.1
 	github.com/qlik-oss/k-apis v0.0.22
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
@@ -56,6 +57,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
+	k8s.io/client-go v11.0.0+incompatible
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0
 )
