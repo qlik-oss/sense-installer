@@ -152,6 +152,7 @@ func removePrivateKey() {
 
 func setup() func() {
 	// create tests dir
+	os.RemoveAll(testDir)
 	if err := os.Mkdir(testDir, 0777); err != nil {
 		log.Printf("\nError occurred: %v", err)
 	}

@@ -50,7 +50,7 @@ func initAndExecute() error {
 		return err
 	}
 
-		return nil
+	return nil
 }
 
 func setUpPaths() (string, error) {
@@ -172,7 +172,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
 
 	cmd.AddCommand(preflightCmd)
-
+	cmd.AddCommand(loadCrFile(p))
 	return cmd
 }
 
