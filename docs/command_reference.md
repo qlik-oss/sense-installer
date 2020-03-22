@@ -24,7 +24,9 @@ spec:
   secrets:
     qliksense:
     - name: mongoDbUri
-      value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
+      value: mongodb://qlik-test-mongodb:27017/qliksense?ssl=false
   profile: docker-desktop
   rotateKeys: "yes"
   ```
+
+after doing one of the above commands, cli will set the current context to the cr name and install the qliksense into the cluster. so make sure you dont have a context (cr name = context name) with the same name already. It will though error if it same context name already exist.
