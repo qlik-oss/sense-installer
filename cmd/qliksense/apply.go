@@ -8,34 +8,32 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func loadCrFile(q *qliksense.Qliksense) *cobra.Command {
+func applyCmd(q *qliksense.Qliksense) *cobra.Command {
+
 	filePath := ""
 	c := &cobra.Command{
-		Use:   "load",
-		Short: "load a CR a file and create necessary structure for future use",
-		Long:  `load a CR a file and create necessary structure for future use`,
+		Use:     "apply",
+		Short:   "install qliksense based on provided cr file",
+		Long:    `install qliksense based on provided cr file`,
+		Example: `qliksense apply -f file_name or cat cr_file | qliksense apply -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if filePath == "-" {
 				if !isInputFromPipe() {
 					return errors.New("No input pipe present")
 				}
-				return q.LoadCr(os.Stdin)
+				return q.ApplyCRFromReader(os.Stdin)
 			}
 			file, e := os.Open(filePath)
 			if e != nil {
 				return errors.Wrapf(e,
 					"unable to read the file %s", filePath)
 			}
-			return q.LoadCr(file)
+			return q.ApplyCRFromReader(file)
 		},
 	}
+
 	f := c.Flags()
-	f.StringVarP(&filePath, "file", "f", "", "File to laod CR from")
+	f.StringVarP(&filePath, "file", "f", "", "Install from a CR file")
 	c.MarkFlagRequired("file")
 	return c
-}
-
-func isInputFromPipe() bool {
-	fileInfo, _ := os.Stdin.Stat()
-	return fileInfo.Mode()&os.ModeCharDevice == 0
 }

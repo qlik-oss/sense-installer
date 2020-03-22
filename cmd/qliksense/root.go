@@ -173,6 +173,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	cmd.AddCommand(preflightCmd)
 	cmd.AddCommand(loadCrFile(p))
+	cmd.AddCommand((applyCmd(p)))
 	return cmd
 }
 

@@ -32,12 +32,34 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
 	}
 	qConfig.CreateContextDirs(cr.GetName())
 
+	// encrypt the secrets and do base64 then update the CR
+	rsaPublicKey, _, err := qConfig.GetContextEncryptionKeyPair(cr.GetName())
+	if err != nil {
+		return "", err
+	}
+	for svc, nvs := range cr.Spec.Secrets {
+		for _, nv := range nvs {
+			if nv.ValueFrom == nil {
+				skv := &qapi.ServiceKeyValue{
+					Key:     nv.Name,
+					Value:   nv.Value,
+					SvcName: svc,
+				}
+				if err := q.processSecret(skv, rsaPublicKey, cr, false); err != nil {
+					return cr.GetName(), err
+				}
+			}
+		}
+	}
+
+	// write to disk
 	if err = qapi.WriteToFile(cr, qConfig.BuildCrFilePath(cr.GetName())); err != nil {
 		return "", err
 	}
 	qConfig.AddToContexts(cr.GetName(), qConfig.BuildCrFilePath(cr.GetName()))
 	qConfig.SetCurrentContextName(cr.GetName())
 	qConfig.Write()
+
 	return cr.GetName(), nil
 }
 
@@ -50,6 +72,7 @@ func readMultipleYamlFromReader(reader io.Reader) []string {
 		if s == "---" {
 			docs = append(docs, adoc)
 			adoc = ""
+			s = ""
 		}
 		adoc = adoc + "\n" + s
 	}

@@ -49,10 +49,6 @@ func (qc *QliksenseConfig) GetCR(contextName string) (*QliksenseCR, error) {
 	return GetCRObject(crFilePath)
 }
 
-func getUnencryptedCR() {
-
-}
-
 // GetCurrentCR create a QliksenseCR object for current context
 func (qc *QliksenseConfig) GetCurrentCR() (*QliksenseCR, error) {
 	return qc.GetCR(qc.Spec.CurrentContext)
@@ -237,6 +233,15 @@ func (qc *QliksenseConfig) getDockerConfigJsonSecret(name string) (*DockerConfig
 }
 
 func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string, error) {
+
+	if qcr, err := qc.GetCurrentCR(); err != nil {
+		return "", err
+	} else {
+		return qc.getContextEncryptionKeyPairLocation(qcr.GetName())
+	}
+}
+
+func (qc *QliksenseConfig) getContextEncryptionKeyPairLocation(contextName string) (string, error) {
 	// Check env var: QLIKSENSE_KEY_LOCATION to determine location to store keypair
 	var secretKeyPairLocation string
 	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
@@ -245,13 +250,9 @@ func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string,
 	} else {
 		// QLIKSENSE_KEY_LOCATION has not been set, hence storing key pair in default location:
 		// /.qliksense/secrets/contexts/<current-context>/secrets/
-		if qcr, err := qc.GetCurrentCR(); err != nil {
-			return "", err
-		} else {
-			secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, qcr.GetObjectMeta().GetName(), qliksenseSecretsDirName)
-		}
+		secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, contextName, qliksenseSecretsDirName)
+
 	}
-	LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
 	return secretKeyPairLocation, nil
 }
 
@@ -268,7 +269,15 @@ func (qc *QliksenseConfig) GetCurrentContextEjsonKeyDir() (string, error) {
 }
 
 func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey, *rsa.PrivateKey, error) {
-	secretKeyPairLocation, err := qc.getCurrentContextEncryptionKeyPairLocation()
+	if qcr, err := qc.GetCurrentCR(); err != nil {
+		return nil, nil, err
+	} else {
+		return qc.GetContextEncryptionKeyPair(qcr.GetName())
+	}
+}
+
+func (qc *QliksenseConfig) GetContextEncryptionKeyPair(contextName string) (*rsa.PublicKey, *rsa.PrivateKey, error) {
+	secretKeyPairLocation, err := qc.getContextEncryptionKeyPairLocation(contextName)
 	if err != nil {
 		return nil, nil, err
 	}
