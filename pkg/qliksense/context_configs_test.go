@@ -165,7 +165,7 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: /root/.qliksense/contexts/qlik-default.yaml
+    crFile: ./tests/contexts/qlik-default/qlik-default.yaml
   currentContext: qlik-default
 `
 	configFile := filepath.Join(testDir, "config.yaml")
