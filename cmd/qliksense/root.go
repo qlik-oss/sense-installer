@@ -50,7 +50,7 @@ func initAndExecute() error {
 		return err
 	}
 
-		return nil
+	return nil
 }
 
 func setUpPaths() (string, error) {
@@ -168,6 +168,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add preflight command
 	preflightCmd := preflightCmd(p)
 	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
+	preflightCmd.AddCommand(preflightCheckK8sVersionCmd(p))
 	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
 	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
 
