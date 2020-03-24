@@ -79,5 +79,6 @@ func (qp *QliksensePreflight) CheckK8sVersion() error {
 		return err
 	}
 
+	fmt.Println("Minimum kubernetes version check completed")
 	return nil
 }

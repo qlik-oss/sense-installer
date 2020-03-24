@@ -123,6 +123,6 @@ func (qp *QliksensePreflight) CheckDns() error {
 		fmt.Println(err)
 		return err
 	}
-	fmt.Println("Preflight checks completed, cleaning up resources now")
+	fmt.Println("DNS check completed, cleaning up resources now")
 	return nil
 }
