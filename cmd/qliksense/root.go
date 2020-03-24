@@ -42,7 +42,6 @@ func initAndExecute() error {
 	api.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
 
 	qliksenseClient := qliksense.New(qlikSenseHome)
-	qliksenseClient.SetUpQliksenseDefaultContext()
 	cmd := rootCmd(qliksenseClient)
 	if err := cmd.Execute(); err != nil {
 		//levenstein checks (auto-suggestions)
@@ -50,7 +49,7 @@ func initAndExecute() error {
 		return err
 	}
 
-		return nil
+	return nil
 }
 
 func setUpPaths() (string, error) {
@@ -85,16 +84,37 @@ var versionCmd = &cobra.Command{
 	},
 }
 
-func rootCmd(p *qliksense.Qliksense) *cobra.Command {
-	var (
-		cmd *cobra.Command
-	)
+func commandUsesContext(command string) bool {
+	return command != "" && command != "help" && command != "version"
+}
 
-	cmd = &cobra.Command{
+func globalPreRun(cmd *cobra.Command, p *qliksense.Qliksense) {
+	if command := cmd.CalledAs(); commandUsesContext(command) {
+		if isEulaEnforced() {
+			enforceEula(p)
+		}
+
+		if err := p.SetUpQliksenseDefaultContext(); err != nil {
+			panic(err)
+		}
+
+		if isEulaEnforced() {
+			if err := p.SetEulaAccepted(); err != nil {
+				panic(err)
+			}
+		}
+	}
+}
+
+func rootCmd(p *qliksense.Qliksense) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "qliksense",
 		Short: "Qliksense cli tool",
 		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			globalPreRun(cmd, p)
+		},
 	}
 
 	cmd.Flags().SetInterspersed(false)
