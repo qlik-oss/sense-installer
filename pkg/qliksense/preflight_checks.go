@@ -163,7 +163,8 @@ func determinePlatformSpecificUrls(platform string) (string, string, error) {
 func (q *Qliksense) CheckDns() error {
 	// retrieve namespace
 	namespace := api.GetKubectlNamespace()
-	api.LogDebugMessage("Namespace here: %s", namespace)
+
+	api.LogDebugMessage("Namespace: %s\n", namespace)
 
 	tmpl, err := template.New("test").Parse(dnsCheckYAML)
 	if err != nil {
@@ -191,6 +192,8 @@ func (q *Qliksense) CheckDns() error {
 	const PreflightChecksDirName = "preflight_checks"
 	const preflightFileName = "preflight"
 
+	fmt.Println("Creating resources to run preflight checks")
+
 	// kubectl create deployment
 	opr := fmt.Sprintf("create deployment %s --image=nginx", appName)
 	err = initiateK8sOps(opr, namespace)
@@ -198,7 +201,6 @@ func (q *Qliksense) CheckDns() error {
 		fmt.Println(err)
 		return err
 	}
-	api.LogDebugMessage("create deployment executed")
 
 	defer func() {
 		// Deleting deployment..
@@ -215,7 +217,6 @@ func (q *Qliksense) CheckDns() error {
 		fmt.Println(err)
 		return err
 	}
-	api.LogDebugMessage("create service executed")
 
 	defer func() {
 		// delete service
@@ -236,16 +237,11 @@ func (q *Qliksense) CheckDns() error {
 
 	// call preflight
 	preflightCommand := filepath.Join(q.QliksenseHome, PreflightChecksDirName, preflightFileName)
-	trackSuccess, err := invokePreflight(preflightCommand, tempYaml)
+
+	err = invokePreflight(preflightCommand, tempYaml)
 	if err != nil {
 		fmt.Println(err)
 		return err
-	}
-
-	if trackSuccess {
-		fmt.Println("PREFLIGHT DNS CHECK PASSED")
-	} else {
-		fmt.Println("PREFLIGHT DNS CHECK FAILED")
 	}
 
 	return nil
@@ -261,7 +257,7 @@ func initiateK8sOps(opr, namespace string) error {
 	return nil
 }
 
-func invokePreflight(preflightCommand string, yamlFile *os.File) (bool, error) {
+func invokePreflight(preflightCommand string, yamlFile *os.File) error {
 	arguments := []string{}
 	arguments = append(arguments, yamlFile.Name(), "--interactive=false")
 	cmd := exec.Command(preflightCommand, arguments...)
@@ -270,7 +266,7 @@ func invokePreflight(preflightCommand string, yamlFile *os.File) (bool, error) {
 	cmd.Stdout = sterrBuffer
 	cmd.Stderr = sterrBuffer
 	if err := cmd.Run(); err != nil {
-		return false, fmt.Errorf("Error when running preflight command: %v\n", err)
+		return fmt.Errorf("Error when running preflight command: %v\n", err)
 	}
 	ind := strings.Index(sterrBuffer.String(), "---")
 	output := sterrBuffer.String()
@@ -278,25 +274,28 @@ func invokePreflight(preflightCommand string, yamlFile *os.File) (bool, error) {
 		output = fmt.Sprintf("%s\n%s", output[:ind], output[ind:])
 	}
 	fmt.Printf("%v\n", output)
-	outputArr := strings.Fields(strings.TrimSpace(output))
-	trackSuccess := false
-	trackPrg := false
 
-	// We are only checking the overall "PASS" or "FAIL"
+	// Maybe good to retain this part in case we need to process the output in future.
 	// We are going to look for the first occurance of PASS or FAIL from the end
-	// there are also some space-like deceiving characters
-	for i := len(outputArr) - 1; i >= 0; i-- {
-		if strings.TrimSpace(outputArr[i]) != "" {
-			if outputArr[i] == "PASS" {
-				trackSuccess = true
-				trackPrg = true
-			} else if outputArr[i] == "FAIL" {
-				trackPrg = true
-			}
-		}
-		if trackPrg {
-			break
-		}
-	}
-	return trackSuccess, nil
+	// there are also some space-like deceiving characters which are being hard to get by
+
+	//outputArr := strings.Fields(strings.TrimSpace(output))
+	//trackSuccess := false
+	//trackPrg := false
+
+	//for i := len(outputArr) - 1; i >= 0; i-- {
+	//	if strings.TrimSpace(outputArr[i]) != "" {
+	//		if outputArr[i] == "PASS" {
+	//			trackSuccess = true
+	//			trackPrg = true
+	//		} else if outputArr[i] == "FAIL" {
+	//			trackPrg = true
+	//		}
+	//	}
+	//	if trackPrg {
+	//		break
+	//	}
+	//}
+	fmt.Println("Preflight checks completed, cleaning up resources now")
+	return nil
 }

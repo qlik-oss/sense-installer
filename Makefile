@@ -46,11 +46,11 @@ build: clean generate
 .PHONY: test
 test: clean generate
 ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
-	$(eval TMP := $(shell mktemp -d))
-	git clone https://github.com/docker/distribution.git $(TMP)/docker-distribution
-	cd $(TMP)/docker-distribution; git checkout -b v2.7.1; make
-	cp $(TMP)/docker-distribution/bin/registry pkg/qliksense/docker-registry
-	-rm -rf $(TMP)/docker-distribution
+	$(eval TMP-docker-distribution := $(shell mktemp -d))
+	git clone https://github.com/docker/distribution.git $(TMP-docker-distribution)/docker-distribution
+	cd $(TMP-docker-distribution)/docker-distribution; git checkout -b v2.7.1; make
+	cp $(TMP-docker-distribution)/docker-distribution/bin/registry pkg/qliksense/docker-registry
+	-rm -rf $(TMP-docker-distribution)
 endif
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
 	$(MAKE) clean
@@ -70,7 +70,7 @@ $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT):
 	GOOS=$(CLIENT_PLATFORM) GOARCH=$(CLIENT_ARCH) $(XBUILD) -o $@ ./cmd/$(MIXIN)
 
 ifeq ($(CLIENT_PLATFORM),windows)
-	zip $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH).zip $(BINDIR)/$(VERSION)/ $(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
+	zip $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH).zip $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 else
 	tar -czvf $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH).tar.gz -C $(BINDIR)/$(VERSION)/ $(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 endif
@@ -91,12 +91,16 @@ clean-packr: packr2
 	cd pkg/qliksense && packr2 clean
 
 get-crds:
-	$(eval TMP := $(shell mktemp -d))
-	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP)/operator
+ifeq ($(QLIKSENSE_OPERATOR_DIR),)
+	$(eval TMP-operator := $(shell mktemp -d))
+	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP-operator)/operator
+	$(MAKE) QLIKSENSE_OPERATOR_DIR=$(TMP-operator)/operator get-crds
+	-rm -rf $(TMP-operator)
+else
 	mkdir -p pkg/qliksense/crds/cr
 	mkdir -p pkg/qliksense/crds/crd
 	mkdir -p pkg/qliksense/crds/crd-deploy
-	cp $(TMP)/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
-	cp $(TMP)/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
-	cp $(TMP)/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
-	-rm -rf $(TMP)/operator
+	cp $(QLIKSENSE_OPERATOR_DIR)/deploy/*.yaml pkg/qliksense/crds/crd-deploy
+	cp $(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
+	cp $(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
+endif
