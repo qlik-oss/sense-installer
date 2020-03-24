@@ -18,5 +18,6 @@ nav:
   - Overview: index.md
   - getting_started.md
   - concepts.md
+  - preflight_checks.md
   - air_gap.md
   - Releases ⧉: https://github.com/qlik-oss/sense-installer/releases

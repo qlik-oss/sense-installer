@@ -12,15 +12,10 @@ import (
 
 func preflightCmd(q *qliksense.Qliksense) *cobra.Command {
 	var preflightCmd = &cobra.Command{
-		Use:   "preflight",
-		Short: "perform preflight checks on the cluster",
-		Long:  `perform preflight checks on the cluster`,
-		Example: `qliksense preflight <preflight_check_to_run>
-Usage:
-qliksense preflight dns
-qliksense preflight k8s-version
-qliksense preflight all
-`,
+		Use:     "preflight",
+		Short:   "perform preflight checks on the cluster",
+		Long:    `perform preflight checks on the cluster`,
+		Example: `qliksense preflight <preflight_check_to_run>`,
 	}
 	return preflightCmd
 }
