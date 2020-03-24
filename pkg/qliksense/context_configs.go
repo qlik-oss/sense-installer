@@ -301,7 +301,7 @@ func (q *Qliksense) ListContextConfigs() error {
 	w.Flush()
 	if len(qliksenseConfig.Spec.Contexts) > 0 {
 		for _, cont := range qliksenseConfig.Spec.Contexts {
-			fmt.Fprintln(w, cont.Name, "\t", cont.CrFile, "\t")
+			fmt.Fprintln(w, cont.Name, "\t", qliksenseConfig.GetCRFilePath(cont.Name), "\t")
 		}
 		w.Flush()
 		fmt.Fprintln(out, "")
@@ -379,6 +379,7 @@ func (q *Qliksense) SetUpQliksenseDefaultContext() error {
 
 // SetUpQliksenseContext - to setup qliksense context
 func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext bool) error {
+	fmt.Println(contextName)
 	if contextName == "" {
 		err := fmt.Errorf("Please enter a non-empty context-name")
 		log.Println(err)
@@ -393,82 +394,30 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
 	var qliksenseConfig api.QliksenseConfig
-	configFileTrack := false
 
 	if !api.FileExists(qliksenseConfigFile) {
+		fmt.Println("In FileExist")
 		qliksenseConfig.AddBaseQliksenseConfigs(contextName)
 	} else {
+		fmt.Println("why here")
 		if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
 			log.Println(err)
 			return err
 		}
-		if isDefaultContext { // if config file exits but a default context is requested, we want to prevent writing to config file
-			configFileTrack = true
-		}
 	}
-	// creating a file in the name of the context if it does not exist/ opening it to append/modify content if it already exists
 
-	qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
-	if !api.DirExists(qliksenseContextsDir1) {
-		if err := os.Mkdir(qliksenseContextsDir1, os.ModePerm); err != nil {
-			err = fmt.Errorf("Not able to create %s dir: %v", qliksenseContextsDir1, err)
-			log.Println(err)
-			return err
-		}
+	if qliksenseConfig.IsContextExist(contextName) {
+		fmt.Println("context [ " + contextName + " ] already exist")
+		return nil
 	}
-	api.LogDebugMessage("%s exists", qliksenseContextsDir1)
-
-	// creating contexts/qlik-default/qlik-default.yaml file
-	qliksenseContextFile := filepath.Join(qliksenseContextsDir1, contextName, contextName+".yaml")
-	//var qliksenseCR api.QliksenseCR
-
-	defaultContextsDir := filepath.Join(qliksenseContextsDir1, contextName)
-	if !api.DirExists(defaultContextsDir) {
-		if err := os.Mkdir(defaultContextsDir, os.ModePerm); err != nil {
-			err = fmt.Errorf("Not able to create %s: %v", defaultContextsDir, err)
-			log.Println(err)
-			return err
-		}
-	}
-	api.LogDebugMessage("%s exists", defaultContextsDir)
-	if !api.FileExists(qliksenseContextFile) {
-		qliksenseCR := &api.QliksenseCR{}
-		qliksenseCR.AddCommonConfig(contextName)
-		api.WriteToFile(&qliksenseCR, qliksenseContextFile)
-		api.LogDebugMessage("Added Context: %s", contextName)
-	}
-	// else {
-	// 	if err := api.ReadFromFile(&qliksenseCR, qliksenseContextFile); err != nil {
-	// 		log.Println(err)
-	// 		return err
-	// 	}
-	// }
-
-	//api.WriteToFile(&qliksenseCR, qliksenseContextFile)
-	ctxTrack := false
-	if len(qliksenseConfig.Spec.Contexts) > 0 {
-		for _, ctx := range qliksenseConfig.Spec.Contexts {
-			if ctx.Name == contextName {
-				ctx.CrFile = qliksenseContextFile
-				ctxTrack = true
-				break
-			}
-		}
-	}
-	if !ctxTrack {
-		qliksenseConfig.Spec.Contexts = append(qliksenseConfig.Spec.Contexts, api.Context{
-			Name:   contextName,
-			CrFile: qliksenseContextFile,
-		})
-	}
-	qliksenseConfig.Spec.CurrentContext = contextName
-	if !configFileTrack {
-		api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+	qliksenseCR := &api.QliksenseCR{}
+	qliksenseCR.AddCommonConfig(contextName)
+	fmt.Println("writiiiiiiii")
+	if err := qliksenseConfig.CreateOrWriteCrAndContext(qliksenseCR); err != nil {
+		return err
 	}
 	// set the encrypted default mongo
-	q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
-
-	return nil
+	return q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
 }
 
 func validateInput(input string) (string, error) {

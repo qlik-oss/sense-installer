@@ -50,7 +50,7 @@ func NewQConfigE(qsHome string) (*QliksenseConfig, error) {
 // GetCR create a QliksenseCR object for a particular context
 // from file ~/.qliksense/contexts/<contx-name>/<contx-name>.yaml
 func (qc *QliksenseConfig) GetCR(contextName string) (*QliksenseCR, error) {
-	crFilePath := qc.getCRFilePath(contextName)
+	crFilePath := qc.GetCRFilePath(contextName)
 	if crFilePath == "" {
 		return nil, errors.New("context name " + contextName + " not found")
 	}
@@ -67,14 +67,14 @@ func (qc *QliksenseConfig) GetCurrentCR() (*QliksenseCR, error) {
 }
 
 // SetCrLocation sets the CR location for a context. Helpful during test
-func (qc *QliksenseConfig) SetCrLocation(contextName, filepath string) (*QliksenseConfig, error) {
+func (qc *QliksenseConfig) SetCrLocation(contextName, filePath string) (*QliksenseConfig, error) {
 	tempQc := &QliksenseConfig{}
 	copier.Copy(tempQc, qc)
 	found := false
 	tempQc.Spec.Contexts = []Context{}
 	for _, c := range qc.Spec.Contexts {
 		if c.Name == contextName {
-			c.CrFile = filepath
+			c.CrFile = filePath
 			found = true
 		}
 		tempQc.Spec.Contexts = append(tempQc.Spec.Contexts, []Context{c}...)
@@ -96,11 +96,11 @@ func getCRObject(crfile string) (*QliksenseCR, error) {
 	return cr, nil
 }
 
-func (qc *QliksenseConfig) getCRFilePath(contextName string) string {
+func (qc *QliksenseConfig) GetCRFilePath(contextName string) string {
 	crFilePath := ""
 	for _, ctx := range qc.Spec.Contexts {
 		if ctx.Name == contextName {
-			crFilePath = ctx.CrFile
+			crFilePath = filepath.Join(qc.QliksenseHomePath, ctx.CrFile)
 			break
 		}
 	}
@@ -133,13 +133,44 @@ func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
 }
 
 func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
-	crf := qc.getCRFilePath(contextName)
+	crf := qc.GetCRFilePath(contextName)
 	if crf == "" {
 		return errors.New("context name " + contextName + " not found")
 	}
 	return WriteToFile(cr, crf)
 }
 
+//CreateOrWriteCrAndContext create necessary folder structure, update config.yaml and context yaml files
+func (qc *QliksenseConfig) CreateOrWriteCrAndContext(cr *QliksenseCR) error {
+	crf := qc.GetCRFilePath(cr.GetName())
+	fmt.Println("dsfsfsdfsf" + crf)
+	if crf == "" {
+
+		// create direcotry structure for context
+		cDir := filepath.Join(qc.QliksenseHomePath, "contexts", cr.GetName())
+		if err := os.MkdirAll(cDir, os.ModePerm); err != nil {
+			return err
+		}
+		crf = filepath.Join(cDir, cr.GetName()+".yaml")
+		ctx := Context{
+			Name:   cr.GetName(),
+			CrFile: filepath.Join("contexts", cr.GetName(), cr.GetName()+".yaml"),
+		}
+		qc.AddToContexts(ctx)
+
+		if err := WriteToFile(qc, filepath.Join(qc.QliksenseHomePath, "config.yaml")); err != nil {
+			return err
+		}
+	}
+	return WriteToFile(cr, crf)
+}
+
+func (qc *QliksenseConfig) AddToContexts(ctx Context) error {
+	//TODO: additional duplicate check may be added latter
+	qc.Spec.Contexts = append(qc.Spec.Contexts, ctx)
+
+	return nil
+}
 func (qc *QliksenseConfig) WriteCurrentContextCR(cr *QliksenseCR) error {
 	return qc.WriteCR(cr, qc.Spec.CurrentContext)
 }
