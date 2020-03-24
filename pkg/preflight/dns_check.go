@@ -47,7 +47,7 @@ func (qp *QliksensePreflight) CheckDns() error {
 
 	api.LogDebugMessage("Namespace: %s\n", namespace)
 
-	tmpl, err := template.New("test").Parse(dnsCheckYAML)
+	tmpl, err := template.New("dnsCheckYAML").Parse(dnsCheckYAML)
 	if err != nil {
 		fmt.Printf("cannot parse template: %v", err)
 		return err
@@ -123,6 +123,6 @@ func (qp *QliksensePreflight) CheckDns() error {
 		fmt.Println(err)
 		return err
 	}
-
+	fmt.Println("Preflight checks completed, cleaning up resources now")
 	return nil
 }

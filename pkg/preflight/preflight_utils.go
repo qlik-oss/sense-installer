@@ -182,6 +182,6 @@ func invokePreflight(preflightCommand string, yamlFile *os.File) error {
 	//		break
 	//	}
 	//}
-	fmt.Println("Preflight checks completed, cleaning up resources now")
+
 	return nil
 }

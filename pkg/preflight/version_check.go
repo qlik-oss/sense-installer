@@ -3,33 +3,30 @@ package preflight
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"path/filepath"
+	"text/template"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
+const minK8sVersion = "1.11.0"
 const checkVersionYAML = `
 apiVersion: troubleshoot.replicated.com/v1beta1
 kind: Preflight
 metadata:
   name: cluster-preflight-checks
-  namespace: {{ . }}
+  namespace: {{ .namespace }}
 spec:
   analyzers:
-     - clusterVersion:
+    - clusterVersion:
         outcomes:
           - fail:
-              when: "<= 1.13.0"
-              message: The application requires at Kubernetes 1.13.0 or later, and recommends 1.15.0.
+              when: "< {{ .minK8sVersion }}"
+              message: The application requires at least Kubernetes {{ .minK8sVersion }} or later.
               uri: https://www.kubernetes.io
-          - warn:
-              when: "< 1.13.1"
-              message: Your cluster meets the minimum version of Kubernetes, but we recommend you update to 1.15.0 or later.
-              uri: https://kubernetes.io
           - pass:
-              when: ">= 1.13.0"
+              when: ">= {{ .minK8sVersion }}"
               message: Good to go.
 `
 
@@ -39,7 +36,7 @@ func (qp *QliksensePreflight) CheckK8sVersion() error {
 
 	api.LogDebugMessage("Namespace: %s\n", namespace)
 
-	tmpl, err := template.New("test").Parse(checkVersionYAML)
+	tmpl, err := template.New("checkVersionYAML").Parse(checkVersionYAML)
 	if err != nil {
 		fmt.Printf("cannot parse template: %v", err)
 		return err
@@ -52,13 +49,26 @@ func (qp *QliksensePreflight) CheckK8sVersion() error {
 	api.LogDebugMessage("Temp Yaml file: %s\n", tempYaml.Name())
 
 	b := bytes.Buffer{}
-	err = tmpl.Execute(&b, namespace)
+	err = tmpl.Execute(&b, map[string]string{
+		"namespace":     namespace,
+		"minK8sVersion": minK8sVersion,
+	})
 	if err != nil {
 		fmt.Println(err)
 		return err
 	}
 
 	tempYaml.WriteString(b.String())
+	//api.LogDebugMessage("Temp yaml contents: %s", b.String())
+	fmt.Printf("Minimum Kubernetes version supported: %s\n", minK8sVersion)
+
+	// current kubectl version
+	opr := fmt.Sprintf("version")
+	err = initiateK8sOps(opr, namespace)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
 
 	// call preflight
 	preflightCommand := filepath.Join(qp.Q.QliksenseHome, PreflightChecksDirName, preflightFileName)
