@@ -54,11 +54,7 @@ func (qc *QliksenseConfig) GetCR(contextName string) (*QliksenseCR, error) {
 	if crFilePath == "" {
 		return nil, errors.New("context name " + contextName + " not found")
 	}
-	return getCRObject(crFilePath)
-}
-
-func getUnencryptedCR() {
-
+	return GetCRObject(crFilePath)
 }
 
 // GetCurrentCR create a QliksenseCR object for current context
@@ -85,7 +81,8 @@ func (qc *QliksenseConfig) SetCrLocation(contextName, filepath string) (*Qliksen
 	return nil, errors.New("cannot find the context")
 }
 
-func getCRObject(crfile string) (*QliksenseCR, error) {
+// GetCRObject create a qliksense CR object from file
+func GetCRObject(crfile string) (*QliksenseCR, error) {
 	cr := &QliksenseCR{}
 	err := ReadFromFile(cr, crfile)
 	if err != nil {
@@ -93,6 +90,20 @@ func getCRObject(crfile string) (*QliksenseCR, error) {
 		return nil, err
 	}
 
+	return cr, nil
+}
+
+//CreateCRObjectFromString create a QliksenseCR from string content
+func CreateCRObjectFromString(crContent string) (*QliksenseCR, error) {
+	if crContent == "" {
+		return nil, errors.New("empty string cannot qliksensecr")
+	}
+	cr := &QliksenseCR{}
+	err := ReadFromStream(cr, strings.NewReader(crContent))
+	if err != nil {
+		fmt.Println("cannot unmarshal cr ", err)
+		return nil, err
+	}
 	return cr, nil
 }
 
@@ -230,6 +241,15 @@ func (qc *QliksenseConfig) getDockerConfigJsonSecret(name string) (*DockerConfig
 }
 
 func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string, error) {
+
+	if qcr, err := qc.GetCurrentCR(); err != nil {
+		return "", err
+	} else {
+		return qc.getContextEncryptionKeyPairLocation(qcr.GetName())
+	}
+}
+
+func (qc *QliksenseConfig) getContextEncryptionKeyPairLocation(contextName string) (string, error) {
 	// Check env var: QLIKSENSE_KEY_LOCATION to determine location to store keypair
 	var secretKeyPairLocation string
 	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
@@ -238,13 +258,9 @@ func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string,
 	} else {
 		// QLIKSENSE_KEY_LOCATION has not been set, hence storing key pair in default location:
 		// /.qliksense/secrets/contexts/<current-context>/secrets/
-		if qcr, err := qc.GetCurrentCR(); err != nil {
-			return "", err
-		} else {
-			secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, qcr.GetObjectMeta().GetName(), qliksenseSecretsDirName)
-		}
+		secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, contextName, qliksenseSecretsDirName)
+
 	}
-	LogDebugMessage("SecretKeyLocation to store key pair: %s", secretKeyPairLocation)
 	return secretKeyPairLocation, nil
 }
 
@@ -261,7 +277,15 @@ func (qc *QliksenseConfig) GetCurrentContextEjsonKeyDir() (string, error) {
 }
 
 func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey, *rsa.PrivateKey, error) {
-	secretKeyPairLocation, err := qc.getCurrentContextEncryptionKeyPairLocation()
+	if qcr, err := qc.GetCurrentCR(); err != nil {
+		return nil, nil, err
+	} else {
+		return qc.GetContextEncryptionKeyPair(qcr.GetName())
+	}
+}
+
+func (qc *QliksenseConfig) GetContextEncryptionKeyPair(contextName string) (*rsa.PublicKey, *rsa.PrivateKey, error) {
+	secretKeyPairLocation, err := qc.getContextEncryptionKeyPairLocation(contextName)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -385,4 +409,37 @@ func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error)
 	}
 	newCr.Spec.Secrets = finalSecrets
 	return newCr, nil
+}
+
+//Validate validate CR
+func (cr *QliksenseCR) Validate() bool {
+	return true
+}
+
+//CreateContextDirs create context dir structure ~/.qliksense/contexts/contextName
+func (qc *QliksenseConfig) CreateContextDirs(contextName string) {
+	contexPath := filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName)
+	os.MkdirAll(contexPath, os.ModePerm)
+}
+
+func (qc *QliksenseConfig) BuildCrFilePath(contextName string) string {
+	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName, contextName+".yaml")
+}
+
+//AddToContexts add the context into qc.Spec.Contexts
+func (qc *QliksenseConfig) AddToContexts(crName, crFile string) {
+	qc.Spec.Contexts = append(qc.Spec.Contexts, []Context{
+		{CrFile: crFile,
+			Name: crName},
+	}...)
+}
+
+//SetCurrentContextName set the qc.Spec.CurrentContext
+func (qc *QliksenseConfig) SetCurrentContextName(name string) {
+	qc.Spec.CurrentContext = name
+}
+
+//Write write QliksenseConfig into config.yaml
+func (qc *QliksenseConfig) Write() error {
+	return WriteToFile(qc, filepath.Join(qc.QliksenseHomePath, "config.yaml"))
 }

@@ -3,8 +3,10 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -103,14 +105,22 @@ func ReadFromFile(content interface{}, sourceFile string) error {
 	if content == nil || sourceFile == "" {
 		return nil
 	}
-	contents, err := ioutil.ReadFile(sourceFile)
+	file, e := os.Open(sourceFile)
+	if e != nil {
+		return e
+	}
+	return ReadFromStream(content, file)
+}
+
+// ReadFromStream reads from input stream and creat yaml struct of type content
+func ReadFromStream(content interface{}, reader io.Reader) error {
+	contents, err := ioutil.ReadAll(reader)
 	if err != nil {
-		err = fmt.Errorf("There was an error reading from file: %s, %v", sourceFile, err)
+		err = fmt.Errorf("There was an error reading from reader: %v", err)
 		return err
 	}
 	// reading k8s style object
 	// https://stackoverflow.com/questions/44306554/how-to-deserialize-kubernetes-yaml-file
 	dec := machine_yaml.NewYAMLOrJSONDecoder(bytes.NewReader(contents), 10000)
-	dec.Decode(content)
-	return nil
+	return dec.Decode(content)
 }
