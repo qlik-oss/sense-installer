@@ -27,16 +27,24 @@ const (
 
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
 func NewQConfig(qsHome string) *QliksenseConfig {
+	qc, err := NewQConfigE(qsHome)
+	if err != nil {
+		fmt.Println("yaml unmarshalling error ", err)
+		os.Exit(1)
+	}
+	return qc
+}
+
+func NewQConfigE(qsHome string) (*QliksenseConfig, error) {
 	configFile := filepath.Join(qsHome, "config.yaml")
 	qc := &QliksenseConfig{}
 
 	err := ReadFromFile(qc, configFile)
 	if err != nil {
-		fmt.Println("yaml unmarshalling error ", err)
-		os.Exit(1)
+		return nil, err
 	}
 	qc.QliksenseHomePath = qsHome
-	return qc
+	return qc, nil
 }
 
 // GetCR create a QliksenseCR object for a particular context
@@ -340,6 +348,10 @@ func (cr *QliksenseCR) IsEULA() bool {
 		}
 	}
 	return false
+}
+
+func (cr *QliksenseCR) SetEULA(value string) {
+	cr.Spec.AddToConfigs("qliksense", "acceptEULA", value)
 }
 
 // GetDecryptedCr it decrypts all the encrypted value and return a new CR
