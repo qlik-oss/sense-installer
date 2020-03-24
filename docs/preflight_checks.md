@@ -25,7 +25,7 @@ Flags:
 
 ### DNS check
 Run the following command to perform preflight DNS check. We setup a kubernetes deployment and try to reach it as part of establishing DNS connectivity in this check. 
-The expected output is also shown below.
+The expected output should be similar to the one shown below.
 ```console
 $ qliksense preflight dns
 
@@ -47,7 +47,7 @@ deployment.extensions "qnginx001" deleted
 
 ### Kubernetes version check
 We check the version of the target kubernetes cluster and ensure that it falls in the valid range of kubernetes versions that are supported by qliksense. 
-The command to run this check and the expected output are as shown below:
+The command to run this check and the expected similar output are as shown below:
 ```console
 $ qliksense preflight k8s-version
 
@@ -64,7 +64,7 @@ Minimum kubernetes version check completed
 ```
 
 ### Running all checks
-Run the command below to execute all preflight checks.
+Run the command shown below to execute all preflight checks.
 ```console
 $ qliksense preflight all
 
