@@ -3,13 +3,14 @@ package qliksense
 import (
 	"crypto/rsa"
 	"fmt"
-	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/robfig/cron/v3"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
 
@@ -577,4 +578,14 @@ func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullU
 
 	qliksenseCR.Spec.AddToConfigs("qliksense", imageRegistryConfigKey, registry)
 	return api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+}
+
+func (q *Qliksense) SetEulaAccepted() error {
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCurrentCR()
+	if err != nil {
+		return err
+	}
+	qcr.SetEULA("yes")
+	return qConfig.WriteCurrentContextCR(qcr)
 }
