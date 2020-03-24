@@ -1,4 +1,4 @@
-package qliksense
+package preflight
 
 import (
 	"fmt"

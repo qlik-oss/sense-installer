@@ -188,6 +188,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add preflight command
 	preflightCmd := preflightCmd(p)
 	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
+	preflightCmd.AddCommand(preflightCheckK8sVersionCmd(p))
+	preflightCmd.AddCommand(preflightAllChecksCmd(p))
 	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
 	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
 
