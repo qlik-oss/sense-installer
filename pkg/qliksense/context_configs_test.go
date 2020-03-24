@@ -165,7 +165,7 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: ./tests/contexts/qlik-default/qlik-default.yaml
+    crFile: contexts/qlik-default/qlik-default.yaml
   currentContext: qlik-default
 `
 	configFile := filepath.Join(testDir, "config.yaml")
@@ -397,7 +397,7 @@ func TestSetConfigs(t *testing.T) {
 
 func TestSetImageRegistry(t *testing.T) {
 	getQlikSense := func(tmpQlikSenseHome string) (*Qliksense, error) {
-		if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(fmt.Sprintf(`
+		if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(`
 apiVersion: config.qlik.com/v1
 kind: QliksenseConfig
 metadata:
@@ -405,9 +405,9 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: %s/contexts/qlik-default/qlik-default.yaml
+    crFile: contexts/qlik-default/qlik-default.yaml
   currentContext: qlik-default
-`, tmpQlikSenseHome)), os.ModePerm); err != nil {
+`), os.ModePerm); err != nil {
 			return nil, err
 		}
 
@@ -799,11 +799,11 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: /root/.qliksense/contexts/qlik-default.yaml
+    crFile: contexts/qlik-default.yaml
   - name: qlik1
-    crFile: /root/.qliksense/contexts/qlik1.yaml
+    crFile: contexts/qlik1.yaml
   - name: qlik2
-    crFile: /root/.qliksense/contexts/qlik2.yaml
+    crFile: contexts/qlik2.yaml
   currentContext: qlik1
 `
 	configFile := filepath.Join(testDir, "config.yaml")

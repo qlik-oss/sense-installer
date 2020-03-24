@@ -46,6 +46,11 @@ func NewQConfigE(qsHome string) (*QliksenseConfig, error) {
 	qc.QliksenseHomePath = qsHome
 	return qc, nil
 }
+func NewQConfigEmpty(qsHome string) *QliksenseConfig {
+	return &QliksenseConfig{
+		QliksenseHomePath: qsHome,
+	}
+}
 
 // GetCR create a QliksenseCR object for a particular context
 // from file ~/.qliksense/contexts/<contx-name>/<contx-name>.yaml
@@ -153,10 +158,11 @@ func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
 
 //CreateOrWriteCrAndContext create necessary folder structure, update config.yaml and context yaml files
 func (qc *QliksenseConfig) CreateOrWriteCrAndContext(cr *QliksenseCR) error {
+	if qc.QliksenseHomePath == "" {
+		return errors.New("qliksense home is not set")
+	}
 	crf := qc.GetCRFilePath(cr.GetName())
-	fmt.Println("dsfsfsdfsf" + crf)
 	if crf == "" {
-
 		// create direcotry structure for context
 		cDir := filepath.Join(qc.QliksenseHomePath, "contexts", cr.GetName())
 		if err := os.MkdirAll(cDir, os.ModePerm); err != nil {
@@ -458,7 +464,7 @@ func (qc *QliksenseConfig) BuildCrFilePath(contextName string) string {
 }
 
 //AddToContexts add the context into qc.Spec.Contexts
-func (qc *QliksenseConfig) AddToContexts(crName, crFile string) {
+func (qc *QliksenseConfig) AddToContextsRaw(crName, crFile string) {
 	qc.Spec.Contexts = append(qc.Spec.Contexts, []Context{
 		{CrFile: crFile,
 			Name: crName},

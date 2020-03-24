@@ -393,14 +393,12 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 	}
 
 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-	var qliksenseConfig api.QliksenseConfig
+	qliksenseConfig := api.NewQConfigEmpty(q.QliksenseHome)
 
 	if !api.FileExists(qliksenseConfigFile) {
-		fmt.Println("In FileExist")
 		qliksenseConfig.AddBaseQliksenseConfigs(contextName)
 	} else {
-		fmt.Println("why here")
-		if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
+		if err := api.ReadFromFile(qliksenseConfig, qliksenseConfigFile); err != nil {
 			log.Println(err)
 			return err
 		}
@@ -412,7 +410,6 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 	}
 	qliksenseCR := &api.QliksenseCR{}
 	qliksenseCR.AddCommonConfig(contextName)
-	fmt.Println("writiiiiiiii")
 	if err := qliksenseConfig.CreateOrWriteCrAndContext(qliksenseCR); err != nil {
 		return err
 	}
