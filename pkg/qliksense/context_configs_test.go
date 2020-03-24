@@ -152,6 +152,7 @@ func removePrivateKey() {
 
 func setup() func() {
 	// create tests dir
+	os.RemoveAll(testDir)
 	if err := os.Mkdir(testDir, 0777); err != nil {
 		log.Printf("\nError occurred: %v", err)
 	}
@@ -164,7 +165,7 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: /root/.qliksense/contexts/qlik-default.yaml
+    crFile: ./tests/contexts/qlik-default/qlik-default.yaml
   currentContext: qlik-default
 `
 	configFile := filepath.Join(testDir, "config.yaml")
