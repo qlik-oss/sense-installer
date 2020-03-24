@@ -45,7 +45,7 @@ func (qp *QliksensePreflight) DownloadPreflight() error {
 	}
 	if exists {
 		// preflight exist, no need to download again.
-		api.LogDebugMessage("Preflight already exist, proceeding to perform checks")
+		api.LogDebugMessage("Preflight already exists, proceeding to perform checks")
 		return nil
 	}
 

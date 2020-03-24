@@ -11,16 +11,18 @@ import (
 )
 
 func preflightCmd(q *qliksense.Qliksense) *cobra.Command {
-	var configCmd = &cobra.Command{
+	var preflightCmd = &cobra.Command{
 		Use:   "preflight",
 		Short: "perform preflight checks on the cluster",
 		Long:  `perform preflight checks on the cluster`,
 		Example: `qliksense preflight <preflight_check_to_run>
 Usage:
 qliksense preflight dns
+qliksense preflight k8s-version
+qliksense preflight all
 `,
 	}
-	return configCmd
+	return preflightCmd
 }
 
 func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
@@ -45,10 +47,10 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 
 func preflightCheckK8sVersionCmd(q *qliksense.Qliksense) *cobra.Command {
 	var preflightCheckK8sVersionCmd = &cobra.Command{
-		Use:     "check-k8s-version",
+		Use:     "k8s-version",
 		Short:   "check k8s version",
 		Long:    `check minimum valid k8s version on the cluster`,
-		Example: `qliksense preflight check-k8s-version`,
+		Example: `qliksense preflight k8s-version`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
 			err := qp.DownloadPreflight()
@@ -68,7 +70,7 @@ func preflightAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 		Use:     "all",
 		Short:   "perform all checks",
 		Long:    `perform all preflight checks on the target cluster`,
-		Example: `qliksense preflight --all`,
+		Example: `qliksense preflight all`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
 			err := qp.DownloadPreflight()
