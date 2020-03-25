@@ -100,7 +100,7 @@ func TestGetDecryptedCr(t *testing.T) {
 	// create CR
 	createCRFile(dir)
 
-	crFile := filepath.Join(dir, "contexts", "contx1", "contx1.yaml")
+	crFile := filepath.Join("contexts", "contx1", "contx1.yaml")
 	qct, e := qc.SetCrLocation("contx1", crFile)
 	if e != nil {
 		t.Fail()
