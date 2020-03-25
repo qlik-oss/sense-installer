@@ -275,7 +275,7 @@ func TestSetUpQliksenseContext(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := New(tt.args.qlikSenseHome)
-			if err := q.SetUpQliksenseContext(tt.args.contextName, tt.args.isDefaultContext); (err != nil) != tt.wantErr {
+			if err := q.SetUpQliksenseContext(tt.args.contextName); (err != nil) != tt.wantErr {
 				t.Errorf("SetUpQliksenseContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

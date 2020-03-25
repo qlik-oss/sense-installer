@@ -276,7 +276,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 // SetContextConfig - set the context for qliksense kubernetes resources to live in
 func (q *Qliksense) SetContextConfig(args []string) error {
 	if len(args) == 1 {
-		err := q.SetUpQliksenseContext(args[0], false)
+		err := q.SetUpQliksenseContext(args[0])
 		if err != nil {
 			return err
 		}
@@ -374,11 +374,11 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 
 // SetUpQliksenseDefaultContext - to setup dir structure for default qliksense context
 func (q *Qliksense) SetUpQliksenseDefaultContext() error {
-	return q.SetUpQliksenseContext(DefaultQliksenseContext, true)
+	return q.SetUpQliksenseContext(DefaultQliksenseContext)
 }
 
 // SetUpQliksenseContext - to setup qliksense context
-func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext bool) error {
+func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	if contextName == "" {
 		err := fmt.Errorf("Please enter a non-empty context-name")
 		log.Println(err)
