@@ -187,7 +187,7 @@ func (qc *QliksenseConfig) CreateOrWriteCrAndContext(cr *QliksenseCR) error {
 		}
 		qc.AddToContexts(ctx)
 
-		if err := WriteToFile(qc, filepath.Join(qc.QliksenseHomePath, "config.yaml")); err != nil {
+		if err := qc.Write(); err != nil {
 			return err
 		}
 	}
