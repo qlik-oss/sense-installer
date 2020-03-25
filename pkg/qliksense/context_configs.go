@@ -408,9 +408,11 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	}
 	qliksenseCR := &api.QliksenseCR{}
 	qliksenseCR.AddCommonConfig(contextName)
+	qliksenseConfig.Spec.CurrentContext = contextName
 	if err := qliksenseConfig.CreateOrWriteCrAndContext(qliksenseCR); err != nil {
 		return err
 	}
+
 	// set the encrypted default mongo
 	return q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
 }
