@@ -107,7 +107,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	if err != nil {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
-	} else if qcr.Spec.GetManifestsRoot() == "" {
+	} else if qConfig.GetCrManifestRoot(qcr) == "" {
 		return errors.New("cannot get the manifest root. Use qliksense fetch <version> or qliksense set manifestsRoot")
 	}
 

@@ -38,7 +38,7 @@ func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 		return err
 	}
 
-	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
+	if engineCRD, err := q.getQliksenseInitCrd(qcr); err != nil {
 		return err
 	} else if err = qapi.KubectlApply(engineCRD, ""); err != nil {
 		return err
@@ -52,12 +52,12 @@ func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 	return nil
 }
 
-func getQliksenseInitCrd(qcr *qapi.QliksenseCR) (string, error) {
+func (q *Qliksense) getQliksenseInitCrd(qcr *qapi.QliksenseCR) (string, error) {
 	var repoPath string
 	var err error
 
-	if qcr.Spec.GetManifestsRoot() != "" {
-		repoPath = qcr.Spec.GetManifestsRoot()
+	if q.GetCrManifestRoot(qcr) != "" {
+		repoPath = q.GetCrManifestRoot(qcr)
 	} else {
 		if repoPath, err = downloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master"); err != nil {
 			return "", err

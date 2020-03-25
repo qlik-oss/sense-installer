@@ -82,12 +82,12 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
 		return err
 	}
-	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
+	fmt.Println("Manifests root: " + q.GetCrManifestRoot(qcr))
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
 	// generate patches
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
-	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
+	profilePath := filepath.Join(q.GetCrManifestRoot(qcr), qcr.Spec.GetProfileDir())
 	mByte, err := executeKustomizeBuild(profilePath)
 	if err != nil {
 		fmt.Println("cannot generate manifests for "+profilePath, err)

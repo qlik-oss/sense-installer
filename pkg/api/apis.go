@@ -140,14 +140,25 @@ func (qc *QliksenseConfig) BuildRepoPath(version string) string {
 	return qc.BuildRepoPathForContext(qc.Spec.CurrentContext, version)
 }
 
+func (qc *QliksenseConfig) BuildRelativeRepoPath(version string) string {
+	return qc.BuildRelativeRepoPathForContext(qc.Spec.CurrentContext, version)
+}
 func (qc *QliksenseConfig) BuildRepoPathForContext(contextName, version string) string {
 	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName, "qlik-k8s", version)
 }
 
+//BuildRelativeRepoPathForContext to build relative from qliksense home, so that can be written into cr file
+// and later easy to export to different computer
+func (qc *QliksenseConfig) BuildRelativeRepoPathForContext(contextName, version string) string {
+	return filepath.Join(qliksenseContextsDirName, contextName, "qlik-k8s", version)
+}
 func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
 	return qc.BuildRepoPath(version)
 }
 
+func (qc *QliksenseConfig) BuildCurrentRelativeManifestsRoot(version string) string {
+	return qc.BuildRelativeRepoPath(version)
+}
 func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
 	crf := qc.GetCRFilePath(contextName)
 	if crf == "" {
@@ -485,4 +496,11 @@ func (qc *QliksenseConfig) SetCurrentContextName(name string) {
 //Write write QliksenseConfig into config.yaml
 func (qc *QliksenseConfig) Write() error {
 	return WriteToFile(qc, filepath.Join(qc.QliksenseHomePath, "config.yaml"))
+}
+
+func (qc *QliksenseConfig) GetCrManifestRoot(cr *QliksenseCR) string {
+	if filepath.IsAbs(cr.Spec.GetManifestsRoot()) {
+		return cr.Spec.GetManifestsRoot()
+	}
+	return filepath.Join(qc.QliksenseHomePath, cr.Spec.GetManifestsRoot())
 }

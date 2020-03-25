@@ -36,7 +36,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	}
 	version := qcr.GetLabelFromCr("version")
 	profile := qcr.Spec.Profile
-	repoDir := qcr.Spec.ManifestsRoot
+	repoDir := q.GetCrManifestRoot(qcr)
 
 	imagesDir, err := setupImagesDir(q.QliksenseHome)
 	if err != nil {
@@ -125,7 +125,7 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	}
 	version := qcr.GetLabelFromCr("version")
 	profile := qcr.Spec.Profile
-	repoDir := qcr.Spec.ManifestsRoot
+	repoDir := q.GetCrManifestRoot(qcr)
 
 	dockerConfigJsonSecret, err := qConfig.GetPushDockerConfigJsonSecret()
 	if err != nil {

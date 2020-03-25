@@ -46,7 +46,7 @@ metadata:
     version: v1.0.0
 spec:
   profile: docker-desktop
-  manifestsRoot: /Users/mqb/.qliksense/contexts/contx1/qlik-k8s/v0.0.1/manifests
+  manifestsRoot: contexts/contx1/qlik-k8s/v0.0.1/manifests
   storageClassName: efs
   configs:
     qliksense:

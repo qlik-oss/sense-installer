@@ -63,7 +63,7 @@ func (qliksenseConfig *QliksenseConfig) SwitchCurrentCRToVersionAndProfile(versi
 	if qcr, err := qliksenseConfig.GetCurrentCR(); err != nil {
 		return err
 	} else {
-		versionManifestRoot := qliksenseConfig.BuildCurrentManifestsRoot(version)
+		versionManifestRoot := qliksenseConfig.BuildCurrentRelativeManifestsRoot(version)
 		if (qcr.Spec.ManifestsRoot != versionManifestRoot) || (profile != "" && qcr.Spec.Profile != profile) || (qcr.GetLabelFromCr("version") != version) {
 			qcr.Spec.ManifestsRoot = versionManifestRoot
 			if profile != "" {
