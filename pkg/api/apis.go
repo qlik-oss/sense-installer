@@ -59,7 +59,7 @@ func (qc *QliksenseConfig) GetCR(contextName string) (*QliksenseCR, error) {
 	if crFilePath == "" {
 		return nil, errors.New("context name " + contextName + " not found")
 	}
-	return GetCRObject(crFilePath)
+	return qc.GetAndTransformCrObject(crFilePath)
 }
 
 // GetCurrentCR create a QliksenseCR object for current context
@@ -95,6 +95,17 @@ func GetCRObject(crfile string) (*QliksenseCR, error) {
 		return nil, err
 	}
 
+	return cr, nil
+}
+
+func (qc *QliksenseConfig) GetAndTransformCrObject(crfile string) (*QliksenseCR, error) {
+	cr, err := GetCRObject(crfile)
+	if err != nil {
+		return nil, err
+	}
+	if cr.Spec.ManifestsRoot != "" && !filepath.IsAbs(cr.Spec.ManifestsRoot) {
+		cr.Spec.ManifestsRoot = filepath.Join(qc.QliksenseHomePath, cr.Spec.ManifestsRoot)
+	}
 	return cr, nil
 }
 
@@ -153,7 +164,8 @@ func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
 	if crf == "" {
 		return errors.New("context name " + contextName + " not found")
 	}
-	return WriteToFile(cr, crf)
+
+	return qc.TransformAndWriteCr(cr, crf)
 }
 
 //CreateOrWriteCrAndContext create necessary folder structure, update config.yaml and context yaml files
@@ -179,9 +191,22 @@ func (qc *QliksenseConfig) CreateOrWriteCrAndContext(cr *QliksenseCR) error {
 			return err
 		}
 	}
-	return WriteToFile(cr, crf)
+
+	return qc.TransformAndWriteCr(cr, crf)
 }
 
+func (qc *QliksenseConfig) TransformAndWriteCr(cr *QliksenseCR, file string) error {
+	if strings.HasPrefix(cr.Spec.ManifestsRoot, qc.QliksenseHomePath) {
+		cr.Spec.ManifestsRoot = strings.Replace(cr.Spec.ManifestsRoot, qc.QliksenseHomePath+"/", "", 1)
+	}
+	if err := WriteToFile(cr, file); err != nil {
+		return err
+	}
+	if cr.Spec.ManifestsRoot != "" {
+		cr.Spec.ManifestsRoot = filepath.Join(qc.QliksenseHomePath, cr.Spec.ManifestsRoot)
+	}
+	return nil
+}
 func (qc *QliksenseConfig) AddToContexts(ctx Context) error {
 	//TODO: additional duplicate check may be added latter
 	qc.Spec.Contexts = append(qc.Spec.Contexts, ctx)
