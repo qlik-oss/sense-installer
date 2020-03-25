@@ -8,12 +8,13 @@ import (
 )
 
 func TestGetQliksenseInitCrd(t *testing.T) {
+	q := &Qliksense{}
 	someTmpRepoPath, err := downloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	crdFromContextConfig, err := getQliksenseInitCrd(&qapi.QliksenseCR{
+	crdFromContextConfig, err := q.getQliksenseInitCrd(&qapi.QliksenseCR{
 		KApiCr: kapi_config.KApiCr{
 			Spec: &kapi_config.CRSpec{
 				ManifestsRoot: someTmpRepoPath,
@@ -24,7 +25,7 @@ func TestGetQliksenseInitCrd(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	crdFromDownloadedConfig, err := getQliksenseInitCrd(&qapi.QliksenseCR{
+	crdFromDownloadedConfig, err := q.getQliksenseInitCrd(&qapi.QliksenseCR{
 		KApiCr: kapi_config.KApiCr{
 			Spec: &kapi_config.CRSpec{
 				ManifestsRoot: "",

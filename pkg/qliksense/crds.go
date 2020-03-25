@@ -19,7 +19,7 @@ func (q *Qliksense) ViewCrds(opts *CrdCommandOptions) error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
+	if engineCRD, err := q.getQliksenseInitCrd(qcr); err != nil {
 		return err
 	} else if opts.All {
 		fmt.Printf("%s\n%s", q.GetOperatorCRDString(), engineCRD)
