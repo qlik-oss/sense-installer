@@ -459,8 +459,14 @@ func (qc *QliksenseConfig) CreateContextDirs(contextName string) {
 	os.MkdirAll(contexPath, os.ModePerm)
 }
 
-func (qc *QliksenseConfig) BuildCrFilePath(contextName string) string {
+//BuildCrFileAbsolutePath build absolute path for a cr ie. ~/.qliksense/contexts/qlik-defautl/qlik-default.yaml
+func (qc *QliksenseConfig) BuildCrFileAbsolutePath(contextName string) string {
 	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName, contextName+".yaml")
+}
+
+//BuildCrFilePath build cr file path i.e. contexts/qlik-default/qlik-default.yaml
+func (qc *QliksenseConfig) BuildCrFilePath(contextName string) string {
+	return filepath.Join(qliksenseContextsDirName, contextName, contextName+".yaml")
 }
 
 //AddToContexts add the context into qc.Spec.Contexts
