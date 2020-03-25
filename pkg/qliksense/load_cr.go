@@ -53,10 +53,11 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
 	}
 
 	// write to disk
-	if err = qapi.WriteToFile(cr, qConfig.BuildCrFilePath(cr.GetName())); err != nil {
+
+	if err = qConfig.CreateOrWriteCrAndContext(cr); err != nil {
 		return "", err
 	}
-	qConfig.AddToContexts(cr.GetName(), qConfig.BuildCrFilePath(cr.GetName()))
+	qConfig.AddToContextsRaw(cr.GetName(), qConfig.BuildCrFilePath(cr.GetName()))
 	qConfig.SetCurrentContextName(cr.GetName())
 	qConfig.Write()
 

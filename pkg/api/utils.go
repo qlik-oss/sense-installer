@@ -232,7 +232,6 @@ func UntarGzFile(destination, fileToUntar string) error {
 			fileAtLoc.Chmod(os.ModePerm)
 		}
 	}
-	return nil
 }
 
 func UnZipFile(destination, fileToUnzip string) error {
