@@ -379,7 +379,6 @@ func (q *Qliksense) SetUpQliksenseDefaultContext() error {
 
 // SetUpQliksenseContext - to setup qliksense context
 func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext bool) error {
-	fmt.Println(contextName)
 	if contextName == "" {
 		err := fmt.Errorf("Please enter a non-empty context-name")
 		log.Println(err)
@@ -405,7 +404,6 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string, isDefaultContext b
 	}
 
 	if qliksenseConfig.IsContextExist(contextName) {
-		fmt.Println("context [ " + contextName + " ] already exist")
 		return nil
 	}
 	qliksenseCR := &api.QliksenseCR{}
