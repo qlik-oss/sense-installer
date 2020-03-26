@@ -32,10 +32,12 @@ const (
 var preflightBaseURL = fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/%s/", preflightRelease)
 
 func (qp *QliksensePreflight) DownloadPreflight() error {
-	const preflightExecutable = "preflight"
+	preflightExecutable := "preflight"
+	if runtime.GOOS == "windows" {
+		preflightExecutable += ".exe"
+	}
 
 	preflightInstallDir := filepath.Join(qp.Q.QliksenseHome, PreflightChecksDirName)
-	platform := runtime.GOOS
 
 	exists, err := checkInstalled(preflightInstallDir, preflightExecutable)
 	if err != nil {
@@ -60,7 +62,7 @@ func (qp *QliksensePreflight) DownloadPreflight() error {
 	}
 	api.LogDebugMessage("Preflight-checks install Dir: %s exists", preflightInstallDir)
 
-	preflightUrl, preflightFile, err := determinePlatformSpecificUrls(platform)
+	preflightUrl, preflightFile, err := determinePlatformSpecificUrls(runtime.GOOS)
 	if err != nil {
 		err = fmt.Errorf("There was an error when trying to determine platform specific paths")
 		return err
