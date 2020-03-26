@@ -145,7 +145,14 @@ func initiateK8sOps(opr, namespace string) error {
 
 func invokePreflight(preflightCommand string, yamlFile *os.File) error {
 	arguments := []string{}
-	arguments = append(arguments, yamlFile.Name(), "--interactive=false")
+	// check for 2nd character is ':' then take file location from after ':'
+	tempYamlName := yamlFile.Name()
+	if tempYamlName[1] == ':' {
+		tempYamlName = tempYamlName[2:]
+		api.LogDebugMessage("This is the Windows yaml file path after modification: %s", tempYamlName)
+	}
+
+	arguments = append(arguments, tempYamlName, "--interactive=false")
 	cmd := exec.Command(preflightCommand, arguments...)
 
 	sterrBuffer := &bytes.Buffer{}
