@@ -2,10 +2,9 @@
 
 ## qliksense apply
 
-`qliksense apply` command takes input a cr file or input from pipe
+`qliksense apply` command takes input a cr file
 
 - `qliksense apply -f cr-file.yaml`
-- `cat cr-file.yaml | qliksense apply -f -`
 
 the content of `cr-file.yaml` should be something similar
 
@@ -29,16 +28,19 @@ spec:
   rotateKeys: "yes"
   ```
 
-after doing one of the above commands, cli will set the current context to the cr name and install the qliksense into the cluster. so make sure you dont have a context (cr name = context name) with the same name already. It will though error if it same context name already exist. It will encrypt the secrets from CR while writing CR into the disk.
+After executing the above command, cli will set the current context to the cr name and install the qliksense into the cluster. 
+Make sure you dont have a context (cr name = context name) with the same name already. It will though an error if the same context name already exists. 
+It will encrypt the secrets from CR while writing CR into the disk.
 
 ## qliksense load
 
-`qliksense load` command takes input a cr file or input from pipe.
+`qliksense load` command takes input a cr file.
 
 - `qliksense load -f cr-file.yaml`
-- `cat cr-file.yaml | qliksense load -f -`
 
-It will load the cr into `~/.qliksense` folder and create context strcture with for the CR and set the current context with the cr name. In case of multiple documents in a single stream/file it will set the current context to the last one. It will encrypt the secrets from CR while writing the CR into the disk.
+Executing the above command will load the cr into `~/.qliksense` folder and create context structure with for the CR and set the current context with the cr name. 
+Make sure you dont have a context (cr name = context name) with the same name already. It will though an error if the same context name already exists. 
+It will encrypt the secrets from CR while writing the CR into the disk.
 
 ## qliksense about
 

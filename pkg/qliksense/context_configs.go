@@ -532,6 +532,9 @@ func (q *Qliksense) SetEulaAccepted() error {
 	if err != nil {
 		return err
 	}
-	qcr.SetEULA("yes")
-	return qConfig.WriteCurrentContextCR(qcr)
+	if !qcr.IsEULA() {
+		qcr.SetEULA("yes")
+		return qConfig.WriteCurrentContextCR(qcr)
+	}
+	return nil
 }

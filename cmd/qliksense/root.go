@@ -88,24 +88,6 @@ func commandUsesContext(command string) bool {
 	return command != "" && command != "help" && command != "version"
 }
 
-func globalPreRun(cmd *cobra.Command, p *qliksense.Qliksense) {
-	if command := cmd.CalledAs(); commandUsesContext(command) {
-		if isEulaEnforced() {
-			enforceEula(p)
-		}
-
-		if err := p.SetUpQliksenseDefaultContext(); err != nil {
-			panic(err)
-		}
-
-		if isEulaEnforced() {
-			if err := p.SetEulaAccepted(); err != nil {
-				panic(err)
-			}
-		}
-	}
-}
-
 func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "qliksense",
@@ -113,7 +95,22 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			globalPreRun(cmd, p)
+			if commandUsesContext(cmd.Name()) {
+				globalEulaPreRun(cmd, p)
+
+				if err := p.SetUpQliksenseDefaultContext(); err != nil {
+					panic(err)
+				} else if eulaAcceptedFromPrompt {
+					if err := p.SetEulaAccepted(); err != nil {
+						panic(err)
+					}
+				}
+			}
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			if commandUsesContext(cmd.Name()) {
+				globalEulaPostRun(cmd, p)
+			}
 		},
 	}
 

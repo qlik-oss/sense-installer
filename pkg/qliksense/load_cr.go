@@ -1,24 +1,33 @@
 package qliksense
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-//
 func (q *Qliksense) LoadCr(reader io.Reader) error {
-	for _, doc := range readMultipleYamlFromReader(reader) {
-		if crName, err := q.loadCrStringIntoFileSystem(doc); err != nil {
-			return err
-		} else {
-			fmt.Println("cr name: [ " + crName + " ] has been loaded")
-		}
+	if crBytes, err := ioutil.ReadAll(reader); err != nil {
+		return err
+	} else if crName, err := q.loadCrStringIntoFileSystem(string(crBytes)); err != nil {
+		return err
+	} else {
+		fmt.Println("cr name: [ " + crName + " ] has been loaded")
 	}
 	return nil
+}
+
+func (q *Qliksense) IsEulaAcceptedInCrFile(reader io.Reader) (bool, error) {
+	if crBytes, err := ioutil.ReadAll(reader); err != nil {
+		return false, err
+	} else if cr, err := qapi.CreateCRObjectFromString(string(crBytes)); err != nil {
+		return false, err
+	} else {
+		return cr.IsEULA(), nil
+	}
 }
 
 func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
@@ -57,28 +66,8 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
 	if err = qConfig.CreateOrWriteCrAndContext(cr); err != nil {
 		return "", err
 	}
-	qConfig.AddToContextsRaw(cr.GetName(), qConfig.BuildCrFilePath(cr.GetName()))
 	qConfig.SetCurrentContextName(cr.GetName())
 	qConfig.Write()
 
 	return cr.GetName(), nil
-}
-
-func readMultipleYamlFromReader(reader io.Reader) []string {
-	docs := make([]string, 0)
-	scanner := bufio.NewScanner(bufio.NewReader(reader))
-	adoc := ""
-	for scanner.Scan() {
-		s := scanner.Text()
-		if s == "---" {
-			docs = append(docs, adoc)
-			adoc = ""
-			s = ""
-		}
-		adoc = adoc + "\n" + s
-	}
-	if adoc != "" {
-		docs = append(docs, adoc)
-	}
-	return docs
 }
