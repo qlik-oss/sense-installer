@@ -39,7 +39,7 @@ const (
 // SetSecrets - set-secrets <key>=<value> commands
 func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
@@ -61,9 +61,9 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		}
 	}
 	// write modified content into context-yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	//api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+	return qConfig.WriteCR(qliksenseCR)
+	//return nil
 }
 
 func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
@@ -131,7 +131,9 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 // SetConfigs - set-configs <key>=<value> commands
 func (q *Qliksense) SetConfigs(args []string) error {
 	// retieve current context from config.yaml
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	//qliksenseCR, err := retrieveCurrentContextInfo(q)
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
@@ -144,54 +146,54 @@ func (q *Qliksense) SetConfigs(args []string) error {
 		qliksenseCR.Spec.AddToConfigs(ra.SvcName, ra.Key, ra.Value)
 	}
 	// write modified content into context.yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	return qConfig.WriteCR(qliksenseCR)
+	//return nil
 }
 
-func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) {
-	var qliksenseConfig api.QliksenseConfig
-	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-	currentContext := qliksenseConfig.Spec.CurrentContext
-	api.LogDebugMessage("Current-context from config.yaml: %s", currentContext)
-	if currentContext == "" {
-		// current-context is empty
-		err := fmt.Errorf(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
-		log.Println(err)
-		return nil, "", err
-	}
-	// read the context.yaml file
-	qliksenseCR := &api.QliksenseCR{}
-	if currentContext == "" {
-		// current-context is empty
-		err := fmt.Errorf(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
-		log.Println(err)
-		return nil, "", err
-	}
-	qliksenseContextsFile := filepath.Join(q.QliksenseHome, QliksenseContextsDir, currentContext, currentContext+".yaml")
-	if !api.FileExists(qliksenseContextsFile) {
-		err := fmt.Errorf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
-		log.Println(err)
-		return nil, "", err
-	}
-	if err := api.ReadFromFile(qliksenseCR, qliksenseContextsFile); err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
+// func (q *Qliksense) retrieveCurrentContextInfo() (*api.QliksenseCR, error) {
+// 	var qliksenseConfig api.QliksenseConfig
+// 	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
+// 	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
+// 		log.Println(err)
+// 		return nil, err
+// 	}
+// 	currentContext := qliksenseConfig.Spec.CurrentContext
+// 	api.LogDebugMessage("Current-context from config.yaml: %s", currentContext)
+// 	if currentContext == "" {
+// 		// current-context is empty
+// 		err := fmt.Errorf(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+// 		log.Println(err)
+// 		return nil, err
+// 	}
+// 	// read the context.yaml file
+// 	qliksenseCR := &api.QliksenseCR{}
+// 	if currentContext == "" {
+// 		// current-context is empty
+// 		err := fmt.Errorf(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
+// 		log.Println(err)
+// 		return nil, err
+// 	}
+// 	qliksenseContextsFile := filepath.Join(q.QliksenseHome, QliksenseContextsDir, currentContext, currentContext+".yaml")
+// 	if !api.FileExists(qliksenseContextsFile) {
+// 		err := fmt.Errorf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
+// 		log.Println(err)
+// 		return nil, err
+// 	}
+// 	if err := api.ReadFromFile(qliksenseCR, qliksenseContextsFile); err != nil {
+// 		log.Println(err)
+// 		return nil, err
+// 	}
 
-	api.LogDebugMessage("Read context file: %s, Read QliksenseCR: %v", qliksenseContextsFile, qliksenseCR)
+// 	api.LogDebugMessage("Read context file: %s, Read QliksenseCR: %v", qliksenseContextsFile, qliksenseCR)
 
-	return qliksenseCR, qliksenseContextsFile, nil
-}
+// 	return qliksenseCR, qliksenseContextsFile, nil
+// }
 
 // SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
@@ -262,15 +264,15 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			qliksenseCR.Spec.GitOps.Image = argsString[1]
 			api.LogDebugMessage("Current gitOps image is : %s ", qliksenseCR.Spec.GitOps.Image)
 		default:
-			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestsRoot, git.repository or gitops arguments to configure the current context")
 			log.Println(err)
 			return err
 		}
 	}
 	// write modified content into context.yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	//api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+	return qConfig.WriteCR(qliksenseCR)
+	//return nil
 }
 
 // SetContextConfig - set the context for qliksense kubernetes resources to live in
@@ -496,7 +498,7 @@ func readTargetfile(targetFile string) ([]byte, error) {
 
 func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullUsername, pullPassword string) error {
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
@@ -523,7 +525,8 @@ func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullU
 	}
 
 	qliksenseCR.Spec.AddToConfigs("qliksense", imageRegistryConfigKey, registry)
-	return api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+	//return api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+	return qConfig.WriteCR(qliksenseCR)
 }
 
 func (q *Qliksense) SetEulaAccepted() error {
