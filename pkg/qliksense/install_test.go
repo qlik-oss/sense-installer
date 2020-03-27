@@ -47,7 +47,7 @@ spec:
 		t.Log(e)
 		t.FailNow()
 	}
-	if err := q.LoadCr(file); err != nil {
+	if err := q.LoadCr(file, false); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}

@@ -78,50 +78,58 @@ func setUpPaths() (string, error) {
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version number of qliksense cli",
-	Long:  `All software has versions. This is Hugo's`,
+	Long:  "Print the version number of qliksense cli",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Printf("%s (%s, %s)\n", pkg.Version, pkg.Commit, pkg.CommitDate)
 	},
 }
 
-func commandUsesContext(command string) bool {
-	return command != "" && command != "help" && command != "version"
+func commandUsesContext(commandName string) bool {
+	return commandName != "" && commandName != "qliksense" && commandName != "help" && commandName != "version"
 }
 
-func globalPreRun(cmd *cobra.Command, p *qliksense.Qliksense) {
-	if command := cmd.CalledAs(); commandUsesContext(command) {
-		if isEulaEnforced() {
-			enforceEula(p)
-		}
-
-		if err := p.SetUpQliksenseDefaultContext(); err != nil {
-			panic(err)
-		}
-
-		if isEulaEnforced() {
-			if err := p.SetEulaAccepted(); err != nil {
-				panic(err)
-			}
-		}
-	}
-}
-
-func rootCmd(p *qliksense.Qliksense) *cobra.Command {
+func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "qliksense",
 		Short: "Qliksense cli tool",
 		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			globalPreRun(cmd, p)
+			if commandUsesContext(cmd.Name()) {
+				globalEulaPreRun(cmd, p)
+				if err := p.SetUpQliksenseDefaultContext(); err != nil {
+					panic(err)
+				}
+				globalEulaPostRun(cmd, p)
+			}
+		},
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			if commandUsesContext(cmd.Name()) {
+				globalEulaPostRun(cmd, p)
+			}
 		},
 	}
-
+	origHelpFunc := cmd.HelpFunc()
+	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if !commandUsesContext(cmd.Name()) {
+			cmd.Flags().MarkHidden("acceptEULA")
+		}
+		origHelpFunc(cmd, args)
+	})
+	accept := ""
+	cmd.PersistentFlags().StringVarP(&accept, "acceptEULA", "a", "", "Accept EULA for qliksense")
 	cmd.Flags().SetInterspersed(false)
+	return cmd
+}
 
+func initConfig() {
+	viper.SetEnvPrefix("QLIKSENSE")
+	viper.AutomaticEnv()
+}
+
+func rootCmd(p *qliksense.Qliksense) *cobra.Command {
+	cmd := getRootCmd(p)
 	cobra.OnInitialize(initConfig)
-
-	// For qliksense overrides/commands
 
 	cmd.AddCommand(getInstallableVersionsCmd(p))
 	cmd.AddCommand(pullQliksenseImages(p))
@@ -197,11 +205,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(loadCrFile(p))
 	cmd.AddCommand((applyCmd(p)))
 	return cmd
-}
-
-func initConfig() {
-	viper.SetEnvPrefix("QLIKSENSE")
-	viper.AutomaticEnv()
 }
 
 func copy(src, dst string) (int64, error) {

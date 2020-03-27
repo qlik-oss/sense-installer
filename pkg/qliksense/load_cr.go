@@ -1,36 +1,53 @@
 package qliksense
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-//
-func (q *Qliksense) LoadCr(reader io.Reader) error {
-	for _, doc := range readMultipleYamlFromReader(reader) {
-		if crName, err := q.loadCrStringIntoFileSystem(doc); err != nil {
-			return err
-		} else {
-			fmt.Println("cr name: [ " + crName + " ] has been loaded")
-		}
+func (q *Qliksense) LoadCr(reader io.Reader, overwriteExistingContext bool) error {
+	if crBytes, err := ioutil.ReadAll(reader); err != nil {
+		return err
+	} else if crName, err := q.loadCrStringIntoFileSystem(string(crBytes), overwriteExistingContext); err != nil {
+		return err
+	} else {
+		fmt.Println("cr name: [ " + crName + " ] has been loaded")
 	}
 	return nil
 }
 
-func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
+func (q *Qliksense) IsEulaAcceptedInCrFile(reader io.Reader) (bool, error) {
+	if crBytes, err := ioutil.ReadAll(reader); err != nil {
+		return false, err
+	} else if cr, err := qapi.CreateCRObjectFromString(string(crBytes)); err != nil {
+		return false, err
+	} else {
+		return cr.IsEULA(), nil
+	}
+}
+
+func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingContext bool) (string, error) {
 	cr, err := qapi.CreateCRObjectFromString(crstr)
 	if err != nil {
 		return "", err
 	}
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if qConfig.IsContextExist(cr.GetName()) {
-		return "", errors.New("Context Name: " + cr.GetName() + " already exist. please delete the existing context first using delete-context command")
+		if !overwriteExistingContext {
+			return "", errors.New("Context with name: " + cr.GetName() + " already exists. " +
+				"Please delete the existing context first using the delete-context command or specify the --overwrite flag.")
+		} else if err := os.RemoveAll(qConfig.GetContextPath(cr.GetName())); err != nil {
+			return "", err
+		}
 	}
-	qConfig.CreateContextDirs(cr.GetName())
+	if err := qConfig.CreateContextDirs(cr.GetName()); err != nil {
+		return "", err
+	}
 
 	// encrypt the secrets and do base64 then update the CR
 	rsaPublicKey, _, err := qConfig.GetContextEncryptionKeyPair(cr.GetName())
@@ -57,28 +74,8 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
 	if err = qConfig.CreateOrWriteCrAndContext(cr); err != nil {
 		return "", err
 	}
-	qConfig.AddToContextsRaw(cr.GetName(), qConfig.BuildCrFilePath(cr.GetName()))
 	qConfig.SetCurrentContextName(cr.GetName())
 	qConfig.Write()
 
 	return cr.GetName(), nil
-}
-
-func readMultipleYamlFromReader(reader io.Reader) []string {
-	docs := make([]string, 0)
-	scanner := bufio.NewScanner(bufio.NewReader(reader))
-	adoc := ""
-	for scanner.Scan() {
-		s := scanner.Text()
-		if s == "---" {
-			docs = append(docs, adoc)
-			adoc = ""
-			s = ""
-		}
-		adoc = adoc + "\n" + s
-	}
-	if adoc != "" {
-		docs = append(docs, adoc)
-	}
-	return docs
 }

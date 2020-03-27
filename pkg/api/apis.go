@@ -152,7 +152,7 @@ func (qc *QliksenseConfig) BuildRepoPath(version string) string {
 }
 
 func (qc *QliksenseConfig) BuildRepoPathForContext(contextName, version string) string {
-	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName, "qlik-k8s", version)
+	return filepath.Join(qc.GetContextPath(contextName), "qlik-k8s", version)
 }
 
 func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
@@ -481,19 +481,22 @@ func (cr *QliksenseCR) Validate() bool {
 }
 
 //CreateContextDirs create context dir structure ~/.qliksense/contexts/contextName
-func (qc *QliksenseConfig) CreateContextDirs(contextName string) {
-	contexPath := filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName)
-	os.MkdirAll(contexPath, os.ModePerm)
+func (qc *QliksenseConfig) CreateContextDirs(contextName string) error {
+	return os.MkdirAll(qc.GetContextPath(contextName), os.ModePerm)
+}
+
+func (qc *QliksenseConfig) GetContextPath(contextName string) string {
+	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName)
 }
 
 //BuildCrFileAbsolutePath build absolute path for a cr ie. ~/.qliksense/contexts/qlik-defautl/qlik-default.yaml
 func (qc *QliksenseConfig) BuildCrFileAbsolutePath(contextName string) string {
-	return filepath.Join(qc.QliksenseHomePath, qliksenseContextsDirName, contextName, contextName+".yaml")
+	return filepath.Join(qc.GetContextPath(contextName), contextName+".yaml")
 }
 
 //BuildCrFilePath build cr file path i.e. contexts/qlik-default/qlik-default.yaml
 func (qc *QliksenseConfig) BuildCrFilePath(contextName string) string {
-	return filepath.Join(qliksenseContextsDirName, contextName, contextName+".yaml")
+	return filepath.Join(qc.GetContextPath(contextName), contextName+".yaml")
 }
 
 //AddToContexts add the context into qc.Spec.Contexts
