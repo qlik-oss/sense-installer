@@ -32,7 +32,7 @@ spec:
     - textAnalyze:
         checkName: DNS check
         collectorName: spin-up-pod-check-dns
-        fileName: spin-up-pod.txt
+        fileName: spin-up-pod.log
         regex: succeeded
         outcomes:
           - fail:

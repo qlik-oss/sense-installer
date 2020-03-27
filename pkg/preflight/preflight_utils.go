@@ -21,7 +21,7 @@ type QliksensePreflight struct {
 
 const (
 	// preflight releases have the same version
-	preflightRelease       = "v0.9.26"
+	preflightRelease       = "v0.9.28"
 	preflightLinuxFile     = "preflight_linux_amd64.tar.gz"
 	preflightMacFile       = "preflight_darwin_amd64.tar.gz"
 	preflightWindowsFile   = "preflight_windows_amd64.zip"
