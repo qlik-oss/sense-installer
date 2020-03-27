@@ -61,9 +61,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 		}
 	}
 	// write modified content into context-yaml
-	//api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
 	return qConfig.WriteCR(qliksenseCR)
-	//return nil
 }
 
 func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
