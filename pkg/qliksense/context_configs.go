@@ -3,16 +3,17 @@ package qliksense
 import (
 	"crypto/rsa"
 	"fmt"
+
+	"github.com/qlik-oss/k-apis/pkg/config"
+	"github.com/robfig/cron/v3"
+
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/tabwriter"
-
-	"github.com/robfig/cron/v3"
-
-	"github.com/qlik-oss/k-apis/pkg/config"
 
 	b64 "encoding/base64"
 
@@ -146,6 +147,58 @@ func (q *Qliksense) SetConfigs(args []string) error {
 	return qConfig.WriteCR(qliksenseCR)
 }
 
+func caseInsenstiveFieldByName(v reflect.Value, name string) reflect.Value {
+	name = strings.ToLower(name)
+	return v.FieldByNameFunc(func(n string) bool { return strings.ToLower(n) == name })
+}
+
+func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR) (bool, *api.QliksenseCR) {
+	cr := reflect.ValueOf(crSpec.Spec)
+	keyValid := caseInsenstiveFieldByName(reflect.Indirect(cr), key)
+	if !keyValid.IsValid() {
+		//not in main spec
+		fmt.Println(key, "is an invalid key")
+		return false, crSpec
+	} else if keySub == "" {
+		if key == "rotatekeys" {
+			if _, err := validateInput(value); err != nil {
+				return false, crSpec
+			}
+		}
+	}
+	// checks if it is git or gitops
+	if keySub != "" {
+		if !keyValid.IsNil() {
+			if !caseInsenstiveFieldByName(reflect.Indirect(keyValid), keySub).IsValid() {
+				fmt.Println(keySub, "is an invalid key")
+				return false, crSpec
+			} else {
+				// verify gitops enabled and gitops schedule
+				switch keySub {
+				case "schedule":
+					if _, err := cron.ParseStandard(value); err != nil {
+						fmt.Println("Please enter string with standard cron scheduling syntax ")
+						return false, crSpec
+					}
+				case "enabled":
+					if !strings.EqualFold(value, "yes") && !strings.EqualFold(value, "no") {
+						fmt.Println("Please use yes or no for key enabled")
+						return false, crSpec
+					}
+				}
+			}
+		} else {
+			switch key {
+			case "gitops":
+				crSpec.Spec.GitOps = &config.GitOps{}
+			case "git":
+				crSpec.Spec.Git = &config.Repo{}
+			}
+		}
+	}
+	return true, crSpec
+}
+
 // SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
@@ -164,67 +217,37 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 
 	for _, arg := range args {
 		argsString := strings.Split(arg, "=")
-		switch argsString[0] {
-		case "profile":
-			qliksenseCR.Spec.Profile = argsString[1]
-			api.LogDebugMessage("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
-		case "git.repository":
-			if qliksenseCR.Spec.Git == nil {
-				qliksenseCR.Spec.Git = &config.Repo{}
-			}
-			qliksenseCR.Spec.Git.Repository = argsString[1]
-			api.LogDebugMessage("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
-		case "storageClassName":
-			qliksenseCR.Spec.StorageClassName = argsString[1]
-			api.LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
-		case "manifestsRoot":
-			qliksenseCR.Spec.ManifestsRoot = argsString[1]
-		case "rotateKeys":
-			rotateKeys, err := validateInput(argsString[1])
-			if err != nil {
-				return err
-			}
-			qliksenseCR.Spec.RotateKeys = rotateKeys
-			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
-		case "gitops.enabled":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
-			}
-			if strings.EqualFold(argsString[1], "yes") || strings.EqualFold(argsString[1], "no") {
-				qliksenseCR.Spec.GitOps.Enabled = argsString[1]
-				api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
-			} else {
-				err := fmt.Errorf("Please use yes or no")
-				log.Println(err)
-				return err
-			}
-		case "gitops.schedule":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
-			}
-			if _, err := cron.ParseStandard(argsString[1]); err != nil {
-				err := fmt.Errorf("Please enter string with standard cron scheduling syntax ")
-				return err
-			}
-			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
-			api.LogDebugMessage("Current gitOps schedule is : %s ", qliksenseCR.Spec.GitOps.Schedule)
-		case "gitops.watchbranch":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
-			}
-			qliksenseCR.Spec.GitOps.WatchBranch = argsString[1]
-			api.LogDebugMessage("Current gitOps watchbranch is : %s ", qliksenseCR.Spec.GitOps.WatchBranch)
-		case "gitops.image":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
-			}
-			qliksenseCR.Spec.GitOps.Image = argsString[1]
-			api.LogDebugMessage("Current gitOps image is : %s ", qliksenseCR.Spec.GitOps.Image)
-		default:
-			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestsRoot, git.repository or gitops arguments to configure the current context")
-			log.Println(err)
-			return err
+		key := strings.ToLower(argsString[0])
+		value := argsString[1]
+		// check if key is for git or gitops (sub objects)
+		keySplit := strings.Split(key, ".")
+		key = keySplit[0]
+		keySub := ""
+
+		if len(keySplit) == 2 {
+			keySub = strings.ToLower(keySplit[1])
 		}
+
+		valid := true
+		valid, qliksenseCR = validateCR(key, keySub, value, qliksenseCR)
+		field := caseInsenstiveFieldByName(reflect.Indirect(reflect.ValueOf(qliksenseCR.Spec)), key)
+		if !valid {
+			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
+			return err
+		} else if strings.EqualFold("", keySub) {
+			// set spec for everything excluding git and gitops
+			if field.CanSet() {
+				field.SetString(value)
+			}
+		} else {
+			// set spec for git or gitops
+			subField := caseInsenstiveFieldByName(reflect.Indirect(field), keySub)
+			if subField.CanSet() {
+				subField.SetString(value)
+			}
+		}
+
+		fmt.Println(chalk.Green.Color("Successfully added to Custom Resource Spec"))
 	}
 	// write modified content into context.yaml
 	return qConfig.WriteCR(qliksenseCR)
