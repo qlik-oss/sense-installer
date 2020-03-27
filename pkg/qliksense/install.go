@@ -12,7 +12,6 @@ import (
 )
 
 type InstallCommandOptions struct {
-	AcceptEULA   string
 	StorageClass string
 	MongoDbUri   string
 	RotateKeys   string
@@ -41,9 +40,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 		return err
 	}
 
-	if opts.AcceptEULA != "" {
-		qcr.SetEULA(opts.AcceptEULA)
-	}
+	qcr.SetEULA("yes")
 	if opts.MongoDbUri != "" {
 		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")
 	}
