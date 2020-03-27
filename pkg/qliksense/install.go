@@ -42,7 +42,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	if opts.AcceptEULA != "" {
-		qcr.Spec.AddToConfigs("qliksense", "acceptEULA", opts.AcceptEULA)
+		qcr.SetEULA(opts.AcceptEULA)
 	}
 	if opts.MongoDbUri != "" {
 		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")

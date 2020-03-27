@@ -6,6 +6,7 @@ import (
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // don't delete this line ref: https://github.com/kubernetes/client-go/issues/242
 	"sigs.k8s.io/kustomize/api/filesys"
 	"sigs.k8s.io/kustomize/api/konfig"
 	"sigs.k8s.io/kustomize/api/krusty"

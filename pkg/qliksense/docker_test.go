@@ -171,7 +171,7 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 }
 
 func setupQlikSenseHome(t *testing.T, tmpQlikSenseHome string, registry *testRegistryV2, clientAuth clientAuthType) error {
-	if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(fmt.Sprintf(`
+	if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(`
 apiVersion: config.qlik.com/v1
 kind: QliksenseConfig
 metadata:
@@ -179,9 +179,9 @@ metadata:
 spec:
   contexts:
   - name: qlik-default
-    crFile: %s/contexts/qlik-default/qlik-default.yaml
+    crFile: contexts/qlik-default/qlik-default.yaml
   currentContext: qlik-default
-`, tmpQlikSenseHome)), os.ModePerm); err != nil {
+`), os.ModePerm); err != nil {
 		return err
 	}
 

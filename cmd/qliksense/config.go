@@ -20,7 +20,7 @@ func configCmd(q *qliksense.Qliksense) *cobra.Command {
 func configApplyCmd(q *qliksense.Qliksense) *cobra.Command {
 	c := &cobra.Command{
 		Use:     "apply",
-		Short:   "generate the patchs and apply manifests to k8s",
+		Short:   "generate the patches and apply manifests to k8s",
 		Long:    `generate patches based on CR and apply manifests to k8s`,
 		Example: `qliksense config apply`,
 		RunE: func(cmd *cobra.Command, args []string) error {
