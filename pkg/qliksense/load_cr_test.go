@@ -12,7 +12,7 @@ import (
 func TestLoadCrFile(t *testing.T) {
 	td := setup()
 	setup()
-	sampleCr := `
+	sampleCr1 := `
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -38,8 +38,8 @@ spec:
     - name: mongoDbUri
       value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
   profile: docker-desktop
-  rotateKeys: "yes"
----
+  rotateKeys: "yes"`
+	sampleCr2 := `
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -79,19 +79,30 @@ spec:
     repository: https://github.com/ffoysal/qliksense-k8s
     accessToken: abababababababaab
     userName: "blblbl"`
-	crFile := filepath.Join(testDir, "testcr.yaml")
-	ioutil.WriteFile(crFile, []byte(sampleCr), 0644)
+	crFile1 := filepath.Join(testDir, "testcr1.yaml")
+	ioutil.WriteFile(crFile1, []byte(sampleCr1), 0644)
+	crFile2 := filepath.Join(testDir, "testcr2.yaml")
+	ioutil.WriteFile(crFile2, []byte(sampleCr2), 0644)
 
 	dupCrFile := filepath.Join(testDir, "dupcr.yaml")
 	ioutil.WriteFile(dupCrFile, []byte(duplicateCr), 0644)
 
 	q := New(testDir)
-	file, e := os.Open(crFile)
+	file1, e := os.Open(crFile1)
 	if e != nil {
 		t.Log(e)
 		t.FailNow()
 	}
-	if err := q.LoadCr(file); err != nil {
+	if err := q.LoadCr(file1, false); err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+	file2, e := os.Open(crFile2)
+	if e != nil {
+		t.Log(e)
+		t.FailNow()
+	}
+	if err := q.LoadCr(file2, false); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
@@ -117,12 +128,12 @@ spec:
 	if qConfig.Spec.CurrentContext != "qlik-test3" {
 		t.FailNow()
 	}
-	file, e = os.Open(dupCrFile)
+	file, e := os.Open(dupCrFile)
 	if e != nil {
 		t.Log(e)
 		t.FailNow()
 	}
-	if err := q.LoadCr(file); err == nil {
+	if err := q.LoadCr(file, false); err == nil {
 		t.FailNow()
 	}
 	td()
