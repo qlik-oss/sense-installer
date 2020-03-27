@@ -312,6 +312,23 @@ func (q *Qliksense) ListContextConfigs() error {
 	return nil
 }
 
+func askForConfirmation(s string) bool {
+	for {
+		fmt.Printf("%s [y/n]: ", s)
+		var response string
+		_, err := fmt.Scanln(&response)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if strings.EqualFold(strings.ToLower(response), "y") || strings.EqualFold(strings.ToLower(response), "yes") {
+			return true
+		} else if strings.EqualFold(strings.ToLower(response), "y") || strings.EqualFold(strings.ToLower(response), "n") {
+			return false
+		}
+	}
+}
+
 func (q *Qliksense) DeleteContextConfig(args []string) error {
 	if len(args) == 1 {
 		qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
@@ -339,7 +356,7 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 				err = fmt.Errorf("No Secrets Folder Detected")
 				log.Println(err)
 				return err
-			} else {
+			} else if conf := askForConfirmation("Are you sure? "); conf == true {
 				currentLength := len(qliksenseConfig.Spec.Contexts)
 				if currentLength > 0 {
 					temp := qliksenseConfig.Spec.Contexts
