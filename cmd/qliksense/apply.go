@@ -2,16 +2,16 @@ package main
 
 import (
 	"io"
-	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
 
 func applyCmd(q *qliksense.Qliksense) *cobra.Command {
+	opts := &qliksense.InstallCommandOptions{}
 	filePath := ""
-	acceptEULA := ""
-	keepPatchFiles := true
+	keepPatchFiles := false
+	overwriteExistingContext := false
 	c := &cobra.Command{
 		Use:     "apply",
 		Short:   "install qliksense based on provided cr file",
@@ -19,29 +19,21 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense apply -f file_name`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLoadOrApplyCommandE(cmd, func(reader io.Reader) error {
-				opts := &qliksense.InstallCommandOptions{
-					AcceptEULA: acceptEULA,
-				}
-				if eulaAcceptedFromPrompt {
-					opts.AcceptEULA = "yes"
-				}
-				return q.ApplyCRFromReader(reader, opts, keepPatchFiles)
+				return q.ApplyCRFromReader(reader, opts, keepPatchFiles, overwriteExistingContext)
 			})
 		},
 	}
 
 	f := c.Flags()
 	f.StringVarP(&filePath, "file", "f", "", "Install from a CR file")
-	f.StringVarP(&acceptEULA, "acceptEULA", "a", "", "AcceptEULA for qliksense")
 	c.MarkFlagRequired("file")
+	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
+	f.StringVarP(&opts.MongoDbUri, "mongoDbUri", "m", "", "mongoDbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
+	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
+	f.BoolVar(&keepPatchFiles, keepPatchFilesFlagName, keepPatchFiles, keepPatchFilesFlagUsage)
+	f.BoolVarP(&overwriteExistingContext, "overwrite", "o", overwriteExistingContext, "Overwrite any existing contexts with the same name")
 
-	eulaPreRunHooks.addValidator(c.Name(), func(cmd *cobra.Command, q *qliksense.Qliksense) (bool, error) {
-		if strings.ToLower(strings.TrimSpace(acceptEULA)) == "yes" {
-			return true, nil
-		} else {
-			return loadOrApplyCommandEulaPreRunHook(cmd, q)
-		}
-	})
+	eulaPreRunHooks.addValidator(c.Name(), loadOrApplyCommandEulaPreRunHook)
 
 	return c
 }

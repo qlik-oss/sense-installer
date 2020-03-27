@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) LoadCr(reader io.Reader) error {
+func (q *Qliksense) LoadCr(reader io.Reader, overwriteExistingContext bool) error {
 	if crBytes, err := ioutil.ReadAll(reader); err != nil {
 		return err
-	} else if crName, err := q.loadCrStringIntoFileSystem(string(crBytes)); err != nil {
+	} else if crName, err := q.loadCrStringIntoFileSystem(string(crBytes), overwriteExistingContext); err != nil {
 		return err
 	} else {
 		fmt.Println("cr name: [ " + crName + " ] has been loaded")
@@ -30,16 +31,23 @@ func (q *Qliksense) IsEulaAcceptedInCrFile(reader io.Reader) (bool, error) {
 	}
 }
 
-func (q *Qliksense) loadCrStringIntoFileSystem(crstr string) (string, error) {
+func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingContext bool) (string, error) {
 	cr, err := qapi.CreateCRObjectFromString(crstr)
 	if err != nil {
 		return "", err
 	}
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if qConfig.IsContextExist(cr.GetName()) {
-		return "", errors.New("Context Name: " + cr.GetName() + " already exist. please delete the existing context first using delete-context command")
+		if !overwriteExistingContext {
+			return "", errors.New("Context with name: " + cr.GetName() + " already exists. " +
+				"Please delete the existing context first using the delete-context command or specify the --overwrite flag.")
+		} else if err := os.RemoveAll(qConfig.GetContextPath(cr.GetName())); err != nil {
+			return "", err
+		}
 	}
-	qConfig.CreateContextDirs(cr.GetName())
+	if err := qConfig.CreateContextDirs(cr.GetName()); err != nil {
+		return "", err
+	}
 
 	// encrypt the secrets and do base64 then update the CR
 	rsaPublicKey, _, err := qConfig.GetContextEncryptionKeyPair(cr.GetName())
