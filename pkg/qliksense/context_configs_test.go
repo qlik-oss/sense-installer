@@ -224,7 +224,7 @@ func Test_retrieveCurrentContextInfo(t *testing.T) {
 	q := &Qliksense{
 		QliksenseHome: testDir,
 	}
-	qConfig := api.NewQConfigEmpty(q.QliksenseHome)
+	qConfig := api.NewQConfig(q.QliksenseHome)
 	_, err := qConfig.GetCurrentCR()
 	if err != nil {
 		t.FailNow()
