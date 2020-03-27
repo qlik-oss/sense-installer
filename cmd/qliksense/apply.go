@@ -11,15 +11,14 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 	opts := &qliksense.InstallCommandOptions{}
 	filePath := ""
 	keepPatchFiles := false
-	overwriteExistingContext := false
 	c := &cobra.Command{
 		Use:     "apply",
 		Short:   "install qliksense based on provided cr file",
 		Long:    `install qliksense based on provided cr file`,
-		Example: `qliksense apply -f file_name`,
+		Example: `qliksense apply -f file_name or cat cr_file | qliksense apply -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLoadOrApplyCommandE(cmd, func(reader io.Reader) error {
-				return q.ApplyCRFromReader(reader, opts, keepPatchFiles, overwriteExistingContext)
+				return q.ApplyCRFromReader(reader, opts, keepPatchFiles, true)
 			})
 		},
 	}
@@ -31,7 +30,6 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&opts.MongoDbUri, "mongoDbUri", "m", "", "mongoDbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
 	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
 	f.BoolVar(&keepPatchFiles, keepPatchFilesFlagName, keepPatchFiles, keepPatchFilesFlagUsage)
-	f.BoolVarP(&overwriteExistingContext, "overwrite", "o", overwriteExistingContext, "Overwrite any existing contexts with the same name")
 
 	eulaPreRunHooks.addValidator(c.Name(), loadOrApplyCommandEulaPreRunHook)
 

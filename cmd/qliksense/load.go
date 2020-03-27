@@ -18,7 +18,7 @@ func loadCrFile(q *qliksense.Qliksense) *cobra.Command {
 		Use:     "load",
 		Short:   "load a CR a file and create necessary structure for future use",
 		Long:    `load a CR a file and create necessary structure for future use`,
-		Example: `qliksense load -f file_name`,
+		Example: `qliksense load -f file_name or cat cr_file | qliksense load -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runLoadOrApplyCommandE(cmd, func(reader io.Reader) error {
 				return q.LoadCr(reader, overwriteExistingContext)
