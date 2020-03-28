@@ -159,10 +159,10 @@ func (qc *QliksenseConfig) BuildCurrentManifestsRoot(version string) string {
 	return qc.BuildRepoPath(version)
 }
 
-func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR, contextName string) error {
-	crf := qc.GetCRFilePath(contextName)
+func (qc *QliksenseConfig) WriteCR(cr *QliksenseCR) error {
+	crf := qc.GetCRFilePath(cr.GetName())
 	if crf == "" {
-		return errors.New("context name " + contextName + " not found")
+		return errors.New("context name " + cr.GetName() + " not found")
 	}
 
 	return qc.TransformAndWriteCr(cr, crf)
@@ -183,7 +183,7 @@ func (qc *QliksenseConfig) CreateOrWriteCrAndContext(cr *QliksenseCR) error {
 		crf = filepath.Join(cDir, cr.GetName()+".yaml")
 		ctx := Context{
 			Name:   cr.GetName(),
-			CrFile: filepath.Join("contexts", cr.GetName(), cr.GetName()+".yaml"),
+			CrFile: "contexts/" + cr.GetName() + "/" + cr.GetName() + ".yaml", //filepath.Join("contexts", cr.GetName(), cr.GetName()+".yaml"),
 		}
 		qc.AddToContexts(ctx)
 
@@ -198,6 +198,8 @@ func (qc *QliksenseConfig) CreateOrWriteCrAndContext(cr *QliksenseCR) error {
 func (qc *QliksenseConfig) TransformAndWriteCr(cr *QliksenseCR, file string) error {
 	if strings.HasPrefix(cr.Spec.ManifestsRoot, qc.QliksenseHomePath) {
 		cr.Spec.ManifestsRoot = strings.Replace(cr.Spec.ManifestsRoot, qc.QliksenseHomePath+"/", "", 1)
+		cr.Spec.ManifestsRoot = strings.Replace(cr.Spec.ManifestsRoot, qc.QliksenseHomePath+"\\", "", 1)
+		cr.Spec.ManifestsRoot = strings.Replace(cr.Spec.ManifestsRoot, "\\", "/", -1)
 	}
 	if err := WriteToFile(cr, file); err != nil {
 		return err
@@ -214,7 +216,7 @@ func (qc *QliksenseConfig) AddToContexts(ctx Context) error {
 	return nil
 }
 func (qc *QliksenseConfig) WriteCurrentContextCR(cr *QliksenseCR) error {
-	return qc.WriteCR(cr, qc.Spec.CurrentContext)
+	return qc.WriteCR(cr)
 }
 
 func (qc *QliksenseConfig) IsContextExist(ctxName string) bool {
