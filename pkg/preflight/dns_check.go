@@ -15,24 +15,24 @@ apiVersion: troubleshoot.replicated.com/v1beta1
 kind: Preflight
 metadata:
   name: cluster-preflight-checks
-  namespace: {{ . }}
+  namespace: {{ .namespace }}
 spec:
   collectors:
     - run: 
         collectorName: spin-up-pod
-        args: ["-z", "-v", "-w 1", "qnginx001", "80"]
+        args: ["-z", "-v", "-w 1", "{{ .serviceName }}", "80"]
         command: ["nc"]
         image: subfuzion/netcat:latest
         imagePullPolicy: IfNotPresent
         name: spin-up-pod-check-dns
-        namespace: {{ . }}
+        namespace: {{ .namespace }}
         timeout: 30s
 
   analyzers:
     - textAnalyze:
         checkName: DNS check
         collectorName: spin-up-pod-check-dns
-        fileName: spin-up-pod.txt
+        fileName: spin-up-pod.log
         regex: succeeded
         outcomes:
           - fail:
@@ -59,8 +59,13 @@ func (qp *QliksensePreflight) CheckDns() error {
 	}
 	api.LogDebugMessage("Temp Yaml file: %s\n", tempYaml.Name())
 
+	appName := "qnginx001"
+	const PreflightChecksDirName = "preflight_checks"
 	b := bytes.Buffer{}
-	err = tmpl.Execute(&b, namespace)
+	err = tmpl.Execute(&b, map[string]string{
+		"namespace":   namespace,
+		"serviceName": appName,
+	})
 	if err != nil {
 		fmt.Println(err)
 		return err
@@ -69,9 +74,6 @@ func (qp *QliksensePreflight) CheckDns() error {
 	tempYaml.WriteString(b.String())
 
 	// creating Kubectl resources
-	appName := "qnginx001"
-	const PreflightChecksDirName = "preflight_checks"
-
 	fmt.Println("Creating resources to run preflight checks")
 
 	// kubectl create deployment
