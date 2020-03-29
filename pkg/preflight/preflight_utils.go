@@ -21,7 +21,7 @@ type QliksensePreflight struct {
 
 const (
 	// preflight releases have the same version
-	preflightRelease       = "v0.9.26"
+	preflightRelease       = "v0.9.28"
 	preflightLinuxFile     = "preflight_linux_amd64.tar.gz"
 	preflightMacFile       = "preflight_darwin_amd64.tar.gz"
 	preflightWindowsFile   = "preflight_windows_amd64.zip"
@@ -32,10 +32,12 @@ const (
 var preflightBaseURL = fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/%s/", preflightRelease)
 
 func (qp *QliksensePreflight) DownloadPreflight() error {
-	const preflightExecutable = "preflight"
+	preflightExecutable := "preflight"
+	if runtime.GOOS == "windows" {
+		preflightExecutable += ".exe"
+	}
 
 	preflightInstallDir := filepath.Join(qp.Q.QliksenseHome, PreflightChecksDirName)
-	platform := runtime.GOOS
 
 	exists, err := checkInstalled(preflightInstallDir, preflightExecutable)
 	if err != nil {
@@ -60,7 +62,7 @@ func (qp *QliksensePreflight) DownloadPreflight() error {
 	}
 	api.LogDebugMessage("Preflight-checks install Dir: %s exists", preflightInstallDir)
 
-	preflightUrl, preflightFile, err := determinePlatformSpecificUrls(platform)
+	preflightUrl, preflightFile, err := determinePlatformSpecificUrls(runtime.GOOS)
 	if err != nil {
 		err = fmt.Errorf("There was an error when trying to determine platform specific paths")
 		return err
@@ -144,7 +146,8 @@ func initiateK8sOps(opr, namespace string) error {
 }
 
 func invokePreflight(preflightCommand string, yamlFile *os.File) error {
-	arguments := []string{}
+	var arguments []string
+
 	arguments = append(arguments, yamlFile.Name(), "--interactive=false")
 	cmd := exec.Command(preflightCommand, arguments...)
 
