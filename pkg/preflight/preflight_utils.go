@@ -135,7 +135,7 @@ func determinePlatformSpecificUrls(platform string) (string, string, error) {
 
 func initiateK8sOps(opr, namespace string) error {
 	opr1 := strings.Fields(opr)
-	err := api.KubectlDirectOps(opr1, namespace)
+	_, err := api.KubectlDirectOps(opr1, namespace)
 	if err != nil {
 		fmt.Println(err)
 		return err
