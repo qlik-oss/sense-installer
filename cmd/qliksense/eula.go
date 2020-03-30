@@ -85,7 +85,6 @@ func doEnforceEula() {
 	fmt.Println(eulaText)
 	fmt.Print(eulaPrompt)
 	answer := readRuneFromTty()
-	fmt.Printf("%v\n", answer)
 	if strings.ToLower(answer) != "y" {
 		fmt.Println(eulaErrorInstruction)
 		os.Exit(1)
@@ -98,9 +97,9 @@ func readRuneFromTty() string {
 		panic(err)
 	}
 	defer t.Close()
-	answer, err := t.ReadRune()
+	answer, err := t.ReadString()
 	if err != nil {
 		panic(err)
 	}
-	return string(answer)
+	return answer
 }
