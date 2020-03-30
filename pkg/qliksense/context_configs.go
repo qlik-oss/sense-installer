@@ -384,7 +384,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	}
 
 	if qliksenseConfig.IsContextExist(contextName) {
-		return nil
+		qliksenseConfig.Spec.CurrentContext = contextName
+		return qliksenseConfig.Write()
 	}
 	qliksenseCR := &api.QliksenseCR{}
 	qliksenseCR.AddCommonConfig(contextName)
