@@ -16,6 +16,7 @@ replace (
 require (
 	cloud.google.com/go v0.52.0 // indirect
 	cloud.google.com/go/storage v1.5.0 // indirect
+	github.com/Masterminds/semver/v3 v3.0.3
 	github.com/Shopify/ejson v1.2.1
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
@@ -59,6 +60,7 @@ require (
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0
 )

@@ -1,130 +1,108 @@
 package preflight
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
-	"io/ioutil"
-	"path/filepath"
-
-	"github.com/qlik-oss/sense-installer/pkg/api"
+	"strings"
+	"time"
 )
 
-const dnsCheckYAML = `
-apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Preflight
-metadata:
-  name: cluster-preflight-checks
-  namespace: {{ .namespace }}
-spec:
-  collectors:
-    - run: 
-        collectorName: spin-up-pod
-        args: ["-z", "-v", "-w 1", "{{ .serviceName }}", "80"]
-        command: ["nc"]
-        image: subfuzion/netcat:latest
-        imagePullPolicy: IfNotPresent
-        name: spin-up-pod-check-dns
-        namespace: {{ .namespace }}
-        timeout: 30s
-
-  analyzers:
-    - textAnalyze:
-        checkName: DNS check
-        collectorName: spin-up-pod-check-dns
-        fileName: spin-up-pod.log
-        regex: succeeded
-        outcomes:
-          - fail:
-              message: DNS check failed
-          - pass:
-              message: DNS check passed
-`
-
-func (qp *QliksensePreflight) CheckDns() error {
-	// retrieve namespace
-	namespace := api.GetKubectlNamespace()
-
-	api.LogDebugMessage("Namespace: %s\n", namespace)
-
-	tmpl, err := template.New("dnsCheckYAML").Parse(dnsCheckYAML)
+func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
+	clientset, clientConfig, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
-		fmt.Printf("cannot parse template: %v", err)
-		return err
-	}
-	tempYaml, err := ioutil.TempFile("", "")
-	if err != nil {
-		fmt.Printf("cannot create file: %v", err)
-		return err
-	}
-	api.LogDebugMessage("Temp Yaml file: %s\n", tempYaml.Name())
-
-	appName := "qnginx001"
-	const PreflightChecksDirName = "preflight_checks"
-	b := bytes.Buffer{}
-	err = tmpl.Execute(&b, map[string]string{
-		"namespace":   namespace,
-		"serviceName": appName,
-	})
-	if err != nil {
-		fmt.Println(err)
-		return err
+		err = fmt.Errorf("Kube config error: %v\n", err)
+		fmt.Print(err)
 	}
 
-	tempYaml.WriteString(b.String())
-
-	// creating Kubectl resources
-	fmt.Println("Creating resources to run preflight checks")
-
-	// kubectl create deployment
-	opr := fmt.Sprintf("create deployment %s --image=nginx", appName)
-	err = initiateK8sOps(opr, namespace)
+	// creating deployment
+	depName := "dep-dns-preflight-check"
+	dnsDeployment, err := createDeployment(clientset, namespace, depName, "nginx")
 	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("Unable to create deployment: %v\n", err)
 		return err
 	}
+	timeout := time.NewTicker(2 * time.Minute)
+	defer timeout.Stop()
+WAIT:
+	for {
+		d, err := getDeployment(dnsDeployment.GetName(), clientset, namespace)
+		if err != nil {
+			err = fmt.Errorf("Unable to retrieve deployment: %s\n", depName)
+			return err
+		}
+		select {
+		case <-timeout.C:
+			break WAIT
+		default:
+			if int(d.Status.ReadyReplicas) > 0 {
+				break WAIT
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+	defer deleteDeployment(clientset, namespace, depName)
 
-	defer func() {
-		// Deleting deployment..
-		opr = fmt.Sprintf("delete deployment %s", appName)
-		// we want to delete the k8s resource here, we dont care a lot about an error here
-		_ = initiateK8sOps(opr, namespace)
-		api.LogDebugMessage("delete deployment executed")
-	}()
-
-	// create service
-	opr = fmt.Sprintf("create service clusterip %s --tcp=80:80", appName)
-	err = initiateK8sOps(opr, namespace)
+	// creating service
+	serviceName := "svc-dns-pf-check"
+	dnsService, err := createService(clientset, namespace, serviceName)
 	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("Unable to create service : %s\n", serviceName)
 		return err
 	}
+	defer deleteService(clientset, namespace, serviceName)
 
-	defer func() {
-		// delete service
-		opr = fmt.Sprintf("delete service %s", appName)
-		// we want to delete the k8s resource here, we dont care a lot about an error here
-		_ = initiateK8sOps(opr, namespace)
-		api.LogDebugMessage("delete service executed")
-	}()
-
-	//kubectl -n $namespace wait --for=condition=ready pod -l app=$appName --timeout=120s
-	opr = fmt.Sprintf("wait --for=condition=ready pod -l app=%s --timeout=120s", appName)
-	err = initiateK8sOps(opr, namespace)
+	// create a pod
+	podName := "pf-pod-1"
+	dnsPod, err := createPod(clientset, namespace, podName, "subfuzion/netcat:latest")
 	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("Unable to create pod : %s\n", podName)
 		return err
 	}
-	api.LogDebugMessage("kubectl wait executed")
+	defer deletePod(clientset, namespace, podName)
 
-	// call preflight
-	preflightCommand := filepath.Join(qp.Q.QliksenseHome, PreflightChecksDirName, preflightFileName)
+	if len(dnsPod.Spec.Containers) > 0 {
+		timeout := time.NewTicker(2 * time.Minute)
+		defer timeout.Stop()
+	OUT:
+		for {
+			dnsPod, err = getPod(clientset, namespace, dnsPod.Name)
+			if err != nil {
+				err = fmt.Errorf("Unable to retrieve service by name: %s\n", podName)
+				fmt.Println(err)
+				return err
+			}
+			select {
+			case <-timeout.C:
+				break OUT
+			default:
+				if len(dnsPod.Status.ContainerStatuses) > 0 && dnsPod.Status.ContainerStatuses[0].Ready {
+					break OUT
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+		if len(dnsPod.Status.ContainerStatuses) == 0 || !dnsPod.Status.ContainerStatuses[0].Ready {
+			err = fmt.Errorf("container is taking much longer than expected")
+			fmt.Println(err)
+			return err
+		}
+		fmt.Println("Exec-ing into the container...")
+		stdout, stderr, err := executeRemoteCommand(clientset, clientConfig, dnsPod.Name, dnsPod.Spec.Containers[0].Name, namespace, []string{"nc", "-z", "-v", "-w 1", dnsService.Name, "80"})
+		if err != nil {
+			err = fmt.Errorf("An error occurred while executing remote command in container: %v", err)
+			fmt.Println(err)
+			return err
+		}
+		//fmt.Printf("stdout: %s\n", stdout)
+		//fmt.Printf("stderr: %s\n", stderr)
 
-	err = invokePreflight(preflightCommand, tempYaml)
-	if err != nil {
-		fmt.Println(err)
-		return err
+		if strings.HasSuffix(stdout, "succeeded!") || strings.HasSuffix(stderr, "succeeded!") {
+			fmt.Println("Preflight DNS check: PASS")
+		} else {
+			fmt.Println("Preflight DNS check: FAIL")
+		}
 	}
-	fmt.Println("DNS check completed, cleaning up resources now")
+
+	fmt.Println("Completed preflight DNS check.\n")
+
 	return nil
 }

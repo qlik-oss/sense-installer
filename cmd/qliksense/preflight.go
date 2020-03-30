@@ -2,8 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
+	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/preflight"
 
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -28,13 +32,14 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense preflight dns`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
-			err := qp.DownloadPreflight()
+
+			// Preflight DNS check
+			fmt.Printf("Running preflight DNS check...\n")
+			namespace, kubeConfigContents, err := initPreflight()
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
-				log.Println(err)
-				return err
+				log.Fatal(err)
 			}
-			return qp.CheckDns()
+			return qp.CheckDns(namespace, kubeConfigContents)
 		},
 	}
 	return preflightDnsCmd
@@ -48,13 +53,14 @@ func preflightCheckK8sVersionCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense preflight k8s-version`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
-			err := qp.DownloadPreflight()
+
+			// Preflight Kubernetes minimum version check
+			fmt.Printf("Running preflight kubernetes minimum version check...\n")
+			namespace, kubeConfigContents, err := initPreflight()
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
-				log.Println(err)
-				return err
+				log.Fatal(err)
 			}
-			return qp.CheckK8sVersion()
+			return qp.CheckK8sVersion(namespace, kubeConfigContents)
 		},
 	}
 	return preflightCheckK8sVersionCmd
@@ -68,14 +74,38 @@ func preflightAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense preflight all`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
-			err := qp.DownloadPreflight()
+
+			// Preflight run all checks
+			fmt.Printf("Running all preflight checks...\n")
+			namespace, kubeConfigContents, err := initPreflight()
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
-				log.Println(err)
-				return err
+				log.Fatal(err)
 			}
-			return qp.RunAllPreflightChecks()
+			return qp.RunAllPreflightChecks(namespace, kubeConfigContents)
+
 		},
 	}
 	return preflightAllChecksCmd
+}
+
+func initPreflight() (string, []byte, error) {
+	api.LogDebugMessage("Reading .kube/config file...")
+
+	homeDir, err := homedir.Dir()
+	if err != nil {
+		err = fmt.Errorf("Unable to deduce home dir\n")
+		return "", nil, err
+	}
+	api.LogDebugMessage("Kube config location: %s\n\n", filepath.Join(homeDir, ".kube", "config"))
+
+	kubeConfig := filepath.Join(homeDir, ".kube", "config")
+	kubeConfigContents, err := ioutil.ReadFile(kubeConfig)
+	if err != nil {
+		err = fmt.Errorf("Unable to deduce home dir\n")
+		return "", nil, err
+	}
+	// retrieve namespace
+	namespace := api.GetKubectlNamespace()
+	api.LogDebugMessage("Namespace: %s\n", namespace)
+	return namespace, kubeConfigContents, nil
 }
