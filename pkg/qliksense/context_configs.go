@@ -354,6 +354,12 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 
 // SetUpQliksenseDefaultContext - to setup dir structure for default qliksense context
 func (q *Qliksense) SetUpQliksenseDefaultContext() error {
+	if api.FileExists(filepath.Join(q.QliksenseHome, "config.yaml")) {
+		qliksenseConfig := api.NewQConfig(q.QliksenseHome)
+		if qliksenseConfig.IsContextExist(DefaultQliksenseContext) {
+			return nil
+		}
+	}
 	return q.SetUpQliksenseContext(DefaultQliksenseContext)
 }
 
@@ -384,7 +390,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	}
 
 	if qliksenseConfig.IsContextExist(contextName) {
-		return nil
+		qliksenseConfig.Spec.CurrentContext = contextName
+		return qliksenseConfig.Write()
 	}
 	qliksenseCR := &api.QliksenseCR{}
 	qliksenseCR.AddCommonConfig(contextName)
