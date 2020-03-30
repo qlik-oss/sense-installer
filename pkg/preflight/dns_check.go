@@ -11,6 +11,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	if err != nil {
 		err = fmt.Errorf("Kube config error: %v\n", err)
 		fmt.Print(err)
+		return err
 	}
 
 	// creating deployment
