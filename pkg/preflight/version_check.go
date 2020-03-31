@@ -1,84 +1,58 @@
 package preflight
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-	"text/template"
 
-	"github.com/qlik-oss/sense-installer/pkg/api"
+	"github.com/Masterminds/semver/v3"
+	"k8s.io/apimachinery/pkg/version"
 )
 
 const minK8sVersion = "1.11.0"
-const checkVersionYAML = `
-apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Preflight
-metadata:
-  name: cluster-preflight-checks
-  namespace: {{ .namespace }}
-spec:
-  analyzers:
-    - clusterVersion:
-        outcomes:
-          - fail:
-              when: "< {{ .minK8sVersion }}"
-              message: The application requires at least Kubernetes {{ .minK8sVersion }} or later.
-              uri: https://www.kubernetes.io
-          - pass:
-              when: ">= {{ .minK8sVersion }}"
-              message: Good to go.
-`
 
-func (qp *QliksensePreflight) CheckK8sVersion() error {
-	// retrieve namespace
-	namespace := api.GetKubectlNamespace()
+func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigContents []byte) error {
 
-	api.LogDebugMessage("Namespace: %s\n", namespace)
+	var currentVersion *semver.Version
 
-	tmpl, err := template.New("checkVersionYAML").Parse(checkVersionYAML)
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
-		fmt.Printf("cannot parse template: %v", err)
+		err = fmt.Errorf("Unable to create clientset: %v\n", err)
 		return err
 	}
-	tempYaml, err := ioutil.TempFile("", "")
-	if err != nil {
-		fmt.Printf("cannot create file: %v", err)
+	var serverVersion *version.Info
+	if err := retryOnError(func() (err error) {
+		serverVersion, err = clientset.ServerVersion()
+		return err
+	}); err != nil {
+		err = fmt.Errorf("Unable to get server version: %v\n", err)
+		//fmt.Println(err)
 		return err
 	}
-	api.LogDebugMessage("Temp Yaml file: %s\n", tempYaml.Name())
+	fmt.Printf("Kubernetes API Server version: %s\n", serverVersion.String())
 
-	b := bytes.Buffer{}
-	err = tmpl.Execute(&b, map[string]string{
-		"namespace":     namespace,
-		"minK8sVersion": minK8sVersion,
-	})
+	// Compare K8s version on the cluster with minimum supported k8s version
+	currentVersion, err = semver.NewVersion(serverVersion.String())
 	if err != nil {
+		err = fmt.Errorf("Unable to convert server version into semver version: %v\n", err)
+		//fmt.Println(err)
+		return err
+	}
+	fmt.Printf("Current K8s Version: %v\n", currentVersion)
+
+	minK8sVersionSemver, err := semver.NewVersion(minK8sVersion)
+	if err != nil {
+		err = fmt.Errorf("Unable to convert minimum Kubernetes version into semver version:%v\n", err)
 		fmt.Println(err)
 		return err
 	}
 
-	tempYaml.WriteString(b.String())
-	//api.LogDebugMessage("Temp yaml contents: %s", b.String())
-	fmt.Printf("Minimum Kubernetes version supported: %s\n", minK8sVersion)
-
-	// current kubectl version
-	opr := fmt.Sprintf("version")
-	err = initiateK8sOps(opr, namespace)
-	if err != nil {
-		fmt.Println(err)
-		return err
+	if currentVersion.GreaterThan(minK8sVersionSemver) {
+		//fmt.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
+		fmt.Printf("Current %s is greater than minimum required version:%s, hence good to go\n", currentVersion, minK8sVersionSemver)
+		fmt.Println("Preflight minimum kubernetes version check: PASSED")
+	} else {
+		fmt.Printf("Current %s is less than minimum required version:%s\n", currentVersion, minK8sVersionSemver)
+		fmt.Println("Preflight minimum kubernetes version check: FAILED")
 	}
-
-	// call preflight
-	preflightCommand := filepath.Join(qp.Q.QliksenseHome, PreflightChecksDirName, preflightFileName)
-
-	err = invokePreflight(preflightCommand, tempYaml)
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-
-	fmt.Println("Minimum kubernetes version check completed")
+	fmt.Printf("Completed Preflight kubernetes minimum version check\n\n")
 	return nil
 }

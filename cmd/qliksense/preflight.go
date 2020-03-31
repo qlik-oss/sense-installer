@@ -28,13 +28,21 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense preflight dns`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
-			err := qp.DownloadPreflight()
+
+			// Preflight DNS check
+			fmt.Printf("Preflight DNS check\n")
+			fmt.Println("---------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
-				log.Println(err)
-				return err
+				fmt.Printf("Preflight DNS check FAILED\n")
+				log.Fatal(err)
 			}
-			return qp.CheckDns()
+			if err = qp.CheckDns(namespace, kubeConfigContents); err != nil {
+				fmt.Println(err)
+				fmt.Print("Preflight DNS check FAILED\n")
+				log.Fatal()
+			}
+			return nil
 		},
 	}
 	return preflightDnsCmd
@@ -48,13 +56,21 @@ func preflightCheckK8sVersionCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense preflight k8s-version`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
-			err := qp.DownloadPreflight()
+
+			// Preflight Kubernetes minimum version check
+			fmt.Printf("Preflight kubernetes minimum version check\n")
+			fmt.Println("------------------------------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
-				log.Println(err)
-				return err
+				fmt.Printf("Preflight kubernetes minimum version check FAILED\n")
+				log.Fatal(err)
 			}
-			return qp.CheckK8sVersion()
+			if err = qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
+				fmt.Println(err)
+				fmt.Printf("Preflight kubernetes minimum version check FAILED\n")
+				log.Fatal()
+			}
+			return nil
 		},
 	}
 	return preflightCheckK8sVersionCmd
@@ -68,13 +84,18 @@ func preflightAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense preflight all`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
-			err := qp.DownloadPreflight()
+
+			// Preflight run all checks
+			fmt.Printf("Running all preflight checks\n")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				err = fmt.Errorf("There has been an error downloading preflight: %+v", err)
-				log.Println(err)
-				return err
+				fmt.Println(err)
+				fmt.Printf("Running preflight check suite has FAILED...\n")
+				log.Fatal()
 			}
-			return qp.RunAllPreflightChecks()
+			qp.RunAllPreflightChecks(namespace, kubeConfigContents)
+			return nil
+
 		},
 	}
 	return preflightAllChecksCmd

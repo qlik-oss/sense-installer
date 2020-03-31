@@ -7,3 +7,5 @@ pkg/qliksense/qliksense-packr.go
 pkg/qliksense/docker-registry
 /pkg/qliksense/tests
 .DS_Store
+
+.idea/
