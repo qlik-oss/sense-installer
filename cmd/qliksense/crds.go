@@ -37,6 +37,6 @@ func crdsInstallCmd(q *qliksense.Qliksense) *cobra.Command {
 		},
 	}
 	f := c.Flags()
-	f.BoolVarP(&opts.All, "all", "a", false, "Include All CRDs")
+	f.BoolVarP(&opts.All, "all", "", false, "Include All CRDs")
 	return c
 }
