@@ -7,11 +7,13 @@ import (
 func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte) error {
 
 	// Preflight DNS check
-	fmt.Printf("\nRunning preflight DNS check...\n")
+	fmt.Printf("\nPreflight DNS check\n")
+	fmt.Println("-------------------")
 	qp.CheckDns(namespace, kubeConfigContents)
 
 	// Preflight minimum kuberenetes version check
-	fmt.Printf("\nRunning preflight kubernetes minimum version check...\n")
+	fmt.Printf("\nPreflight kubernetes minimum version check\n")
+	fmt.Println("------------------------------------------")
 	qp.CheckK8sVersion(namespace, kubeConfigContents)
 
 	fmt.Println("Completed running all preflight checks")

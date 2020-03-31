@@ -2,7 +2,6 @@ package preflight
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/Masterminds/semver/v3"
 	"k8s.io/apimachinery/pkg/version"
@@ -48,9 +47,11 @@ func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigConten
 
 	if currentVersion.GreaterThan(minK8sVersionSemver) {
 		//fmt.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
-		log.Printf("Current %s is greater than minimum required version:%s, hence good to go\n", currentVersion, minK8sVersionSemver)
+		fmt.Printf("Current %s is greater than minimum required version:%s, hence good to go\n", currentVersion, minK8sVersionSemver)
+		fmt.Println("Preflight minimum kubernetes version check: PASS")
 	} else {
-		log.Printf("Current %s is less than minimum required version:%s\n", currentVersion, minK8sVersionSemver)
+		fmt.Printf("Current %s is less than minimum required version:%s\n", currentVersion, minK8sVersionSemver)
+		fmt.Println("Preflight minimum kubernetes version check: FAIL")
 	}
 	fmt.Printf("Completed Preflight kubernetes minimum version check\n\n")
 	return nil

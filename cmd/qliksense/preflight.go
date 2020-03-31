@@ -34,7 +34,8 @@ func preflightCheckDnsCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q}
 
 			// Preflight DNS check
-			fmt.Printf("Running preflight DNS check...\n")
+			fmt.Printf("Preflight DNS check\n")
+			fmt.Println("---------------------")
 			namespace, kubeConfigContents, err := initPreflight()
 			if err != nil {
 				fmt.Printf("Preflight DNS check failed\n")
@@ -60,7 +61,8 @@ func preflightCheckK8sVersionCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q}
 
 			// Preflight Kubernetes minimum version check
-			fmt.Printf("Running preflight kubernetes minimum version check...\n")
+			fmt.Printf("Preflight kubernetes minimum version check\n")
+			fmt.Println("------------------------------------------")
 			namespace, kubeConfigContents, err := initPreflight()
 			if err != nil {
 				fmt.Printf("Preflight kubernetes minimum version check failed\n")
@@ -86,7 +88,7 @@ func preflightAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q}
 
 			// Preflight run all checks
-			fmt.Printf("Running all preflight checks...\n")
+			fmt.Printf("Running all preflight checks\n")
 			namespace, kubeConfigContents, err := initPreflight()
 			if err != nil {
 				fmt.Printf("Preflight checks failed...\n")
