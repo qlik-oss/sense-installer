@@ -25,7 +25,16 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 		checkCount++
 	}
 
-	if checkCount == 2 {
+	// Preflight minimum kuberenetes version check
+	fmt.Printf("\nPreflight deploy check\n")
+	fmt.Println("-----------------------")
+	if err := qp.CheckDeploy(namespace, kubeConfigContents); err != nil {
+		fmt.Printf("Preflight deploy check: FAILED\n")
+	} else {
+		checkCount++
+	}
+
+	if checkCount == 3 {
 		fmt.Printf("All preflight checks have PASSED\n")
 	} else {
 		fmt.Printf("1 or more preflight checks have FAILED\n")

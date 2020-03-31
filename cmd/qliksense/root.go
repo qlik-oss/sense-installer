@@ -199,7 +199,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	preflightCmd.AddCommand(preflightCheckK8sVersionCmd(p))
 	preflightCmd.AddCommand(preflightAllChecksCmd(p))
 	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
-	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
+	preflightCmd.AddCommand(preflightCheckDeployCmd(p))
 
 	cmd.AddCommand(preflightCmd)
 	cmd.AddCommand(loadCrFile(p))

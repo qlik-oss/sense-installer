@@ -100,3 +100,31 @@ func preflightAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	return preflightAllChecksCmd
 }
+
+func preflightCheckDeployCmd(q *qliksense.Qliksense) *cobra.Command {
+	var preflightDnsCmd = &cobra.Command{
+		Use:     "deploy",
+		Short:   "perform preflight deploy check",
+		Long:    `perform preflight deploy check to ensure services, deployments and pods can be deployed in the cluster`,
+		Example: `qliksense preflight deploy`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q}
+
+			// Preflight DNS check
+			fmt.Printf("Preflight deploy check\n")
+			fmt.Println("-----------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Printf("Preflight deploy check FAILED\n")
+				log.Fatal(err)
+			}
+			if err = qp.CheckDeploy(namespace, kubeConfigContents); err != nil {
+				fmt.Println(err)
+				fmt.Print("Preflight deploy check FAILED\n")
+				log.Fatal()
+			}
+			return nil
+		},
+	}
+	return preflightDnsCmd
+}
