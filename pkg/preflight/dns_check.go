@@ -16,7 +16,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// creating deployment
 	depName := "dep-dns-preflight-check"
-	dnsDeployment, err := createDeployment(clientset, namespace, depName, "nginx")
+	dnsDeployment, err := createPfDeployment(clientset, namespace, depName, "nginx")
 	if err != nil {
 		err = fmt.Errorf("Unable to create deployment: %v\n", err)
 		return err
@@ -44,7 +44,7 @@ WAIT:
 
 	// creating service
 	serviceName := "svc-dns-pf-check"
-	dnsService, err := createService(clientset, namespace, serviceName)
+	dnsService, err := createPfService(clientset, namespace, serviceName)
 	if err != nil {
 		err = fmt.Errorf("Unable to create service : %s\n", serviceName)
 		return err
@@ -53,7 +53,7 @@ WAIT:
 
 	// create a pod
 	podName := "pf-pod-1"
-	dnsPod, err := createPod(clientset, namespace, podName, "subfuzion/netcat:latest")
+	dnsPod, err := createPfPod(clientset, namespace, podName, "subfuzion/netcat:latest")
 	if err != nil {
 		err = fmt.Errorf("Unable to create pod : %s\n", podName)
 		return err

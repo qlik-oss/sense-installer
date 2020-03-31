@@ -93,7 +93,7 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 	return clientset, clientConfig, nil
 }
 
-func createDeployment(clientset *kubernetes.Clientset, namespace string, depName string, imageName string) (*appsv1.Deployment, error) {
+func createPfDeployment(clientset *kubernetes.Clientset, namespace string, depName string, imageName string) (*appsv1.Deployment, error) {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -178,7 +178,7 @@ func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) {
 	fmt.Printf("Deleted deployment: %s\n", name)
 }
 
-func createService(clientset *kubernetes.Clientset, namespace string, svcName string) (*apiv1.Service, error) {
+func createPfService(clientset *kubernetes.Clientset, namespace string, svcName string) (*apiv1.Service, error) {
 	//fmt.Println("Creating Service...")
 	iptr := int32Ptr(80)
 	servicesClient := clientset.CoreV1().Services(namespace)
@@ -263,7 +263,7 @@ func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
 	return nil
 }
 
-func createPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string) (*apiv1.Pod, error) {
+func createPfPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
