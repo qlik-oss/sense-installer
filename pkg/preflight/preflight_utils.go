@@ -4,9 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/mitchellh/go-homedir"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -31,6 +35,32 @@ import (
 
 type QliksensePreflight struct {
 	Q *qliksense.Qliksense
+}
+
+func InitPreflight() (string, []byte, error) {
+	api.LogDebugMessage("Reading .kube/config file...")
+
+	homeDir, err := homedir.Dir()
+	if err != nil {
+		err = fmt.Errorf("Unable to deduce home dir\n")
+		return "", nil, err
+	}
+	api.LogDebugMessage("Kube config location: %s\n\n", filepath.Join(homeDir, ".kube", "config"))
+
+	kubeConfig := filepath.Join(homeDir, ".kube", "config")
+	kubeConfigContents, err := ioutil.ReadFile(kubeConfig)
+	if err != nil {
+		err = fmt.Errorf("Unable to deduce home dir\n")
+		return "", nil, err
+	}
+	// retrieve namespace
+	namespace := api.GetKubectlNamespace()
+	// if namespace comes back empty, we will run checks in the default namespace
+	if namespace == "" {
+		namespace = "default"
+	}
+	api.LogDebugMessage("Namespace: %s\n", namespace)
+	return namespace, kubeConfigContents, nil
 }
 
 func initiateK8sOps(opr, namespace string) error {

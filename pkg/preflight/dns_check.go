@@ -97,9 +97,9 @@ WAIT:
 		//fmt.Printf("stderr: %s\n", stderr)
 
 		if strings.HasSuffix(stdout, "succeeded!") || strings.HasSuffix(stderr, "succeeded!") {
-			fmt.Println("Preflight DNS check: PASS")
+			fmt.Println("Preflight DNS check: PASSED")
 		} else {
-			fmt.Println("Preflight DNS check: FAIL")
+			fmt.Println("Preflight DNS check: FAILED")
 		}
 	}
 
