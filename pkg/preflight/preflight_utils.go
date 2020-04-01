@@ -278,10 +278,6 @@ func deleteService(clientset *kubernetes.Clientset, namespace, name string) erro
 	}); err != nil {
 		fmt.Println(err)
 		return err
-	}); err != nil {
-		err = errors.Wrapf(err, "unable to get deployments in the %s namespace", namespace)
-		fmt.Println(err)
-		return nil, err
 	}
 	fmt.Printf("Deleted service: %s\n", name)
 	return nil
@@ -332,15 +328,6 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, p
 			},
 		},
 	}
-	var result *apiv1.Service
-	if err := retryOnError(func() (err error) {
-		result, err = servicesClient.Create(service)
-		return err
-	}); err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	fmt.Printf("Created service %q\n", result.GetObjectMeta().GetName())
 
 	// now create the pod in kubernetes cluster using the clientset
 	if err := retryOnError(func() (err error) {
