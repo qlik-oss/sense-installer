@@ -10,7 +10,7 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
 	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 
-	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200206224201-2e697eccbad9
+	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200401055330-fa528324112a
 )
 
 require (
