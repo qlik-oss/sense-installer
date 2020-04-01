@@ -62,6 +62,53 @@ Completed Preflight kubernetes minimum version check
 
 ```
 
+### Service check
+We use the commmand below to test if we are able to create a service in the cluster.
+```console
+$ qliksense preflight service
+
+Preflight service check
+-----------------------
+
+Preflight service check: 
+Created service "svc-pf-check"
+Preflight service creation check: PASSED
+Cleaning up resources...
+Deleted service: svc-pf-check
+Completed preflight service check
+```
+
+### Deployment check
+We use the commmand below to test if we are able to create a deployment in the cluster. After the test exexutes, we wait until the created deployment terminates before we exit the command. 
+```console
+$ qliksense preflight deployment
+
+Preflight deployment check
+-----------------------
+Preflight deployment check: 
+Created deployment "deployment-preflight-check"
+Preflight Deployment check: PASSED
+Cleaning up resources...
+Deleted deployment: deployment-preflight-check
+Completed preflight deployment check
+```
+
+### Pod check
+We use the commmand below to test if we are able to create a pod in the cluster.
+```console
+$ qliksense preflight pod
+
+Preflight pod check
+--------------------
+
+Preflight pod check: 
+Created pod: pod-pf-check
+Preflight pod creation check: PASSED
+Cleaning up resources...
+Deleted pod: pod-pf-check
+Completed preflight pod check
+```
+
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```console
@@ -91,7 +138,8 @@ Current K8s Version: 1.15.5
 Current 1.15.5 is greater than minimum required version:1.11.0, hence good to go
 Preflight minimum kubernetes version check: PASSED
 Completed Preflight kubernetes minimum version check
-
+...
+...
 All preflight checks have PASSED
 Completed running all preflight checks
 
