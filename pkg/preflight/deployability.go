@@ -7,8 +7,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func (qp *QliksensePreflight) CheckDeploy(namespace string, kubeConfigContents []byte) error {
-	checkCount := 0
+func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigContents []byte) error {
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("Kube config error: %v\n", err)
@@ -23,9 +22,18 @@ func (qp *QliksensePreflight) CheckDeploy(namespace string, kubeConfigContents [
 		fmt.Println("Preflight Deployment check: FAILED")
 		return err
 	}
-	checkCount++
 	fmt.Println("Completed preflight deployment check")
 
+	return nil
+}
+
+func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents []byte) error {
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	if err != nil {
+		err = fmt.Errorf("Kube config error: %v\n", err)
+		fmt.Print(err)
+		return err
+	}
 	// Service check
 	fmt.Printf("\nPreflight service check: \n")
 	err = checkPfService(clientset, namespace)
@@ -33,9 +41,17 @@ func (qp *QliksensePreflight) CheckDeploy(namespace string, kubeConfigContents [
 		fmt.Println("Preflight Service check: FAILED")
 		return err
 	}
-	checkCount++
 	fmt.Println("Completed preflight service check")
+	return nil
+}
 
+func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []byte) error {
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	if err != nil {
+		err = fmt.Errorf("Kube config error: %v\n", err)
+		fmt.Print(err)
+		return err
+	}
 	// Pod check
 	fmt.Printf("\nPreflight pod check: \n")
 
@@ -44,14 +60,7 @@ func (qp *QliksensePreflight) CheckDeploy(namespace string, kubeConfigContents [
 		fmt.Println("Preflight Pod check: FAILED")
 		return err
 	}
-	checkCount++
 	fmt.Println("Completed preflight pod check")
-
-	if checkCount == 3 {
-		fmt.Printf("All preflight deploy checks have PASSED\n")
-	} else {
-		fmt.Printf("1 or more preflight deploy checks have FAILED\n")
-	}
 	return nil
 }
 
