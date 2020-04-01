@@ -1,4 +1,4 @@
-site_name: Qlik Sense installer
+site_name: Qlik Sense on Kubernetes CLI
 repo_url: 'https://github.com/qlik-oss/sense-installer'
 strict: true
 theme:
