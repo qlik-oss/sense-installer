@@ -17,10 +17,10 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 	}
 
 	// Preflight deployment check
-	fmt.Printf("\nPreflight deploy check\n")
+	fmt.Printf("\nPreflight deployment check\n")
 	fmt.Println("-----------------------")
 	if err := qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight deploy check: FAILED\n")
+		fmt.Printf("Preflight deployment check: FAILED\n")
 	} else {
 		checkCount++
 	}
