@@ -33,6 +33,8 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
+var gracePeriod int64 = 0
+
 type QliksensePreflight struct {
 	Q *qliksense.Qliksense
 }
@@ -168,7 +170,7 @@ func createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace st
 		result, err = deploymentsClient.Create(deployment)
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to create deployments in the %s namespace", namespace)
+		err = errors.Wrapf(err, "error: unable to create deployments in the %s namespace", namespace)
 		fmt.Println(err)
 		return nil, err
 	}
@@ -177,39 +179,43 @@ func createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace st
 	return deployment, nil
 }
 
-func getDeployment(depName string, clientset *kubernetes.Clientset, namespace string) (*appsv1.Deployment, error) {
+func getDeployment(clientset *kubernetes.Clientset, namespace, depName string) (*appsv1.Deployment, error) {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	var deployment *appsv1.Deployment
 	if err := retryOnError(func() (err error) {
 		deployment, err = deploymentsClient.Get(depName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to get deployments in the %s namespace", namespace)
-		fmt.Println(err)
+		err = errors.Wrapf(err, "error: unable to get deployments in the %s namespace", namespace)
+		api.LogDebugMessage("%v\n", err)
 		return nil, err
 	}
 	return deployment, nil
 }
 
-func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) {
+func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) error {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	// Create Deployment
 	deletePolicy := v1.DeletePropagationForeground
 	deleteOptions := v1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
+		PropagationPolicy:  &deletePolicy,
+		GracePeriodSeconds: &gracePeriod,
 	}
 
 	if err := retryOnError(func() (err error) {
 		return deploymentsClient.Delete(name, &deleteOptions)
 	}); err != nil {
 		fmt.Println(err)
-		return
+		return err
+	}
+	if err := waitForDeploymentToDelete(clientset, namespace, name); err != nil {
+		return err
 	}
 	fmt.Printf("Deleted deployment: %s\n", name)
+	return nil
 }
 
 func createPreflightTestService(clientset *kubernetes.Clientset, namespace string, svcName string) (*apiv1.Service, error) {
-	//fmt.Println("Creating Service...")
 	iptr := int32Ptr(80)
 	servicesClient := clientset.CoreV1().Services(namespace)
 	service := &apiv1.Service{
@@ -278,15 +284,20 @@ func deleteService(clientset *kubernetes.Clientset, namespace, name string) erro
 }
 
 func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
+
 	podsClient := clientset.CoreV1().Pods(namespace)
 	deletePolicy := v1.DeletePropagationForeground
 	deleteOptions := v1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
+		PropagationPolicy:  &deletePolicy,
+		GracePeriodSeconds: &gracePeriod,
 	}
 	if err := retryOnError(func() (err error) {
 		return podsClient.Delete(name, &deleteOptions)
 	}); err != nil {
 		fmt.Println(err)
+		return err
+	}
+	if err := waitForPodToDelete(clientset, namespace, name); err != nil {
 		return err
 	}
 	fmt.Printf("Deleted pod: %s\n", name)
@@ -331,13 +342,13 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, p
 }
 
 func getPod(clientset *kubernetes.Clientset, namespace, podName string) (*apiv1.Pod, error) {
-	fmt.Printf("Fetching pod: %s\n", podName)
+	api.LogDebugMessage("Fetching pod: %s\n", podName)
 	var pod *apiv1.Pod
 	if err := retryOnError(func() (err error) {
 		pod, err = clientset.CoreV1().Pods(namespace).Get(podName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		fmt.Println(err)
+		api.LogDebugMessage("%v\n", err)
 		return nil, err
 	}
 	return pod, nil
@@ -376,4 +387,117 @@ func executeRemoteCommand(clientset *kubernetes.Clientset, config *rest.Config, 
 	var stdout, stderr bytes.Buffer
 	err := execute("POST", req.URL(), config, nil, &stdout, &stderr, tty)
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
+}
+
+func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDeployment *appsv1.Deployment) error {
+	timeout := time.NewTicker(2 * time.Minute)
+	defer timeout.Stop()
+	var d *appsv1.Deployment
+	var err error
+WAIT:
+	for {
+		d, err = getDeployment(clientset, namespace, pfDeployment.GetName())
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", pfDeployment.GetName())
+			fmt.Println(err)
+			return err
+		}
+		select {
+		case <-timeout.C:
+			break WAIT
+		default:
+			if int(d.Status.ReadyReplicas) > 0 {
+				break WAIT
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+	if int(d.Status.ReadyReplicas) == 0 {
+		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
+	var err error
+	if len(pod.Spec.Containers) > 0 {
+		timeout := time.NewTicker(2 * time.Minute)
+		defer timeout.Stop()
+		podName := pod.Name
+	OUT:
+		for {
+			pod, err = getPod(clientset, namespace, podName)
+			if err != nil {
+				err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+				fmt.Println(err)
+				return err
+			}
+			select {
+			case <-timeout.C:
+				break OUT
+			default:
+				if len(pod.Status.ContainerStatuses) > 0 && pod.Status.ContainerStatuses[0].Ready {
+					break OUT
+				}
+			}
+			time.Sleep(5 * time.Second)
+		}
+		if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
+			err = fmt.Errorf("error: container is taking much longer than expected")
+			fmt.Println(err)
+			return err
+		}
+		return nil
+	}
+	err = fmt.Errorf("error: there are no containers in the pod")
+	fmt.Println(err)
+	return err
+}
+
+func waitForPodToDelete(clientset *kubernetes.Clientset, namespace, podName string) error {
+	var err error
+	timeout := time.NewTicker(2 * time.Minute)
+	defer timeout.Stop()
+OUT:
+	for {
+		_, err = getPod(clientset, namespace, podName)
+		if err != nil {
+			return nil
+		}
+		select {
+		case <-timeout.C:
+			break OUT
+		default:
+
+		}
+		time.Sleep(5 * time.Second)
+	}
+	err = fmt.Errorf("error: delete pod is taking unusually long")
+	fmt.Println(err)
+	return err
+}
+
+func waitForDeploymentToDelete(clientset *kubernetes.Clientset, namespace, deploymentName string) error {
+	var err error
+	timeout := time.NewTicker(2 * time.Minute)
+	defer timeout.Stop()
+OUT:
+	for {
+		_, err = getDeployment(clientset, namespace, deploymentName)
+		if err != nil {
+			return nil
+		}
+		select {
+		case <-timeout.C:
+			break OUT
+		default:
+
+		}
+		time.Sleep(5 * time.Second)
+	}
+	err = fmt.Errorf("error: delete deployment is taking unusually long")
+	fmt.Println(err)
+	return err
 }

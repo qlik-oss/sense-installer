@@ -53,6 +53,6 @@ func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigConten
 		fmt.Printf("Current %s is less than minimum required version:%s\n", currentVersion, minK8sVersionSemver)
 		fmt.Println("Preflight minimum kubernetes version check: FAILED")
 	}
-	fmt.Printf("Completed Preflight kubernetes minimum version check\n\n")
+	fmt.Printf("Completed Preflight kubernetes minimum version check\n")
 	return nil
 }

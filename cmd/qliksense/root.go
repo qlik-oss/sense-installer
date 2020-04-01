@@ -195,11 +195,17 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add preflight command
 	preflightCmd := preflightCmd(p)
-	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
-	preflightCmd.AddCommand(preflightCheckK8sVersionCmd(p))
-	preflightCmd.AddCommand(preflightAllChecksCmd(p))
-	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
-	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
+	preflightCmd.AddCommand(pfDnsCheckCmd(p))
+	preflightCmd.AddCommand(pfK8sVersionCheckCmd(p))
+	preflightCmd.AddCommand(pfAllChecksCmd(p))
+	// preflightCmd.AddCommand(pfMongoCheckCmd(p))
+	preflightCmd.AddCommand(pfDeploymentCheckCmd(p))
+	preflightCmd.AddCommand(pfServiceCheckCmd(p))
+	preflightCmd.AddCommand(pfPodCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateRoleCheckCmd(p))
+	// preflightCmd.AddCommand(pfCreateRoleBindingCheckCmd(p))
+	// preflightCmd.AddCommand(pfCreateServiceAccountCheckCmd(p))
+	// preflightCmd.AddCommand(pfCreateRBCheckCmd(p))
 
 	cmd.AddCommand(preflightCmd)
 	cmd.AddCommand(loadCrFile(p))
