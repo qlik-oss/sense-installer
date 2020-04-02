@@ -3,8 +3,10 @@ package preflight
 import (
 	"fmt"
 	"log"
+	"path"
 	"path/filepath"
 
+	"github.com/qlik-oss/k-apis/pkg/cr"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -17,15 +19,25 @@ func (qp *QliksensePreflight) CheckCreateRole(namespace string, kubeConfigConten
 	var tempDownloadedDir string
 	var resultYamlString []byte
 	var err error
+	qConfig.SetNamespace(namespace)
 	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Println(err)
 		log.Fatal("Unable to retrieve current CR")
-	} else if tempDownloadedDir, err = qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
+	}
+
+	currentCR.Spec.RotateKeys = "None"
+	currentCR.SetNamespace(namespace)
+	fmt.Println("Manifests root: " + currentCR.Spec.GetManifestsRoot())
+	fmt.Println("Namespace: " + currentCR.GetNamespace())
+	// generate patches
+	cr.GeneratePatches(&currentCR.KApiCr, path.Join(qp.Q.QliksenseHome, ".kube", "config"))
+	if tempDownloadedDir, err = qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
 		fmt.Println("Unable to Download from git repo to tmp dir", err)
 		return err
 	}
 	fmt.Printf("qliksense.QLIK_GIT_REPO: %s\n", qliksense.QLIK_GIT_REPO)
+	fmt.Printf("currentCR.Spec.Profile: %s\n", currentCR.Spec.Profile)
 	if currentCR.Spec.Profile == "" {
 		resultYamlString, err = qliksense.ExecuteKustomizeBuild(filepath.Join(tempDownloadedDir, "manifests", "docker-desktop"))
 		if err != nil {
@@ -33,12 +45,20 @@ func (qp *QliksensePreflight) CheckCreateRole(namespace string, kubeConfigConten
 			log.Fatal("Unable to retrieve manifests from executing kustomize")
 		}
 
+	} else {
+		resultYamlString, err = qliksense.ExecuteKustomizeBuild(filepath.Join(tempDownloadedDir, currentCR.Spec.GetManifestsRoot(), currentCR.Spec.GetProfileDir()))
+		if err != nil {
+			fmt.Printf("ERROR: %v\n", err)
+			log.Fatal("Unable to retrieve manifests from executing kustomize")
+		}
 	}
 	fmt.Printf("Tmp downloaded dir: %s\n", filepath.Join(tempDownloadedDir, "manifests", "docker-desktop"))
-	fmt.Printf("resultYaml String: %s\n", string(resultYamlString))
+	// fmt.Printf("resultYaml String: %s\n", string(resultYamlString))
+
+	// replace namespace with my namespace in the resulting yaml file
 	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlString), "Role")
 
-	fmt.Printf("SA: %s\n", sa)
+	// fmt.Printf("SA: %s\n", sa)
 	err = api.KubectlApply(sa, namespace)
 	if err != nil {
 		fmt.Println("Preflight create-role check: FAILED")
