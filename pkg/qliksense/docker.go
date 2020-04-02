@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -26,6 +27,29 @@ const (
 	imageIndexDirName       = "index"
 	imageSharedBlobsDirName = "blobs"
 )
+
+func (q *Qliksense) PullImages(version, profile string) error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if version != "" {
+		if err := q.FetchQK8s(version); err != nil {
+			return err
+		}
+	}
+	qcr, err := qConfig.GetCurrentCR()
+	if err != nil {
+		return err
+	}
+	if !qcr.IsRepoExist() {
+		return errors.New("ManifestsRoot not found")
+	}
+	if profile != "" {
+		qcr.Spec.Profile = profile
+		if e := qConfig.WriteCR(qcr); e != nil {
+			return e
+		}
+	}
+	return q.PullImagesForCurrentCR()
+}
 
 // PullImages ...
 func (q *Qliksense) PullImagesForCurrentCR() error {

@@ -133,6 +133,17 @@ func (qc *QliksenseConfig) GetCRFilePath(contextName string) string {
 	}
 	return crFilePath
 }
+
+func (cr *QliksenseCR) IsRepoExist() bool {
+	if cr.Spec.ManifestsRoot == "" {
+		return false
+	}
+	if _, err := os.Lstat(cr.Spec.ManifestsRoot); err != nil {
+		return false
+	}
+	return true
+}
+
 func (qc *QliksenseConfig) IsRepoExist(contextName, version string) bool {
 	if _, err := os.Lstat(qc.BuildRepoPathForContext(contextName, version)); err != nil {
 		return false
