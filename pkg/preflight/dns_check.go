@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	nginxImage  = "nginx"
-	netcatImage = "subfuzion/netcat:latest"
+	nginx  = "nginx"
+	netcat = "netcat"
 )
 
 func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
@@ -22,7 +22,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// creating deployment
 	depName := "dep-dns-preflight-check"
-	dnsDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, nginxImage)
+	dnsDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, qp.GetPreflightConfigObj().GetImageName(nginx))
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
 		fmt.Println(err)
@@ -45,7 +45,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// create a pod
 	podName := "pf-pod-1"
-	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, netcatImage)
+	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(netcat))
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
 		return err

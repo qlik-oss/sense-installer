@@ -39,6 +39,10 @@ type QliksensePreflight struct {
 	Q *qliksense.Qliksense
 }
 
+func (qp *QliksensePreflight) GetPreflightConfigObj() *PreflightConfig {
+	return NewPreflightConfig(qp.Q.QliksenseHome)
+}
+
 func InitPreflight() (string, []byte, error) {
 	api.LogDebugMessage("Reading .kube/config file...")
 

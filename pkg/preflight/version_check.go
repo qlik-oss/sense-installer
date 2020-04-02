@@ -7,8 +7,6 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 )
 
-const minK8sVersion = "1.15.0"
-
 func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigContents []byte) error {
 
 	var currentVersion *semver.Version
@@ -38,7 +36,7 @@ func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigConten
 	}
 	//fmt.Printf("Current K8s Version: %v\n", currentVersion)
 
-	minK8sVersionSemver, err := semver.NewVersion(minK8sVersion)
+	minK8sVersionSemver, err := semver.NewVersion(qp.GetPreflightConfigObj().GetMinK8sVersion())
 	if err != nil {
 		err = fmt.Errorf("Unable to convert minimum Kubernetes version into semver version:%v\n", err)
 		fmt.Println(err)
