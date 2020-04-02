@@ -109,6 +109,55 @@ Deleted pod: pod-pf-check
 Completed preflight pod check
 ```
 
+### Create-Role check
+We use the command below to test if we are able to create a role in the cluster
+```shell
+$ qliksense preflight create-role
+Preflight create-role check
+---------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+```
+
+### Create-RoleBinding check
+We use the command below to test if we are able to create a role binding in the cluster
+```shell
+$ qliksense preflight createRoleBinding
+
+Preflight create roleBinding check
+---------------------------
+Preflight createRoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight createRoleBinding check: PASSED
+Cleaning up resources...
+Deleting RoleBinding: role-binding-preflight-check
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight createRoleBinding check
+```
+
+### Create-ServiceAccount check
+We use the command below to test if we are able to create a service account in the cluster
+```shell
+$ qliksense preflight createServiceAccount
+
+Preflight create ServiceAccount check
+-------------------------------------
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleting ServiceAccount: preflight-check-test-serviceaccount
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+```
+
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```console

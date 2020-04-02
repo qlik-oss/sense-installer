@@ -186,35 +186,88 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
-	var preflightDnsCmd = &cobra.Command{
-		Use:     "create-role",
+	var preflightRoleCmd = &cobra.Command{
+		Use:     "createRole",
 		Short:   "preflight create role check",
 		Long:    `perform preflight role check to ensure we are able to create a role in the cluster`,
-		Example: `qliksense preflight create-role`,
+		Example: `qliksense preflight createRole`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
 
-			// Preflight create-role check
-			fmt.Printf("Preflight create-role check\n")
+			// Preflight createRole check
+			fmt.Printf("Preflight createRole check\n")
 			fmt.Println("---------------------------")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("Preflight create-role check FAILED\n")
+				fmt.Printf("Preflight createRole check FAILED\n")
 				log.Fatal(err)
 			}
-			if err = qp.CreateRoleCheck(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckCreateRole(namespace, kubeConfigContents); err != nil {
 				fmt.Println(err)
-				fmt.Print("Preflight role-check FAILED\n")
+				fmt.Print("Preflight createRole FAILED\n")
 				log.Fatal()
 			}
 			return nil
 		},
 	}
-	return preflightDnsCmd
+	return preflightRoleCmd
+}
+
+func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	var preflightRoleBindingCmd = &cobra.Command{
+		Use:     "createRoleBinding",
+		Short:   "preflight create rolebinding check",
+		Long:    `perform preflight rolebinding check to ensure we are able to create a rolebinding in the cluster`,
+		Example: `qliksense preflight createRoleBinding`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q}
+
+			// Preflight createRoleBinding check
+			fmt.Printf("Preflight create roleBinding check\n")
+			fmt.Println("---------------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Printf("Preflight create RoleBinding check FAILED\n")
+				log.Fatal(err)
+			}
+			if err = qp.CheckCreateRoleBinding(namespace, kubeConfigContents); err != nil {
+				fmt.Println(err)
+				fmt.Print("Preflight createRoleBinding check FAILED\n")
+				log.Fatal()
+			}
+			return nil
+		},
+	}
+	return preflightRoleBindingCmd
+}
+
+func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	var preflightServiceAccountCmd = &cobra.Command{
+		Use:     "createServiceAccount",
+		Short:   "preflight create ServiceAccount check",
+		Long:    `perform preflight createServiceAccount check to ensure we are able to create a service account in the cluster`,
+		Example: `qliksense preflight createServiceAccount`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q}
+
+			// Preflight createServiceAccount check
+			fmt.Printf("Preflight create ServiceAccount check\n")
+			fmt.Println("-------------------------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Printf("Preflight createServiceAccount check FAILED\n")
+				log.Fatal(err)
+			}
+			if err = qp.CheckCreateServiceAccount(namespace, kubeConfigContents); err != nil {
+				fmt.Println(err)
+				fmt.Print("Preflight createServiceAccount check FAILED\n")
+				log.Fatal()
+			}
+			return nil
+		},
+	}
+	return preflightServiceAccountCmd
 }
 
 // preflightCmd.AddCommand(pfMongoCheckCmd(p))
-// preflightCmd.AddCommand(pfServiceCheckCmd(p))
-// preflightCmd.AddCommand(pfCreateRoleBindingCheckCmd(p))
-// preflightCmd.AddCommand(pfCreateServiceAccountCheckCmd(p))
 // preflightCmd.AddCommand(pfCreateRBCheckCmd(p))

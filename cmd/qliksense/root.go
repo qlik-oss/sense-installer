@@ -203,8 +203,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	preflightCmd.AddCommand(pfServiceCheckCmd(p))
 	preflightCmd.AddCommand(pfPodCheckCmd(p))
 	preflightCmd.AddCommand(pfCreateRoleCheckCmd(p))
-	// preflightCmd.AddCommand(pfCreateRoleBindingCheckCmd(p))
-	// preflightCmd.AddCommand(pfCreateServiceAccountCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateRoleBindingCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateServiceAccountCheckCmd(p))
 	// preflightCmd.AddCommand(pfCreateRBCheckCmd(p))
 
 	cmd.AddCommand(preflightCmd)

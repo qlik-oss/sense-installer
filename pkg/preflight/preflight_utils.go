@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"path/filepath"
 	"strings"
@@ -26,6 +27,7 @@ import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/api/rbac/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -311,7 +313,7 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, p
 			Name:      podName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app": "demo",
+				"app": "preflight",
 			},
 		},
 		Spec: apiv1.PodSpec{
@@ -500,4 +502,137 @@ OUT:
 	err = fmt.Errorf("error: delete deployment is taking unusually long")
 	fmt.Println(err)
 	return err
+}
+
+func createPfRole(clientset *kubernetes.Clientset, namespace, roleName string) (*v1beta1.Role, error) {
+	// build the role defination we want to create
+	var role *v1beta1.Role
+	roleSpec := &v1beta1.Role{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      roleName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "preflight",
+			},
+		},
+		Rules: []v1beta1.PolicyRule{},
+	}
+
+	// now create the role in kubernetes cluster using the clientset
+	if err := retryOnError(func() (err error) {
+		role, err = clientset.RbacV1beta1().Roles(namespace).Create(roleSpec)
+		return err
+	}); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	fmt.Printf("Created role: %s\n", role.Name)
+
+	return role, nil
+}
+
+func deleteRole(clientset *kubernetes.Clientset, namespace string, role *v1beta1.Role) {
+	rolesClient := clientset.RbacV1beta1().Roles(namespace)
+
+	deletePolicy := v1.DeletePropagationForeground
+	deleteOptions := v1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err := rolesClient.Delete(role.GetName(), &deleteOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Deleted role: %s\n\n", role.Name)
+}
+
+func createPfRoleBinding(clientset *kubernetes.Clientset, namespace, roleBindingName string) (*v1beta1.RoleBinding, error) {
+	var roleBinding *v1beta1.RoleBinding
+	// build the rolebinding defination we want to create
+	roleBindingSpec := &v1beta1.RoleBinding{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      roleBindingName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "demo",
+			},
+		},
+		Subjects: []v1beta1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				APIGroup:  "",
+				Name:      "preflight-check-subject",
+				Namespace: namespace,
+			},
+		},
+		RoleRef: v1beta1.RoleRef{
+			APIGroup: "",
+			Kind:     "Role",
+			Name:     "preflight-check-roleref",
+		},
+	}
+
+	// now create the roleBinding in kubernetes cluster using the clientset
+	if err := retryOnError(func() (err error) {
+		roleBinding, err = clientset.RbacV1beta1().RoleBindings(namespace).Create(roleBindingSpec)
+		return err
+	}); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	fmt.Printf("Created RoleBinding: %s\n", roleBindingSpec.Name)
+	return roleBinding, nil
+}
+
+func deleteRoleBinding(clientset *kubernetes.Clientset, namespace string, roleBinding *v1beta1.RoleBinding) {
+	roleBindingClient := clientset.RbacV1beta1().RoleBindings(namespace)
+
+	deletePolicy := v1.DeletePropagationForeground
+	deleteOptions := v1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err := roleBindingClient.Delete(roleBinding.GetName(), &deleteOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Deleted RoleBinding: %s\n\n", roleBinding.Name)
+}
+
+func createPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceAccountName string) (*apiv1.ServiceAccount, error) {
+	var serviceAccount *apiv1.ServiceAccount
+	// build the serviceAccount defination we want to create
+	serviceAccountSpec := &apiv1.ServiceAccount{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "preflight-check-test-serviceaccount",
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "demo",
+			},
+		},
+	}
+
+	// now create the serviceAccount in kubernetes cluster using the clientset
+	if err := retryOnError(func() (err error) {
+		serviceAccount, err = clientset.CoreV1().ServiceAccounts(namespace).Create(serviceAccountSpec)
+		return err
+	}); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	fmt.Printf("Created Service Account: %s\n", serviceAccountSpec.Name)
+	return serviceAccount, nil
+}
+
+func deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, serviceAccount *apiv1.ServiceAccount) {
+	serviceAccountClient := clientset.CoreV1().ServiceAccounts(namespace)
+
+	deletePolicy := v1.DeletePropagationForeground
+	deleteOptions := v1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err := serviceAccountClient.Delete(serviceAccount.GetName(), &deleteOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Deleted ServiceAccount: %s\n\n", serviceAccount.Name)
 }
