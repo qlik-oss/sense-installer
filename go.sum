@@ -856,6 +856,8 @@ github.com/qlik-oss/k-apis v0.0.34 h1:lOC21wz/nNZNmSfTXZSJCOm1BulaZfdg7tAuYb7knA
 github.com/qlik-oss/k-apis v0.0.34/go.mod h1:DNiWYqCqPIN216l7+1rccArNIYPb1Le7kYDcPSyNp+Q=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200401055330-fa528324112a h1:Vzod5XB+e25ENy5Lse0pXNmSYSDFxSEYhH/6Sj7twPg=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200401055330-fa528324112a/go.mod h1:tSQaDZ4Jt9KwYvD7LlMUPi5nkiGOno3PAKl5/XqEfxs=
+github.com/qlik-oss/kustomize/api v0.3.3-0.20200402170547-2e8140160c36 h1:BuT+cnXPQ6mcOWTDS1S8GXy65LAEMdPuNQCC36rMq28=
+github.com/qlik-oss/kustomize/api v0.3.3-0.20200402170547-2e8140160c36/go.mod h1:tSQaDZ4Jt9KwYvD7LlMUPi5nkiGOno3PAKl5/XqEfxs=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
 github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be h1:ta7tUOvsPHVHGom5hKW5VXNc2xZIkfCKP8iaqOyYtUQ=
 github.com/rainycape/unidecode v0.0.0-20150907023854-cb7f23ec59be/go.mod h1:MIDFMn7db1kT65GmV94GzpX9Qdi7N/pQlwb+AN8wh+Q=
