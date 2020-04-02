@@ -20,7 +20,7 @@ import (
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 )
 
-func Test_executeKustomizeBuild(t *testing.T) {
+func Test_ExecuteKustomizeBuild(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
@@ -41,7 +41,7 @@ configMapGenerator:
 		t.Fatalf("error writing kustomization file to path: %v error: %v\n", kustomizationYamlFilePath, err)
 	}
 
-	result, err := executeKustomizeBuild(tmpDir)
+	result, err := ExecuteKustomizeBuild(tmpDir)
 	if err != nil {
 		t.Fatalf("unexpected kustomize error: %v\n", err)
 	}
@@ -86,7 +86,7 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 
 	generateKeys(cr, "won't-use")
 
-	yamlResources, err := executeKustomizeBuild(path.Join(configPath, "manifests", "base", "resources", "users"))
+	yamlResources, err := ExecuteKustomizeBuild(path.Join(configPath, "manifests", "base", "resources", "users"))
 	if err != nil {
 		t.Fatalf("unexpected kustomize error: %v\n", err)
 	}
@@ -138,4 +138,98 @@ func getEjsonKeyDir(defaultKeyDir string) string {
 		ejsonKeyDir = defaultKeyDir
 	}
 	return ejsonKeyDir
+}
+
+func Test_getYamlDocKindFromMultiDoc(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v\n", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	kustomizationYamlFilePath := path.Join(tmpDir, "kustomization.yaml")
+	testResFileYamlFilePath := path.Join(tmpDir, "test-file.yaml")
+	kustomizationYaml := `
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- test-file.yaml
+`
+	testYaml := `
+apiVersion: v1
+data:
+  foo: bar
+kind: ConfigMap
+metadata:
+  name: foo-config
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: qix-sessions
+    chart: qix-sessions-4.0.10
+    heritage: Helm
+    release: qliksense
+  name: qliksense-qix-sessions
+  namespace: default
+   ---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  labels:
+    app: chronos
+    chart: chronos-1.5.7
+    heritage: Helm
+    release: qliksense
+  name: qliksense-chronos
+  namespace: default
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - endpoints
+    verbs:
+    - get
+    - update
+`
+	err = ioutil.WriteFile(kustomizationYamlFilePath, []byte(kustomizationYaml), os.ModePerm)
+	if err != nil {
+		t.Fatalf("error writing kustomization file to path: %v error: %v\n", kustomizationYamlFilePath, err)
+	}
+	err = ioutil.WriteFile(testResFileYamlFilePath, []byte(testYaml), os.ModePerm)
+	if err != nil {
+		t.Fatalf("error writing test-file to path: %v error: %v\n", testResFileYamlFilePath, err)
+	}
+	result, err := ExecuteKustomizeBuild(tmpDir)
+	if err != nil {
+		t.Fatalf("unexpected kustomize error: %v\n", err)
+	}
+	resultYaml := GetYamlsFromMultiDoc(string(result), "Role")
+
+	expectedK8sYaml := `
+---
+
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  labels:
+    app: chronos
+    chart: chronos-1.5.7
+    heritage: Helm
+    release: qliksense
+  name: qliksense-chronos
+  namespace: default
+  rules:
+  - apiGroups:
+    - ""
+    resources:
+    - endpoints
+    verbs:
+    - get
+    - update
+`
+	if resultYaml != expectedK8sYaml {
+		t.Fatalf("expected k8s yaml: [%v] but got: [%v]\n", expectedK8sYaml, resultYaml)
+	}
 }

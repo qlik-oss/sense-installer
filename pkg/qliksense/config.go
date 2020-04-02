@@ -88,7 +88,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
-	mByte, err := executeKustomizeBuild(profilePath)
+	mByte, err := ExecuteKustomizeBuild(profilePath)
 	if err != nil {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
 		return err

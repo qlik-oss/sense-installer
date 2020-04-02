@@ -24,7 +24,7 @@ func (q *Qliksense) GetInstallableVersions(opts *LsRemoteCmdOptions) error {
 	if qcr.Spec.GetManifestsRoot() != "" {
 		repoPath = qcr.Spec.GetManifestsRoot()
 	} else {
-		repoPath, err = downloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master")
+		repoPath, err = DownloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master")
 		if err != nil {
 			return err
 		}
