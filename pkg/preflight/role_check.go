@@ -2,26 +2,64 @@ package preflight
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
 
+	"github.com/qlik-oss/sense-installer/pkg/api"
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
+	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"k8s.io/client-go/kubernetes"
 )
 
 func (qp *QliksensePreflight) CheckCreateRole(namespace string, kubeConfigContents []byte) error {
-	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
+	var currentCR *qapi.QliksenseCR
+	var tempDownloadedDir string
+	var resultYamlString []byte
+	var err error
+	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
-		err = fmt.Errorf("Kube config error: %v\n", err)
-		fmt.Print(err)
+		fmt.Println(err)
+		log.Fatal("Unable to retrieve current CR")
+	} else if tempDownloadedDir, err = qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
+		fmt.Println("Unable to Download from git repo to tmp dir", err)
 		return err
 	}
+	fmt.Printf("qliksense.QLIK_GIT_REPO: %s\n", qliksense.QLIK_GIT_REPO)
+	if currentCR.Spec.Profile == "" {
+		resultYamlString, err = qliksense.ExecuteKustomizeBuild(filepath.Join(tempDownloadedDir, "manifests", "docker-desktop"))
+		if err != nil {
+			fmt.Printf("ERROR: %v\n", err)
+			log.Fatal("Unable to retrieve manifests from executing kustomize")
+		}
 
-	// create a role
-	fmt.Printf("Preflight create-role check: \n")
-	err = checkPfRole(clientset, namespace, "role-preflight-check")
+	}
+	fmt.Printf("Tmp downloaded dir: %s\n", filepath.Join(tempDownloadedDir, "manifests", "docker-desktop"))
+	fmt.Printf("resultYaml String: %s\n", string(resultYamlString))
+	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlString), "Role")
+
+	fmt.Printf("SA: %s\n", sa)
+	err = api.KubectlApply(sa, namespace)
 	if err != nil {
 		fmt.Println("Preflight create-role check: FAILED")
 		return err
 	}
-	fmt.Println("Completed preflight create-role check")
+
+	// clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	// if err != nil {
+	// 	err = fmt.Errorf("Kube config error: %v\n", err)
+	// 	fmt.Print(err)
+	// 	return err
+	// }
+
+	// // create a role
+	// fmt.Printf("Preflight create-role check: \n")
+	// err = checkPfRole(clientset, namespace, "role-preflight-check")
+	// if err != nil {
+	// 	fmt.Println("Preflight create-role check: FAILED")
+	// 	return err
+	// }
+	fmt.Println("Completed preflight createRole check")
 
 	return nil
 }
