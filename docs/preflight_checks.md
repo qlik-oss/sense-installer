@@ -158,6 +158,39 @@ Deleted ServiceAccount: preflight-check-test-serviceaccount
 Completed preflight createServiceAccount check
 ```
 
+### CreateRB check
+We use the command below to combine creation of role, role binding, and service account tests
+```shell
+$ qliksense preflight createRB
+
+Preflight createRB check
+-------------------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+
+Preflight create RoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight create RoleBinding check: PASSED
+Cleaning up resources...
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight create RoleBinding check
+
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+Completed preflight CreateRB check
+```
+
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```console

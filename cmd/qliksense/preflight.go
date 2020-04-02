@@ -269,5 +269,30 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	return preflightServiceAccountCmd
 }
 
-// preflightCmd.AddCommand(pfMongoCheckCmd(p))
-// preflightCmd.AddCommand(pfCreateRBCheckCmd(p))
+func pfCreateRBCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	var preflightCreateRBCmd = &cobra.Command{
+		Use:     "createRB",
+		Short:   "preflight createRB check",
+		Long:    `perform preflight createRB check that combines the createRole check, createRoleBindingCheck and createServiceAccountCheck`,
+		Example: `qliksense preflight createRB`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q}
+
+			// Preflight createServiceAccount check
+			fmt.Printf("Preflight createRB check\n")
+			fmt.Println("------------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Printf("Preflight createRB check FAILED\n")
+				log.Fatal(err)
+			}
+			if err = qp.CheckCreateRB(namespace, kubeConfigContents); err != nil {
+				fmt.Println(err)
+				fmt.Print("Preflight createRB check FAILED\n")
+				log.Fatal()
+			}
+			return nil
+		},
+	}
+	return preflightCreateRBCmd
+}

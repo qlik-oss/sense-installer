@@ -108,3 +108,42 @@ func checkPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceAc
 
 	return nil
 }
+
+func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents []byte) error {
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	if err != nil {
+		err = fmt.Errorf("Kube config error: %v\n", err)
+		fmt.Print(err)
+		return err
+	}
+
+	// create a role
+	fmt.Printf("Preflight create-role check: \n")
+	err = checkPfRole(clientset, namespace, "role-preflight-check")
+	if err != nil {
+		fmt.Println("Preflight create-role check: FAILED")
+		return err
+	}
+	fmt.Printf("Completed preflight create-role check\n\n")
+
+	// create a roleBinding
+	fmt.Printf("Preflight create RoleBinding check: \n")
+	err = checkPfRoleBinding(clientset, namespace, "role-binding-preflight-check")
+	if err != nil {
+		fmt.Println("Preflight create RoleBinding check: FAILED")
+		return err
+	}
+	fmt.Printf("Completed preflight create RoleBinding check\n\n")
+
+	// create a service account
+	fmt.Printf("Preflight createServiceAccount check: \n")
+	err = checkPfServiceAccount(clientset, namespace, "service-account-preflight-check")
+	if err != nil {
+		fmt.Println("Preflight createServiceAccount check: FAILED")
+		return err
+	}
+	fmt.Println("Completed preflight createServiceAccount check")
+
+	fmt.Println("Completed preflight CreateRB check")
+	return nil
+}
