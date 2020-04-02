@@ -57,7 +57,7 @@ func GetYamlsFromMultiDoc(multiYaml string, kind string) string {
 	for _, doc := range yamlDocs {
 		scanner := bufio.NewScanner(strings.NewReader(doc))
 		for scanner.Scan() {
-			if strings.HasPrefix(scanner.Text(), "kind: "+kind) {
+			if scanner.Text() == "kind: "+kind {
 				resultDocs = resultDocs + "\n---\n" + doc
 				break
 			}
