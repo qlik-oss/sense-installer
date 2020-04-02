@@ -37,7 +37,7 @@ func (q *Qliksense) PullImages(version, profile string) error {
 	}
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
-		return nil
+		return err
 	}
 	if !qcr.IsRepoExist() {
 		return errors.New("ManifestsRoot not found")
