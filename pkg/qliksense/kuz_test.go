@@ -140,7 +140,7 @@ func getEjsonKeyDir(defaultKeyDir string) string {
 	return ejsonKeyDir
 }
 
-func Test_getYamlDocKindFromMultiDoc(t *testing.T) {
+func Test_GetYamlDocKindFromMultiDoc(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
