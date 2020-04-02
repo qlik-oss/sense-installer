@@ -59,13 +59,13 @@ func getQliksenseInitCrd(qcr *qapi.QliksenseCR) (string, error) {
 	if qcr.Spec.GetManifestsRoot() != "" {
 		repoPath = qcr.Spec.GetManifestsRoot()
 	} else {
-		if repoPath, err = downloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master"); err != nil {
+		if repoPath, err = DownloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master"); err != nil {
 			return "", err
 		}
 	}
 
 	qInitMsPath := filepath.Join(repoPath, Q_INIT_CRD_PATH)
-	qInitByte, err := executeKustomizeBuild(qInitMsPath)
+	qInitByte, err := ExecuteKustomizeBuild(qInitMsPath)
 	if err != nil {
 		fmt.Println("cannot generate crds for qliksense-init", err)
 		return "", err
