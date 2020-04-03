@@ -80,7 +80,6 @@ func kubectlOperation(manifests string, oprName string, namespace string) error 
 		arguments = append(arguments, "-n")
 		arguments = append(arguments, namespace)
 	}
-	fmt.Printf("Kubectl command: %v\n", arguments)
 	var cmd *exec.Cmd
 	if oprName == "apply" {
 		cmd = exec.Command("kubectl", arguments...)

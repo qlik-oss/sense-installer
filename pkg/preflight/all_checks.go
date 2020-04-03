@@ -46,7 +46,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 	// Preflight createRole check
 	fmt.Printf("\nPreflight createRole check\n")
 	fmt.Println("--------------------------")
-	if err := qp.CheckCreateRole(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckCreateRole(namespace); err != nil {
 		fmt.Printf("Preflight createRole check: FAILED\n")
 	} else {
 		checkCount++
@@ -55,7 +55,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 	// Preflight createRoleBinding check
 	fmt.Printf("\nPreflight createRoleBinding check\n")
 	fmt.Println("---------------------------------")
-	if err := qp.CheckCreateRoleBinding(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckCreateRoleBinding(namespace); err != nil {
 		fmt.Printf("Preflight createRoleBinding check: FAILED\n")
 	} else {
 		checkCount++
@@ -64,7 +64,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 	// Preflight createServiceAccount check
 	fmt.Printf("\nPreflight createServiceAccount check\n")
 	fmt.Println("------------------------------------")
-	if err := qp.CheckCreateServiceAccount(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckCreateServiceAccount(namespace); err != nil {
 		fmt.Printf("Preflight createServiceAccount check: FAILED\n")
 	} else {
 		checkCount++

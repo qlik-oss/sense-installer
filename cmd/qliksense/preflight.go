@@ -197,12 +197,12 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight createRole check
 			fmt.Printf("Preflight createRole check\n")
 			fmt.Println("---------------------------")
-			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			namespace, _, err := preflight.InitPreflight()
 			if err != nil {
 				fmt.Printf("Preflight createRole check FAILED\n")
 				log.Fatal(err)
 			}
-			if err = qp.CheckCreateRole(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckCreateRole(namespace); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight createRole FAILED\n")
 				log.Fatal()
@@ -223,14 +223,14 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q}
 
 			// Preflight createRoleBinding check
-			fmt.Printf("Preflight create roleBinding check\n")
+			fmt.Printf("Preflight createRoleBinding check\n")
 			fmt.Println("---------------------------")
-			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			namespace, _, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("Preflight create RoleBinding check FAILED\n")
+				fmt.Printf("Preflight createRoleBinding check FAILED\n")
 				log.Fatal(err)
 			}
-			if err = qp.CheckCreateRoleBinding(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckCreateRoleBinding(namespace); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight createRoleBinding check FAILED\n")
 				log.Fatal()
@@ -253,12 +253,12 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight createServiceAccount check
 			fmt.Printf("Preflight create ServiceAccount check\n")
 			fmt.Println("-------------------------------------")
-			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			namespace, _, err := preflight.InitPreflight()
 			if err != nil {
 				fmt.Printf("Preflight createServiceAccount check FAILED\n")
 				log.Fatal(err)
 			}
-			if err = qp.CheckCreateServiceAccount(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckCreateServiceAccount(namespace); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight createServiceAccount check FAILED\n")
 				log.Fatal()
