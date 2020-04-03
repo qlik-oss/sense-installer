@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 const (
@@ -15,9 +16,22 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 	fmt.Printf("Preflight mongodb check: \n")
 
 	if mongodbUrl == "" {
-		// TODO: infer this from currentCR
+		// infer mongoDbUrl from currentCR
 		fmt.Println("MongoDbUri is empty, infer from CR")
+		qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
+		var currentCR *qapi.QliksenseCR
+
+		var err error
+		qConfig.SetNamespace(namespace)
+		currentCR, err = qConfig.GetCurrentCR()
+		if err != nil {
+			fmt.Printf("Unable to retrieve current CR: %v\n", err)
+			return err
+		}
+		decryptedCR, err := qConfig.GetDecryptedCr(currentCR)
+		mongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	}
+
 	api.LogDebugMessage("mongodbUrl: %s\n", mongodbUrl)
 	mongoConnCheck(kubeConfigContents, namespace, mongodbUrl)
 	fmt.Println("Completed preflight mongodb check")
