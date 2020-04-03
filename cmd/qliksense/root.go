@@ -190,6 +190,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add clean-config-repo-patches command as a sub-command to the app config sub-command
 	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
 
+	// open editor for config
+	configCmd.AddCommand(configEditCmd(p))
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
 
