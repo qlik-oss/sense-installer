@@ -70,6 +70,16 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 		checkCount++
 	}
 
+	// Preflight mongo check
+	mongodbUrl := "mongodb://192.168.2.24:27017"
+	fmt.Printf("\nPreflight mongo check\n")
+	fmt.Println("---------------------")
+	if err := qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {
+		fmt.Printf("Preflight mongo check: FAILED\n")
+	} else {
+		checkCount++
+	}
+
 	// Preflight DNS check
 	fmt.Printf("\nPreflight DNS check\n")
 	fmt.Println("-------------------")
@@ -79,7 +89,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 		checkCount++
 	}
 
-	if checkCount == 8 {
+	if checkCount == 9 {
 		fmt.Printf("\nAll preflight checks have PASSED\n")
 	} else {
 		fmt.Printf("\n1 or more preflight checks have FAILED\n")
