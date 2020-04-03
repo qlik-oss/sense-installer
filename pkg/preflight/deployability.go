@@ -16,7 +16,7 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 
 	// Deployment check
 	fmt.Printf("Preflight deployment check: \n")
-	err = checkPfDeployment(clientset, namespace, "deployment-preflight-check")
+	err = qp.checkPfDeployment(clientset, namespace, "deployment-preflight-check")
 	if err != nil {
 		fmt.Println("Preflight Deployment check: FAILED")
 		return err
@@ -54,7 +54,7 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 	// Pod check
 	fmt.Printf("\nPreflight pod check: \n")
 
-	err = checkPfPod(clientset, namespace)
+	err = qp.checkPfPod(clientset, namespace)
 	if err != nil {
 		fmt.Println("Preflight Pod check: FAILED")
 		return err
@@ -63,10 +63,10 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 	return nil
 }
 
-func checkPfPod(clientset *kubernetes.Clientset, namespace string) error {
+func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string) error {
 	// create a pod
 	podName := "pod-pf-check"
-	pod, err := createPreflightTestPod(clientset, namespace, podName, nginxImage)
+	pod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(nginx))
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod %s - %v\n", podName, err)
 		return err
@@ -101,9 +101,9 @@ func checkPfService(clientset *kubernetes.Clientset, namespace string) error {
 	return nil
 }
 
-func checkPfDeployment(clientset *kubernetes.Clientset, namespace, depName string) error {
+func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace, depName string) error {
 	// check if we are able to create a deployment
-	pfDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, nginxImage)
+	pfDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, qp.GetPreflightConfigObj().GetImageName(nginx))
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
 		return err

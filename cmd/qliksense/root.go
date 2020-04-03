@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
 	"github.com/qlik-oss/sense-installer/pkg/api"
+	"github.com/qlik-oss/sense-installer/pkg/preflight"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -98,6 +99,10 @@ func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 			if commandUsesContext(cmd.Name()) {
 				globalEulaPreRun(cmd, p)
 				if err := p.SetUpQliksenseDefaultContext(); err != nil {
+					panic(err)
+				}
+				pf := preflight.NewPreflightConfig(p.QliksenseHome)
+				if err := pf.Initialize(); err != nil {
 					panic(err)
 				}
 				globalEulaPostRun(cmd, p)
