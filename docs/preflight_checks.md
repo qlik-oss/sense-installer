@@ -191,6 +191,29 @@ Completed preflight createServiceAccount check
 Completed preflight CreateRB check
 ```
 
+### Mongodb check
+We can check if we are able to connect to an instance of mongodb on the cluster by either supplying the mongodbUri as part of the command or infer it from the current context.
+
+```shell
+qliksense preflight mongo --url=<url>
+
+Preflight mongo check
+---------------------
+Preflight mongodb check: 
+Created pod: pf-mongo-pod
+stdout: MongoDB shell version v4.2.5
+connecting to: <url>/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("64f639d3-2c93-4894-80f6-ee14acaf56a5") }
+MongoDB server version: 4.2.5
+bye
+stderr: 
+Preflight mongo check: PASSED
+Deleted pod: pf-mongo-pod
+Completed preflight mongodb check
+```
+
+
+
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```console
