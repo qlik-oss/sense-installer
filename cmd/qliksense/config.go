@@ -42,3 +42,20 @@ func configViewCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	return c
 }
+
+func configEditCmd(q *qliksense.Qliksense) *cobra.Command {
+	c := &cobra.Command{
+		Use:   "edit [context-name]",
+		Short: "Edit the context cr",
+		Long: `edit the context cr. if no context name provided default context will be edited
+		It will open the vim editor unless KUBE_EDITOR is defined`,
+		Example: `qliksense config edit [context-name]`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 1 {
+				return q.EditCR(args[0])
+			}
+			return q.EditCR("")
+		},
+	}
+	return c
+}
