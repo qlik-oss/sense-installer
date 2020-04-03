@@ -175,7 +175,7 @@ func (q *Qliksense) EditCR(contextName string) error {
 		contextName = cr.GetName()
 	}
 	crFilePath := qConfig.GetCRFilePath(contextName)
-	tempFile, err := ioutil.TempFile("", "mycr.yaml")
+	tempFile, err := ioutil.TempFile("", "*.yaml")
 	if err != nil {
 		return err
 	}
