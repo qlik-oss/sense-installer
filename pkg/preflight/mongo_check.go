@@ -32,7 +32,7 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 		mongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	}
 
-	api.LogDebugMessage("mongodbUrl: %s\n", mongodbUrl)
+	fmt.Printf("mongodbUrl: %s\n", mongodbUrl)
 	mongoConnCheck(kubeConfigContents, namespace, mongodbUrl)
 	fmt.Println("Completed preflight mongodb check")
 	return nil
