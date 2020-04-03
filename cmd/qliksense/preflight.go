@@ -296,3 +296,34 @@ func pfCreateRBCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	return preflightCreateRBCmd
 }
+
+func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	var mongodbUrl string
+	var preflightMongoCmd = &cobra.Command{
+		Use:     "mongo",
+		Short:   "preflight mongo OR preflight mongo --url=<url>",
+		Long:    `perform preflight mongo check to ensure we are able to connect to a mongodb instance in the cluster`,
+		Example: `qliksense preflight mongo OR preflight mongo --url=<url>`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q}
+
+			// Preflight mongo check
+			fmt.Printf("Preflight mongo check\n")
+			fmt.Println("-------------------------------------")
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Printf("Preflight mongo check FAILED\n")
+				log.Fatal(err)
+			}
+			if err = qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {
+				fmt.Println(err)
+				fmt.Print("Preflight mongo check FAILED\n")
+				log.Fatal()
+			}
+			return nil
+		},
+	}
+	f := preflightMongoCmd.Flags()
+	f.StringVarP(&mongodbUrl, "url", "", "", "mongodbUrl to try connecting to")
+	return preflightMongoCmd
+}

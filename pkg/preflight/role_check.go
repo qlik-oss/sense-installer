@@ -15,7 +15,6 @@ func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
 	fmt.Printf("Preflight createRole check: \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
-		// fmt.Println("Preflight createRole check: FAILED")
 		return err
 	}
 	fmt.Println("Completed preflight createRole check")
@@ -27,7 +26,6 @@ func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string) error {
 	fmt.Printf("Preflight createRoleBinding check: \n")
 	err := qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
-		// fmt.Println("Preflight createRoleBinding check: FAILED")
 		return err
 	}
 	fmt.Println("Completed preflight createRoleBinding check")
@@ -39,7 +37,6 @@ func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string) error 
 	fmt.Printf("Preflight createServiceAccount check: \n")
 	err := qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
-		// fmt.Println("Preflight createServiceAccount check: FAILED")
 		return err
 	}
 	fmt.Println("Completed preflight createServiceAccount check")

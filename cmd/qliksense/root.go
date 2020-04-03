@@ -198,7 +198,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	preflightCmd.AddCommand(pfDnsCheckCmd(p))
 	preflightCmd.AddCommand(pfK8sVersionCheckCmd(p))
 	preflightCmd.AddCommand(pfAllChecksCmd(p))
-	// preflightCmd.AddCommand(pfMongoCheckCmd(p))
+	preflightCmd.AddCommand(pfMongoCheckCmd(p))
 	preflightCmd.AddCommand(pfDeploymentCheckCmd(p))
 	preflightCmd.AddCommand(pfServiceCheckCmd(p))
 	preflightCmd.AddCommand(pfPodCheckCmd(p))
