@@ -19,12 +19,24 @@ func (q *Qliksense) ViewCrds(opts *CrdCommandOptions) error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	if engineCRD, err := getQliksenseInitCrd(qcr); err != nil {
+	engineCRD, err := getQliksenseInitCrd(qcr)
+	if err != nil {
 		return err
-	} else if opts.All {
-		fmt.Printf("%s\n%s", q.GetOperatorCRDString(), engineCRD)
-	} else {
-		fmt.Printf("%s", engineCRD)
+	}
+	customCrd, err := getCustomCrd(qcr)
+	if err != nil {
+		return nil
+	}
+
+	fmt.Println(engineCRD)
+	if customCrd != "" {
+		fmt.Println("---")
+		fmt.Println(customCrd)
+	}
+
+	if opts.All {
+		fmt.Println("---")
+		fmt.Printf("%s", q.GetOperatorCRDString())
 	}
 	return nil
 }
@@ -43,6 +55,14 @@ func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 	} else if err = qapi.KubectlApply(engineCRD, ""); err != nil {
 		return err
 	}
+	if customCrd, err := getCustomCrd(qcr); err != nil {
+		return err
+	} else if customCrd != "" {
+		if err = qapi.KubectlApply(customCrd, ""); err != nil {
+			return err
+		}
+	}
+
 	if opts.All { // install opeartor crd
 		if err := qapi.KubectlApply(q.GetOperatorCRDString(), ""); err != nil {
 			fmt.Println("cannot do kubectl apply on opeartor CRD", err)
@@ -68,6 +88,19 @@ func getQliksenseInitCrd(qcr *qapi.QliksenseCR) (string, error) {
 	qInitByte, err := ExecuteKustomizeBuild(qInitMsPath)
 	if err != nil {
 		fmt.Println("cannot generate crds for qliksense-init", err)
+		return "", err
+	}
+	return string(qInitByte), nil
+}
+
+func getCustomCrd(qcr *qapi.QliksenseCR) (string, error) {
+	crdPath := qcr.GetCustomCrdsPath()
+	if crdPath == "" {
+		return "", nil
+	}
+	qInitByte, err := ExecuteKustomizeBuild(crdPath)
+	if err != nil {
+		fmt.Println("cannot generate custom crds", err)
 		return "", err
 	}
 	return string(qInitByte), nil
