@@ -12,34 +12,34 @@ import (
 
 func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
 	// create a Role
-	fmt.Printf("Preflight createRole check: \n")
+	fmt.Printf("Preflight role check: \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight createRole check")
+	fmt.Println("Completed preflight role check")
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string) error {
 	// create a RoleBinding
-	fmt.Printf("Preflight createRoleBinding check: \n")
+	fmt.Printf("Preflight rolebinding check: \n")
 	err := qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight createRoleBinding check")
+	fmt.Println("Completed preflight rolebinding check")
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string) error {
 	// create a service account
-	fmt.Printf("Preflight createServiceAccount check: \n")
+	fmt.Printf("Preflight serviceaccount check: \n")
 	err := qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight createServiceAccount check")
+	fmt.Println("Completed preflight serviceaccount check")
 	return nil
 }
 func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) error {
@@ -70,7 +70,8 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	} else {
 		resultYamlString, err = qliksense.ExecuteKustomizeBuild(filepath.Join(tempDownloadedDir, currentCR.Spec.GetManifestsRoot(), currentCR.Spec.GetProfileDir()))
 		if err != nil {
-			fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
+			err := fmt.Errorf("Unable to retrieve manifests from executing kustomize")
+			fmt.Println(err)
 			return err
 		}
 	}
@@ -79,18 +80,19 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	if sa != "" {
 		sa = strings.ReplaceAll(sa, "namespace: default\n", fmt.Sprintf("namespace: %s\n", namespace))
 	} else {
-		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster\n")
+		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster")
 		fmt.Println(err)
 		return err
 	}
 
 	err = api.KubectlApply(sa, namespace)
 	if err != nil {
-		fmt.Printf("Failed to create entity on the cluster: ", err)
+		err := fmt.Errorf("Failed to create entity on the cluster")
+		fmt.Println(err)
 		return err
 	}
 
-	fmt.Printf("Preflight create%s check: PASSED\n", entityToTest)
+	fmt.Printf("Preflight %s check: PASSED\n", entityToTest)
 	fmt.Println("Cleaning up resources")
 	err = api.KubectlDelete(sa, namespace)
 	if err != nil {
@@ -106,27 +108,27 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	fmt.Printf("Preflight createRole check: \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
-		fmt.Println("Preflight createRole check: FAILED")
+		fmt.Println("Preflight role check: FAILED")
 	}
-	fmt.Printf("Completed preflight create-role check\n\n")
+	fmt.Printf("Completed preflight role check\n\n")
 
 	// create a roleBinding
-	fmt.Printf("Preflight createRoleBinding check: \n")
+	fmt.Printf("Preflight rolebinding check: \n")
 	err = qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
-		fmt.Println("Preflight createRoleBinding check: FAILED")
+		fmt.Println("Preflight rolebinding check: FAILED")
 	}
-	fmt.Printf("Completed preflight createRoleBinding check\n\n")
+	fmt.Printf("Completed preflight rolebinding check\n\n")
 
 	// create a service account
-	fmt.Printf("Preflight createServiceAccount check: \n")
+	fmt.Printf("Preflight serviceaccount check: \n")
 	err = qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
-		fmt.Println("Preflight createServiceAccount check: FAILED")
+		fmt.Println("Preflight serviceaccount check: FAILED")
 	}
-	fmt.Printf("Completed preflight createServiceAccount check\n\n")
+	fmt.Printf("Completed preflight serviceaccount check\n\n")
 
-	fmt.Println("Preflight CreateRB check: PASSED")
+	fmt.Println("Preflight RB check: PASSED")
 	fmt.Println("Completed preflight CreateRB check")
 	return nil
 }
