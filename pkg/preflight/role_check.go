@@ -45,35 +45,32 @@ func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string) error 
 func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) error {
 	qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
 	var currentCR *qapi.QliksenseCR
-	var tempDownloadedDir string
-	var resultYamlString []byte
+	mfroot := ""
+	kusDir := ""
 	var err error
-	qConfig.SetNamespace(namespace)
 	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Printf("Unable to retrieve current CR: %v\n", err)
 		return err
 	}
-
-	if tempDownloadedDir, err = qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
+	if currentCR.IsRepoExist() {
+		mfroot = currentCR.Spec.GetManifestsRoot()
+	} else if tempDownloadedDir, err := qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
 		fmt.Printf("Unable to Download from git repo to tmp dir: %v\n", err)
 		return err
+	} else {
+		mfroot = tempDownloadedDir
 	}
 
 	if currentCR.Spec.Profile == "" {
-		resultYamlString, err = qliksense.ExecuteKustomizeBuild(filepath.Join(tempDownloadedDir, "manifests", "docker-desktop"))
-		if err != nil {
-			fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
-			return err
-		}
-
+		kusDir = filepath.Join(mfroot, "manifests", "docker-desktop")
 	} else {
-		resultYamlString, err = qliksense.ExecuteKustomizeBuild(filepath.Join(tempDownloadedDir, currentCR.Spec.GetManifestsRoot(), currentCR.Spec.GetProfileDir()))
-		if err != nil {
-			err := fmt.Errorf("Unable to retrieve manifests from executing kustomize")
-			fmt.Println(err)
-			return err
-		}
+		kusDir = filepath.Join(mfroot, "manifests", currentCR.Spec.Profile)
+	}
+	resultYamlString, err := qliksense.ExecuteKustomizeBuild(kusDir)
+	if err != nil {
+		fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
+		return err
 	}
 
 	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlString), entityToTest)
