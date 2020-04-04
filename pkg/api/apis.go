@@ -453,6 +453,18 @@ func (cr *QliksenseCR) SetEULA(value string) {
 	cr.Spec.AddToConfigs("qliksense", "acceptEULA", value)
 }
 
+// GetCustomCrdsPath get crds path if exist in the profile dir
+func (cr *QliksenseCR) GetCustomCrdsPath() string {
+	if cr.Spec.ManifestsRoot == "" || cr.Spec.Profile == "" {
+		return ""
+	}
+	crdsPath := filepath.Join(cr.Spec.GetManifestsRoot(), "manifests", cr.Spec.Profile, "crds")
+	if _, err := os.Lstat(crdsPath); err != nil {
+		return ""
+	}
+	return crdsPath
+}
+
 // GetDecryptedCr it decrypts all the encrypted value and return a new CR
 func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error) {
 	newCr := &QliksenseCR{}
