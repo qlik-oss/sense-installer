@@ -195,7 +195,8 @@ Completed preflight CreateRB check
 We can check if we are able to connect to an instance of mongodb on the cluster by either supplying the mongodbUri as part of the command or infer it from the current context.
 
 ```shell
-qliksense preflight mongo --url=<url>
+qliksense preflight mongo --url=<url> OR
+qliksense preflight mongo
 
 Preflight mongo check
 ---------------------
@@ -217,6 +218,7 @@ Completed preflight mongodb check
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```console
+$ qliksense preflight all --mongodb-url=<url> OR
 $ qliksense preflight all
 
 Running all preflight checks
