@@ -33,10 +33,11 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 	}
 
 	fmt.Printf("mongodbUrl: %s\n", mongodbUrl)
-	mongoConnCheck(kubeConfigContents, namespace, mongodbUrl)
+	if err := mongoConnCheck(kubeConfigContents, namespace, mongodbUrl); err != nil {
+		return err
+	}
 	fmt.Println("Completed preflight mongodb check")
 	return nil
-
 }
 
 func mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) error {
@@ -51,6 +52,7 @@ func mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) err
 	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, mongoImage)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
+		fmt.Println("Preflight mongo check: FAILED")
 		return err
 	}
 	defer deletePod(clientset, namespace, podName)

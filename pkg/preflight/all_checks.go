@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte) {
+func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte, mongodbUrl string) {
 
 	checkCount := 0
 	// Preflight minimum kuberenetes version check
@@ -71,7 +71,6 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 	}
 
 	// Preflight mongo check
-	mongodbUrl := "mongodb://192.168.2.24:27017"
 	fmt.Printf("\nPreflight mongo check\n")
 	fmt.Println("---------------------")
 	if err := qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {

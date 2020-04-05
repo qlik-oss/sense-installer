@@ -77,6 +77,7 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
+	var mongodbUrl string
 	var preflightAllChecksCmd = &cobra.Command{
 		Use:     "all",
 		Short:   "perform all checks",
@@ -93,11 +94,13 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Running preflight check suite has FAILED...\n")
 				log.Fatal()
 			}
-			qp.RunAllPreflightChecks(namespace, kubeConfigContents)
+			qp.RunAllPreflightChecks(namespace, kubeConfigContents, mongodbUrl)
 			return nil
 
 		},
 	}
+	f := preflightAllChecksCmd.Flags()
+	f.StringVarP(&mongodbUrl, "mongodb-url", "", "", "mongodbUrl to try connecting to")
 	return preflightAllChecksCmd
 }
 
@@ -271,24 +274,24 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 
 func pfCreateRBCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	var preflightCreateRBCmd = &cobra.Command{
-		Use:     "RB",
-		Short:   "preflight RB check",
-		Long:    `perform preflight RB check that combines the role, rolebinding and serviceaccount checks`,
-		Example: `qliksense preflight RB`,
+		Use:     "authcheck",
+		Short:   "preflight authcheck",
+		Long:    `perform preflight authcheck that combines the role, rolebinding and serviceaccount checks`,
+		Example: `qliksense preflight authcheck`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q}
 
-			// Preflight createServiceAccount check
-			fmt.Printf("Preflight RB check\n")
+			// Preflight authcheck
+			fmt.Printf("Preflight authcheck\n")
 			fmt.Println("------------------------")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("Preflight RB check FAILED\n")
+				fmt.Printf("Preflight authcheck FAILED\n")
 				log.Fatal(err)
 			}
 			if err = qp.CheckCreateRB(namespace, kubeConfigContents); err != nil {
 				fmt.Println(err)
-				fmt.Print("Preflight RB check FAILED\n")
+				fmt.Print("Preflight authcheck FAILED\n")
 				log.Fatal()
 			}
 			return nil
