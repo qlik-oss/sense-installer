@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte) {
+func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte, mongodbUrl string) {
 
 	checkCount := 0
 	// Preflight minimum kuberenetes version check
@@ -18,7 +18,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 
 	// Preflight deployment check
 	fmt.Printf("\nPreflight deployment check\n")
-	fmt.Println("-----------------------")
+	fmt.Println("--------------------------")
 	if err := qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
 		fmt.Printf("Preflight deployment check: FAILED\n")
 	} else {
@@ -43,6 +43,42 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 		checkCount++
 	}
 
+	// Preflight role check
+	fmt.Printf("\nPreflight role check\n")
+	fmt.Println("--------------------------")
+	if err := qp.CheckCreateRole(namespace); err != nil {
+		fmt.Printf("Preflight role check: FAILED\n")
+	} else {
+		checkCount++
+	}
+
+	// Preflight rolebinding check
+	fmt.Printf("\nPreflight rolebinding check\n")
+	fmt.Println("---------------------------------")
+	if err := qp.CheckCreateRoleBinding(namespace); err != nil {
+		fmt.Printf("Preflight rolebinding check: FAILED\n")
+	} else {
+		checkCount++
+	}
+
+	// Preflight serviceaccount check
+	fmt.Printf("\nPreflight serviceaccount check\n")
+	fmt.Println("------------------------------------")
+	if err := qp.CheckCreateServiceAccount(namespace); err != nil {
+		fmt.Printf("Preflight serviceaccount check: FAILED\n")
+	} else {
+		checkCount++
+	}
+
+	// Preflight mongo check
+	fmt.Printf("\nPreflight mongo check\n")
+	fmt.Println("---------------------")
+	if err := qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {
+		fmt.Printf("Preflight mongo check: FAILED\n")
+	} else {
+		checkCount++
+	}
+
 	// Preflight DNS check
 	fmt.Printf("\nPreflight DNS check\n")
 	fmt.Println("-------------------")
@@ -52,7 +88,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 		checkCount++
 	}
 
-	if checkCount == 5 {
+	if checkCount == 9 {
 		fmt.Printf("\nAll preflight checks have PASSED\n")
 	} else {
 		fmt.Printf("\n1 or more preflight checks have FAILED\n")

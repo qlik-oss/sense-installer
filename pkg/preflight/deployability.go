@@ -103,7 +103,6 @@ func checkPfService(clientset *kubernetes.Clientset, namespace string) error {
 
 func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace, depName string) error {
 	// check if we are able to create a deployment
-	// depName :=
 	pfDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, qp.GetPreflightConfigObj().GetImageName(nginx))
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)

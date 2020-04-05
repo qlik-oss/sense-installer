@@ -109,9 +109,116 @@ Deleted pod: pod-pf-check
 Completed preflight pod check
 ```
 
+### Create-Role check
+We use the command below to test if we are able to create a role in the cluster
+```shell
+$ qliksense preflight create-role
+Preflight create-role check
+---------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+```
+
+### Create-RoleBinding check
+We use the command below to test if we are able to create a role binding in the cluster
+```shell
+$ qliksense preflight createRoleBinding
+
+Preflight create roleBinding check
+---------------------------
+Preflight createRoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight createRoleBinding check: PASSED
+Cleaning up resources...
+Deleting RoleBinding: role-binding-preflight-check
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight createRoleBinding check
+```
+
+### Create-ServiceAccount check
+We use the command below to test if we are able to create a service account in the cluster
+```shell
+$ qliksense preflight createServiceAccount
+
+Preflight create ServiceAccount check
+-------------------------------------
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleting ServiceAccount: preflight-check-test-serviceaccount
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+```
+
+### CreateRB check
+We use the command below to combine creation of role, role binding, and service account tests
+```shell
+$ qliksense preflight createRB
+
+Preflight createRB check
+-------------------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+
+Preflight create RoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight create RoleBinding check: PASSED
+Cleaning up resources...
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight create RoleBinding check
+
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+Completed preflight CreateRB check
+```
+
+### Mongodb check
+We can check if we are able to connect to an instance of mongodb on the cluster by either supplying the mongodbUri as part of the command or infer it from the current context.
+
+```shell
+qliksense preflight mongo --url=<url> OR
+qliksense preflight mongo
+
+Preflight mongo check
+---------------------
+Preflight mongodb check: 
+Created pod: pf-mongo-pod
+stdout: MongoDB shell version v4.2.5
+connecting to: <url>/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("64f639d3-2c93-4894-80f6-ee14acaf56a5") }
+MongoDB server version: 4.2.5
+bye
+stderr: 
+Preflight mongo check: PASSED
+Deleted pod: pf-mongo-pod
+Completed preflight mongodb check
+```
+
+
+
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```console
+$ qliksense preflight all --mongodb-url=<url> OR
 $ qliksense preflight all
 
 Running all preflight checks
