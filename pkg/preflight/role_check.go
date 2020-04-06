@@ -82,20 +82,23 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 		return err
 	}
 
+	defer func() {
+		fmt.Println("Cleaning up resources")
+		api.KubectlDelete(sa, namespace)
+		if err != nil {
+			fmt.Println("Preflight cleanup failed!")
+		}
+	}()
+
 	err = api.KubectlApply(sa, namespace)
 	if err != nil {
-		err := fmt.Errorf("Failed to create entity on the cluster")
+		err := fmt.Errorf("Failed to create entity on the cluster: %v", err)
 		fmt.Println(err)
 		return err
 	}
 
 	fmt.Printf("Preflight %s check: PASSED\n", entityToTest)
-	fmt.Println("Cleaning up resources")
-	err = api.KubectlDelete(sa, namespace)
-	if err != nil {
-		fmt.Println("Preflight cleanup failed!")
-		return err
-	}
+
 	return nil
 }
 
