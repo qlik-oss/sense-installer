@@ -73,8 +73,8 @@ func mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) err
 		return err
 	}
 
-	fmt.Println("stdout:", stdout)
-	fmt.Println("stderr:", stderr)
+	api.LogDebugMessage("stdout:%v\n", stdout)
+	api.LogDebugMessage("stderr:%v\n", stderr)
 	stringToCheck := "Implicit session"
 	if strings.Contains(stdout, stringToCheck) || strings.Contains(stderr, stringToCheck) {
 		fmt.Println("Preflight mongo check: PASSED")

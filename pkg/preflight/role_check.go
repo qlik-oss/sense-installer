@@ -3,7 +3,6 @@ package preflight
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -75,27 +74,30 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 
 	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlString), entityToTest)
 	if sa != "" {
-		sa = strings.ReplaceAll(sa, "namespace: default\n", fmt.Sprintf("namespace: %s\n", namespace))
+		// sa = strings.ReplaceAll(sa, "namespace: default\n", fmt.Sprintf("namespace: %s\n", namespace))
 	} else {
 		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster")
 		fmt.Println(err)
 		return err
 	}
+	namespace = "" // namespace is handled when generating the manifests
+
+	defer func() {
+		fmt.Println("Cleaning up resources")
+		api.KubectlDelete(sa, namespace)
+		if err != nil {
+			fmt.Println("Preflight cleanup failed!")
+		}
+	}()
 
 	err = api.KubectlApply(sa, namespace)
 	if err != nil {
-		err := fmt.Errorf("Failed to create entity on the cluster")
+		err := fmt.Errorf("Failed to create entity on the cluster: %v", err)
 		fmt.Println(err)
 		return err
 	}
 
 	fmt.Printf("Preflight %s check: PASSED\n", entityToTest)
-	fmt.Println("Cleaning up resources")
-	err = api.KubectlDelete(sa, namespace)
-	if err != nil {
-		fmt.Println("Preflight cleanup failed!")
-		return err
-	}
 	return nil
 }
 
