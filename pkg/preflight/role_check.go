@@ -3,11 +3,14 @@ package preflight
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 )
+
+var resultYamlBytes = []byte("")
 
 func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
 	// create a Role
@@ -66,15 +69,16 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	} else {
 		kusDir = filepath.Join(mfroot, "manifests", currentCR.Spec.Profile)
 	}
-	resultYamlString, err := qliksense.ExecuteKustomizeBuild(kusDir)
-	if err != nil {
-		fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
-		return err
+	if len(resultYamlBytes) == 0 {
+		resultYamlBytes, err = qliksense.ExecuteKustomizeBuild(kusDir)
+		if err != nil {
+			fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
+			return err
+		}
 	}
-
-	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlString), entityToTest)
+	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlBytes), entityToTest)
 	if sa != "" {
-		// sa = strings.ReplaceAll(sa, "namespace: default\n", fmt.Sprintf("namespace: %s\n", namespace))
+		sa = strings.Replace(sa, "name: qliksense", "name: preflight", -1)
 	} else {
 		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster")
 		fmt.Println(err)
