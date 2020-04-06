@@ -98,7 +98,6 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	}
 
 	fmt.Printf("Preflight %s check: PASSED\n", entityToTest)
-
 	return nil
 }
 
