@@ -37,6 +37,9 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Preflight DNS check FAILED\n")
 				log.Fatal(err)
 			}
+			if namespace == "" {
+				namespace = "default"
+			}
 			if err = qp.CheckDns(namespace, kubeConfigContents); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight DNS check FAILED\n")
@@ -94,6 +97,9 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Running preflight check suite has FAILED...\n")
 				log.Fatal()
 			}
+			if namespace == "" {
+				namespace = "default"
+			}
 			qp.RunAllPreflightChecks(namespace, kubeConfigContents, mongodbUrl)
 			return nil
 
@@ -120,6 +126,9 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if err != nil {
 				fmt.Printf("Preflight deployment check FAILED\n")
 				log.Fatal(err)
+			}
+			if namespace == "" {
+				namespace = "default"
 			}
 			if err = qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
 				fmt.Println(err)
@@ -149,6 +158,9 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Preflight service check FAILED\n")
 				log.Fatal(err)
 			}
+			if namespace == "" {
+				namespace = "default"
+			}
 			if err = qp.CheckService(namespace, kubeConfigContents); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight service check FAILED\n")
@@ -176,6 +188,9 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if err != nil {
 				fmt.Printf("Preflight pod check FAILED\n")
 				log.Fatal(err)
+			}
+			if namespace == "" {
+				namespace = "default"
 			}
 			if err = qp.CheckPod(namespace, kubeConfigContents); err != nil {
 				fmt.Println(err)
@@ -272,8 +287,8 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	return preflightServiceAccountCmd
 }
 
-func pfCreateRBCheckCmd(q *qliksense.Qliksense) *cobra.Command {
-	var preflightCreateRBCmd = &cobra.Command{
+func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	var preflightCreateAuthCmd = &cobra.Command{
 		Use:     "authcheck",
 		Short:   "preflight authcheck",
 		Long:    `perform preflight authcheck that combines the role, rolebinding and serviceaccount checks`,
@@ -297,7 +312,7 @@ func pfCreateRBCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			return nil
 		},
 	}
-	return preflightCreateRBCmd
+	return preflightCreateAuthCmd
 }
 
 func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
@@ -317,6 +332,9 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if err != nil {
 				fmt.Printf("Preflight mongo check FAILED\n")
 				log.Fatal(err)
+			}
+			if namespace == "" {
+				namespace = "default"
 			}
 			if err = qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {
 				fmt.Println(err)

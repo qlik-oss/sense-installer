@@ -3,7 +3,6 @@ package preflight
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -75,12 +74,13 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 
 	sa := qliksense.GetYamlsFromMultiDoc(string(resultYamlString), entityToTest)
 	if sa != "" {
-		sa = strings.ReplaceAll(sa, "namespace: default\n", fmt.Sprintf("namespace: %s\n", namespace))
+		// sa = strings.ReplaceAll(sa, "namespace: default\n", fmt.Sprintf("namespace: %s\n", namespace))
 	} else {
 		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster")
 		fmt.Println(err)
 		return err
 	}
+	namespace = "" // namespace is handled when generating the manifests
 
 	defer func() {
 		fmt.Println("Cleaning up resources")
