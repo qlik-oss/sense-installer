@@ -2,8 +2,11 @@ package preflight
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
+	"github.com/qlik-oss/k-apis/pkg/cr"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -66,6 +69,18 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	} else {
 		kusDir = filepath.Join(mfroot, "manifests", currentCR.Spec.Profile)
 	}
+
+	currentCR.SetName("random")
+	currentCR.Spec.RotateKeys = "None"
+	currentCR.Spec.ManifestsRoot = mfroot
+	userHomeDir, err := homedir.Dir()
+	if err != nil {
+		fmt.Printf(`error fetching user's home directory: %v\n`, err)
+		return err
+	}
+
+	cr.GeneratePatches(&currentCR.KApiCr, path.Join(userHomeDir, ".kube", "config"))
+
 	resultYamlString, err := qliksense.ExecuteKustomizeBuild(kusDir)
 	if err != nil {
 		fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
