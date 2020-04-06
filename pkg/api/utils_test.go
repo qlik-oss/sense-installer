@@ -11,10 +11,11 @@ func TestProcessConfigArgs(t *testing.T) {
 		"test-dash.dash-key=value-dash",
 		"test-dot.dot-key=127.0.0.1",
 		"test123.key123=value123",
+		"test-equal.keyequal=newvalue=@hj",
 	}
-	expectedKeys := []string{"mongodb", "test", "dash-key", "dot-key", "key123"}
-	expectedValue := []string{"mongouri://something?ffall", "value_under", "value-dash", "127.0.0.1", "value123"}
-	exppectedSvc := []string{"qliksense", "test_under", "test-dash", "test-dot", "test123"}
+	expectedKeys := []string{"mongodb", "test", "dash-key", "dot-key", "key123", "keyequal"}
+	expectedValue := []string{"mongouri://something?ffall", "value_under", "value-dash", "127.0.0.1", "value123", "newvalue=@hj"}
+	exppectedSvc := []string{"qliksense", "test_under", "test-dash", "test-dot", "test123", "test-equal"}
 	sv, err := ProcessConfigArgs(args)
 	if err != nil {
 		t.Log(err)
