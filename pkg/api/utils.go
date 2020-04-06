@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -69,20 +68,23 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
 		return nil, err
 	}
+	notValidErr := fmt.Errorf("Please provide valid args for this command")
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
-	re1 := regexp.MustCompile(`([\w\-]{1,}).([\w\-]{1,})=("*[\w\-?=_/:0-9\.]+"*)`)
+	// qliksense.mongodb=somethig
 	for i, arg := range args {
 		LogDebugMessage("Arg received: %s", arg)
-		result := re1.FindStringSubmatch(arg)
-		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
-		if len(result) != 4 {
-			err := fmt.Errorf("Please provide valid args for this command")
-			return nil, err
+		first := strings.SplitN(arg, "=", 2)
+		if len(first) != 2 {
+			return nil, notValidErr
+		}
+		second := strings.SplitN(first[0], ".", 2)
+		if len(second) != 2 {
+			return nil, notValidErr
 		}
 		resultSvcKV[i] = &ServiceKeyValue{
-			SvcName: result[1],
-			Key:     result[2],
-			Value:   strings.ReplaceAll(result[3], `"`, ""),
+			SvcName: second[0],
+			Key:     second[1],
+			Value:   strings.ReplaceAll(first[1], `"`, ""),
 		}
 	}
 	return resultSvcKV, nil
