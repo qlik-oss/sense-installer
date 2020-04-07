@@ -18,8 +18,11 @@ func (q *Qliksense) ApplyCRFromReader(r io.Reader, opts *InstallCommandOptions, 
 	if IsQliksenseInstalled(cr.GetName()) {
 		// it is needed in case want to upgrade from one version to another
 		if cr.Spec.ManifestsRoot == "" && cr.Spec.Git == nil {
-			if err := q.FetchQK8s(cr.GetLabelFromCr("version")); err != nil {
-				return err
+			v := cr.GetLabelFromCr("version")
+			if !qConfig.IsRepoExistForCurrent(v) {
+				if err := q.FetchQK8s(v); err != nil {
+					return err
+				}
 			}
 		}
 		return q.UpgradeQK8s(keepPatchFiles)

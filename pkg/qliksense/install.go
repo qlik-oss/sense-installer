@@ -94,11 +94,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 			return q.applyCR(dcr)
 		}
 	}
-	if version == "" {
-		version = qcr.GetLabelFromCr("version")
-	}
-	if err := fetchAndUpdateCR(qConfig, version); err != nil {
-		return err
+	if !qcr.IsRepoExist() {
+		if err := fetchAndUpdateCR(qConfig, version); err != nil {
+			return err
+		}
 	}
 
 	qcr, err = qConfig.GetCurrentCR()
