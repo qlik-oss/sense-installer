@@ -232,7 +232,7 @@ spec:
 		t.Fatalf("unexpected error appending additional images: %v", err)
 	}
 
-	expectedNumberAdditionalImages := 4
+	expectedNumberAdditionalImages := 5
 	if len(images) != expectedNumberAdditionalImages {
 		t.Fatalf("unexpected number of additional images: %v, expected: %v", len(images), expectedNumberAdditionalImages)
 	}
@@ -264,6 +264,11 @@ spec:
 		return image == "subfuzion/netcat"
 	}) {
 		t.Fatal("expected to find the netcat Preflight image in the list, but it wasn't there")
+	}
+	if !haveMatchingImage(func(image string) bool {
+		return image == "mongo"
+	}) {
+		t.Fatal("expected to find the mongo Preflight image in the list, but it wasn't there")
 	}
 }
 
