@@ -68,6 +68,9 @@ const (
 )
 
 func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping pull/push tests in short mode")
+	}
 	var testCases = []struct {
 		name              string
 		registryAuth      bool

@@ -1,10 +1,9 @@
-package preflight
+package api
 
 import (
 	"os"
 	"path/filepath"
 
-	api "github.com/qlik-oss/sense-installer/pkg/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,7 +43,7 @@ func NewPreflightConfig(qHome string) *PreflightConfig {
 		return p
 	}
 	p = &PreflightConfig{}
-	if err := api.ReadFromFile(p, conFile); err != nil {
+	if err := ReadFromFile(p, conFile); err != nil {
 		return nil
 	}
 	return p
@@ -61,7 +60,7 @@ func (p *PreflightConfig) Write() error {
 	if err := os.MkdirAll(pDir, os.ModePerm); err != nil {
 		return err
 	}
-	return api.WriteToFile(p, p.GetConfigFilePath())
+	return WriteToFile(p, p.GetConfigFilePath())
 }
 
 func (p *PreflightConfig) AddMinK8sV(version string) {

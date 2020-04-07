@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/qlik-oss/sense-installer/pkg/preflight"
-
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
@@ -105,7 +103,7 @@ func (q *Qliksense) appendGitOpsImage(images *[]string, qcr *qapi.QliksenseCR) {
 }
 
 func (q *Qliksense) appendPreflightImages(images *[]string) {
-	pf := preflight.NewPreflightConfig(q.QliksenseHome)
+	pf := qapi.NewPreflightConfig(q.QliksenseHome)
 	for _, preflightImage := range pf.GetImageMap() {
 		*images = append(*images, preflightImage)
 	}
