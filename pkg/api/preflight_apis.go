@@ -104,5 +104,6 @@ func (p *PreflightConfig) Initialize() error {
 	p.AddMinK8sV("1.15")
 	p.AddImage("nginx", "nginx")
 	p.AddImage("netcat", "subfuzion/netcat")
+	p.AddImage("mongo", "mongo")
 	return p.Write()
 }

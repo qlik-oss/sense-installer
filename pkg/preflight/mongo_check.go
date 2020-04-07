@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	mongoImage = "mongo"
+	mongo = "mongo"
 )
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, mongodbUrl string) error {
@@ -33,14 +33,14 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 	}
 
 	fmt.Printf("mongodbUrl: %s\n", mongodbUrl)
-	if err := mongoConnCheck(kubeConfigContents, namespace, mongodbUrl); err != nil {
+	if err := qp.mongoConnCheck(kubeConfigContents, namespace, mongodbUrl); err != nil {
 		return err
 	}
 	fmt.Println("Completed preflight mongodb check")
 	return nil
 }
 
-func mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) error {
+func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) error {
 	clientset, clientConfig, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
@@ -49,7 +49,7 @@ func mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) err
 	}
 	// create a pod
 	podName := "pf-mongo-pod"
-	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, mongoImage)
+	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(mongo))
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
 		fmt.Println("Preflight mongo check: FAILED")
