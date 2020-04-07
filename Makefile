@@ -43,8 +43,8 @@ build: clean generate
 	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 	$(MAKE) clean
 
-.PHONY: test
-test: clean generate
+.PHONY: test-setup
+test-setup: clean generate
 ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	$(eval TMP-docker-distribution := $(shell mktemp -d))
 	git clone https://github.com/docker/distribution.git $(TMP-docker-distribution)/docker-distribution
@@ -52,7 +52,15 @@ ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	cp $(TMP-docker-distribution)/docker-distribution/bin/registry pkg/qliksense/docker-registry
 	-rm -rf $(TMP-docker-distribution)
 endif
+
+.PHONY: test-short
+test-short: test-setup
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
+	$(MAKE) clean
+
+.PHONY: test
+test: test-setup
+	go test -count=1 -tags "$(BUILDTAGS)" -v ./...
 	$(MAKE) clean
 
 xbuild-all: clean generate

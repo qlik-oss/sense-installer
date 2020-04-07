@@ -1,10 +1,8 @@
-package preflight
+package api
 
 import (
 	"io/ioutil"
 	"testing"
-
-	api "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 func Test_Initalize(t *testing.T) {
@@ -21,7 +19,7 @@ func Test_Initalize(t *testing.T) {
 	p := &PreflightConfig{
 		QliksenseHomePath: tempDir,
 	}
-	if err := api.ReadFromFile(p, pf.GetConfigFilePath()); err != nil {
+	if err := ReadFromFile(p, pf.GetConfigFilePath()); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
