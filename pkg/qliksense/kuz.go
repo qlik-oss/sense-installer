@@ -17,7 +17,7 @@ import (
 
 //ExecuteKustomizeBuild execute kustomize to the directory and return manifest as byte array
 func ExecuteKustomizeBuild(directory string) ([]byte, error) {
-	return executeKustomizeBuildForFileSystem(directory, filesys.MakeFsInMemory())
+	return executeKustomizeBuildForFileSystem(directory, filesys.MakeFsOnDisk())
 }
 
 func executeKustomizeBuildForFileSystem(directory string, fSys filesys.FileSystem) ([]byte, error) {
