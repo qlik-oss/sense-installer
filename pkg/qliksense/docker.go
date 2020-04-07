@@ -73,12 +73,9 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	}
 
 	images := versionOut.Images
-	if err := q.appendOperatorImages(&images); err != nil {
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
 		return err
 	}
-
-	q.appendGitOpsImage(&images, qcr)
-	q.appendPreflightImages(&images)
 
 	for _, image := range images {
 		if err := pullImage(image, imagesDir); err != nil {
@@ -189,7 +186,7 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	}
 
 	images := versionOut.Images
-	if err := q.appendOperatorImages(&images); err != nil {
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
 		return err
 	}
 
@@ -207,6 +204,15 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 		}
 	}
 
+	return nil
+}
+
+func (q *Qliksense) appendAdditionalImages(images *[]string, qcr *qapi.QliksenseCR) error {
+	if err := q.appendOperatorImages(images); err != nil {
+		return err
+	}
+	q.appendGitOpsImage(images, qcr)
+	q.appendPreflightImages(images)
 	return nil
 }
 
