@@ -22,7 +22,8 @@ func fetchCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	f := c.Flags()
 	f.StringVarP(&opts.GitUrl, "url", "", "", "git url from where configuration will be pulled")
-	f.StringVarP(&opts.AccessToken, "token", "", "", "access token for git url")
+	f.StringVarP(&opts.AccessToken, "accessToken", "", "", "access token for git url")
+	f.StringVarP(&opts.SecretName, "secretName", "", "", "kubernetes secret name where a key name accessToken exist")
 
 	return c
 }

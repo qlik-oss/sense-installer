@@ -16,6 +16,7 @@ type FetchCommandOptions struct {
 	GitUrl      string
 	AccessToken string
 	Version     string
+	SecretName  string
 }
 
 const (
@@ -35,6 +36,9 @@ func (q *Qliksense) FetchK8sWithOpts(opts *FetchCommandOptions) error {
 	}
 	if opts.AccessToken != "" {
 		cr.SetFetchAccessToken(opts.AccessToken)
+	}
+	if opts.SecretName != "" {
+		cr.SetFetchAccessSecretName(opts.SecretName)
 	}
 	if opts.GitUrl != "" {
 		cr.SetFetchUrl(opts.GitUrl)

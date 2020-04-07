@@ -178,6 +178,13 @@ func (cr *QliksenseCR) SetFetchAccessToken(token string) {
 	cr.Spec.FetchSource.AccessToken = token
 }
 
+func (cr *QliksenseCR) SetFetchAccessSecretName(sec string) {
+	if cr.Spec.FetchSource == nil {
+		cr.Spec.FetchSource = &config.Repo{}
+	}
+	cr.Spec.FetchSource.SecretName = sec
+}
+
 //DeleteRepo delete the manifest repo and unset manifestsRoot
 func (cr *QliksenseCR) DeleteRepo() error {
 	if err := os.RemoveAll(cr.Spec.ManifestsRoot); err != nil {
