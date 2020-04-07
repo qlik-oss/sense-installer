@@ -71,7 +71,7 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 	}
 
 	destDir := qConfig.BuildRepoPath(version)
-	fmt.Printf("fetching version [%s] from %s\n", version, QLIK_GIT_REPO)
+	fmt.Printf("fetching version [%s] from %s\n", version, qcr.GetFetchUrl())
 	if err := qapi.CopyDirectory(tempDest, destDir); err != nil {
 		return nil
 	}
