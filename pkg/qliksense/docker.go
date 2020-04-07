@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/qlik-oss/sense-installer/pkg/preflight"
+
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
@@ -77,6 +79,9 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 		return err
 	}
 
+	q.appendGitOpsImage(&images, qcr)
+	q.appendPreflightImages(&images)
+
 	for _, image := range images {
 		if err := pullImage(image, imagesDir); err != nil {
 			fmt.Printf("%v\n", err)
@@ -91,6 +96,19 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 		}
 	}
 	return nil
+}
+
+func (q *Qliksense) appendGitOpsImage(images *[]string, qcr *qapi.QliksenseCR) {
+	if qcr.Spec.GitOps != nil && qcr.Spec.GitOps.Image != "" {
+		*images = append(*images, qcr.Spec.GitOps.Image)
+	}
+}
+
+func (q *Qliksense) appendPreflightImages(images *[]string) {
+	pf := preflight.NewPreflightConfig(q.QliksenseHome)
+	for _, preflightImage := range pf.GetImageMap() {
+		*images = append(*images, preflightImage)
+	}
 }
 
 func (q *Qliksense) appendOperatorImages(images *[]string) error {
