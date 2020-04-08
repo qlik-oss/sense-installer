@@ -64,16 +64,11 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	//CRD will be installed outside of operator
 	//install operator controller into the namespace
 	fmt.Println("Installing operator controller")
-	operatorControllerString := q.GetOperatorControllerString()
-	if imageRegistry := qcr.GetImageRegistry(); imageRegistry != "" {
-		operatorControllerString, err = kustomizeForImageRegistry(operatorControllerString, pullSecretName,
-			"qlik/qliksense-operator", fmt.Sprintf("%v/qliksense-operator", imageRegistry))
-		if err != nil {
-			return err
-		}
-	}
-	if err := qapi.KubectlApply(operatorControllerString, ""); err != nil {
-		fmt.Println("cannot do kubectl apply on opeartor controller", err)
+	if operatorControllerString, err := q.getProcessedOperatorControllerString(qcr); err != nil {
+		fmt.Println("error extracting/transforming operator controller", err)
+		return err
+	} else if err := qapi.KubectlApply(operatorControllerString, ""); err != nil {
+		fmt.Println("cannot do kubectl apply on operator controller", err)
 		return err
 	}
 
@@ -117,6 +112,16 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	} else {
 		return q.applyCR(dcr)
 	}
+}
+
+func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) (string, error) {
+	operatorControllerString := q.GetOperatorControllerString()
+	if imageRegistry := qcr.GetImageRegistry(); imageRegistry != "" {
+		return kustomizeForImageRegistry(operatorControllerString, pullSecretName,
+			fmt.Sprintf("%v/%v", qliksenseOperatorImageRepo, qliksenseOperatorImageName),
+			fmt.Sprintf("%v/%v", imageRegistry, qliksenseOperatorImageName))
+	}
+	return operatorControllerString, nil
 }
 
 func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
