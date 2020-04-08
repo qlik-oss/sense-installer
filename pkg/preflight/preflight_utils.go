@@ -310,7 +310,7 @@ func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
 	return nil
 }
 
-func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string) (*apiv1.Pod, error) {
+func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string, commandToRun []string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
@@ -321,15 +321,13 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, p
 			},
 		},
 		Spec: apiv1.PodSpec{
+			RestartPolicy: apiv1.RestartPolicyNever,
 			Containers: []apiv1.Container{
 				{
 					Name:            "cnt",
 					Image:           imageName,
 					ImagePullPolicy: apiv1.PullIfNotPresent,
-					Command: []string{
-						"sleep",
-						"3600",
-					},
+					Command:         commandToRun,
 				},
 			},
 		},
@@ -358,6 +356,26 @@ func getPod(clientset *kubernetes.Clientset, namespace, podName string) (*apiv1.
 		return nil, err
 	}
 	return pod, nil
+}
+
+func getPodLogs(clientset *kubernetes.Clientset, pod *apiv1.Pod) (string, error) {
+	podLogOpts := apiv1.PodLogOptions{}
+
+	api.LogDebugMessage("Retrieving logs for pod: %s   namespace: %s\n", pod.GetName(), pod.Namespace)
+	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
+	podLogs, err := req.Stream()
+	if err != nil {
+		return "", err
+	}
+	defer podLogs.Close()
+	time.Sleep(15 * time.Second)
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", err
+	}
+	api.LogDebugMessage("Log from pod: %s\n", buf.String())
+	return buf.String(), nil
 }
 
 func execute(method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
@@ -460,6 +478,33 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	err = fmt.Errorf("error: there are no containers in the pod")
 	fmt.Println(err)
 	return err
+}
+
+func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
+	var err error
+	podName := pod.Name
+	timeout := time.NewTicker(2 * time.Minute)
+	defer timeout.Stop()
+OUT:
+	for {
+		pod, err = getPod(clientset, namespace, podName)
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+			fmt.Println(err)
+			return err
+		}
+		fmt.Println("pod status:", pod.Status.Phase)
+		select {
+		case <-timeout.C:
+			break OUT
+		default:
+			if pod.Status.Phase == apiv1.PodFailed || pod.Status.Phase == apiv1.PodSucceeded {
+				break OUT
+			}
+		}
+		time.Sleep(5 * time.Second)
+	}
+	return nil
 }
 
 func waitForPodToDelete(clientset *kubernetes.Clientset, namespace, podName string) error {

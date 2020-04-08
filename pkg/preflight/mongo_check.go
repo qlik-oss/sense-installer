@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -41,7 +40,7 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 }
 
 func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string) error {
-	clientset, clientConfig, err := getK8SClientSet(kubeConfigContents, "")
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
 		fmt.Println(err)
@@ -49,7 +48,8 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	}
 	// create a pod
 	podName := "pf-mongo-pod"
-	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(mongo))
+	commandToRun := []string{"sh", "-c", "sleep 10;mongo " + mongodbUrl}
+	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(mongo), commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
 		fmt.Println("Preflight mongo check: FAILED")
@@ -65,18 +65,16 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		fmt.Println(err)
 		return err
 	}
-	api.LogDebugMessage("Exec-ing into the container...")
-	stdout, stderr, err := executeRemoteCommand(clientset, clientConfig, mongoPod.Name, mongoPod.Spec.Containers[0].Name, namespace, []string{"mongo", mongodbUrl})
+	waitForPodToDie(clientset, namespace, mongoPod)
+	logStr, err := getPodLogs(clientset, mongoPod)
 	if err != nil {
 		err = fmt.Errorf("error: unable to execute mongo check in the cluster: %v", err)
 		fmt.Println(err)
 		return err
 	}
 
-	api.LogDebugMessage("stdout:%v\n", stdout)
-	api.LogDebugMessage("stderr:%v\n", stderr)
 	stringToCheck := "Implicit session"
-	if strings.Contains(stdout, stringToCheck) || strings.Contains(stderr, stringToCheck) {
+	if strings.Contains(logStr, stringToCheck) {
 		fmt.Println("Preflight mongo check: PASSED")
 	} else {
 		fmt.Println("Preflight mongo check: FAILED")
