@@ -23,6 +23,7 @@ const (
 	qliksenseContextsDirName = "contexts"
 	qliksenseSecretsDirName  = "secrets"
 	qliksenseEjsonDirName    = "ejson"
+	QLIK_GIT_REPO            = "https://github.com/qlik-oss/qliksense-k8s"
 )
 
 // NewQConfig create QliksenseConfig object from file ~/.qliksense/config.yaml
@@ -144,6 +145,55 @@ func (cr *QliksenseCR) IsRepoExist() bool {
 	return true
 }
 
+func (cr *QliksenseCR) GetFetchUrl() string {
+	if cr.Spec.FetchSource == nil || cr.Spec.FetchSource.Repository == "" {
+		return QLIK_GIT_REPO
+	}
+	return cr.Spec.FetchSource.Repository
+}
+
+func (cr *QliksenseCR) GetFetchAccessToken() string {
+	if cr.Spec.FetchSource == nil || cr.Spec.FetchSource.Repository == "" {
+		return ""
+	}
+	if tok, err := cr.Spec.FetchSource.GetAccessToken(); err != nil {
+		fmt.Println(err)
+		return ""
+	} else {
+		return tok
+	}
+}
+
+func (cr *QliksenseCR) SetFetchUrl(url string) {
+	if cr.Spec.FetchSource == nil {
+		cr.Spec.FetchSource = &config.Repo{}
+	}
+	cr.Spec.FetchSource.Repository = url
+}
+
+func (cr *QliksenseCR) SetFetchAccessToken(token string) {
+	if cr.Spec.FetchSource == nil {
+		cr.Spec.FetchSource = &config.Repo{}
+	}
+	cr.Spec.FetchSource.AccessToken = token
+}
+
+func (cr *QliksenseCR) SetFetchAccessSecretName(sec string) {
+	if cr.Spec.FetchSource == nil {
+		cr.Spec.FetchSource = &config.Repo{}
+	}
+	cr.Spec.FetchSource.SecretName = sec
+}
+
+//DeleteRepo delete the manifest repo and unset manifestsRoot
+func (cr *QliksenseCR) DeleteRepo() error {
+	if err := os.RemoveAll(cr.Spec.ManifestsRoot); err != nil {
+		return err
+	}
+	cr.Spec.ManifestsRoot = ""
+	return nil
+}
+
 func (qc *QliksenseConfig) IsRepoExist(contextName, version string) bool {
 	if _, err := os.Lstat(qc.BuildRepoPathForContext(contextName, version)); err != nil {
 		return false
@@ -156,6 +206,11 @@ func (qc *QliksenseConfig) IsRepoExistForCurrent(version string) bool {
 		return false
 	}
 	return true
+}
+
+func (qc *QliksenseConfig) DeleteRepoForCurrent(version string) error {
+	path := qc.BuildRepoPath(version)
+	return os.RemoveAll(path)
 }
 
 func (qc *QliksenseConfig) BuildRepoPath(version string) string {

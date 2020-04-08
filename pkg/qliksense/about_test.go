@@ -525,12 +525,16 @@ func Test_About_getConfigDirectory(t *testing.T) {
 					if err := q.SetUpQliksenseDefaultContext(); err != nil {
 						t.Fatalf("error setting up default context in the tmp dir: %v\n", err)
 						return nil, "", "", ""
-					} else if err := q.FetchQK8s("master"); err != nil {
-						t.Fatalf("error fetching master config to the tmp dir: %v\n", err)
+					} else if qConfig, err := qapi.NewQConfigE(q.QliksenseHome); err != nil {
+						t.Fatalf("cannot initiallize qConfig: %v\n", err)
 						return nil, "", "", ""
-					} else {
-						return q, "no-git-clone-for-you", "", ""
+					} else if !qConfig.IsRepoExistForCurrent("master") {
+						if err := q.FetchQK8s("master"); err != nil {
+							t.Fatalf("error fetching master config to the tmp dir: %v\n", err)
+							return nil, "", "", ""
+						}
 					}
+					return q, "no-git-clone-for-you", "", ""
 				}
 			},
 			verify: func(q *Qliksense, configDir string, isTemporary bool, profile string) (ok bool, reason string, err error) {

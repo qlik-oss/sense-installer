@@ -31,8 +31,10 @@ const (
 func (q *Qliksense) PullImages(version, profile string) error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if version != "" {
-		if err := q.FetchQK8s(version); err != nil {
-			return err
+		if !qConfig.IsRepoExistForCurrent(version) {
+			if err := q.FetchQK8s(version); err != nil {
+				return err
+			}
 		}
 	}
 	qcr, err := qConfig.GetCurrentCR()
