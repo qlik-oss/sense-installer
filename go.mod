@@ -58,8 +58,8 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.13.1
 	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
-	k8s.io/api v0.17.0
-	k8s.io/apimachinery v0.17.0
+	k8s.io/api v0.18.1
+	k8s.io/apimachinery v0.18.1
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 	sigs.k8s.io/kustomize/api v0.3.2
