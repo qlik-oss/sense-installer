@@ -22,9 +22,8 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
 	github.com/containerd/containerd v1.3.2 // indirect
 	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
-	github.com/containers/image/v5 v5.1.0
+	github.com/containers/image/v5 v5.4.3
 	github.com/docker/cli v0.0.0-20191212191748-ebca1413117a // indirect
-	github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/logger v1.0.3 // indirect
@@ -32,7 +31,6 @@ require (
 	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.3.3 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
@@ -40,7 +38,7 @@ require (
 	github.com/mattn/go-tty v0.0.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/qlik-oss/k-apis v0.0.35
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
@@ -48,10 +46,8 @@ require (
 	github.com/spf13/viper v1.6.1
 	github.com/src-d/go-git v4.7.0+incompatible
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
-	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
-	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
 	golang.org/x/tools v0.0.0-20200312194400-c312e98713c2 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	google.golang.org/grpc v1.27.0 // indirect
