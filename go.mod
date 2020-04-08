@@ -44,7 +44,7 @@ require (
 	github.com/qlik-oss/k-apis v0.0.35
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
-	github.com/spf13/cobra v0.0.6
+	github.com/spf13/cobra v0.0.7
 	github.com/spf13/viper v1.6.1
 	github.com/src-d/go-git v4.7.0+incompatible
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
