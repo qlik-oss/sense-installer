@@ -27,11 +27,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if !keepPatchFiles {
-		defer func() {
-			if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
-				fmt.Printf("error removing temporary changes to the config: %v\n", err)
-			}
-		}()
+		if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
+			fmt.Printf("error removing temporary changes to the config: %v\n", err)
+		}
 	}
 
 	qcr, err := qConfig.GetCurrentCR()
@@ -94,11 +92,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 			return q.applyCR(dcr)
 		}
 	}
-	if version == "" {
-		version = qcr.GetLabelFromCr("version")
-	}
-	if err := fetchAndUpdateCR(qConfig, version); err != nil {
-		return err
+	if !qcr.IsRepoExist() {
+		if err := fetchAndUpdateCR(qConfig, version); err != nil {
+			return err
+		}
 	}
 
 	qcr, err = qConfig.GetCurrentCR()

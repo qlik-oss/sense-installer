@@ -12,27 +12,22 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-homedir"
-
-	"k8s.io/apimachinery/pkg/util/wait"
-
-	"k8s.io/client-go/util/retry"
-
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
-	"k8s.io/kubectl/pkg/scheme"
-
 	"github.com/pkg/errors"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/api/rbac/v1beta1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
-
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	restclient "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/remotecommand"
+	"k8s.io/client-go/util/retry"
+	"k8s.io/kubectl/pkg/scheme"
 )
 
 var gracePeriod int64 = 0
@@ -41,8 +36,8 @@ type QliksensePreflight struct {
 	Q *qliksense.Qliksense
 }
 
-func (qp *QliksensePreflight) GetPreflightConfigObj() *PreflightConfig {
-	return NewPreflightConfig(qp.Q.QliksenseHome)
+func (qp *QliksensePreflight) GetPreflightConfigObj() *api.PreflightConfig {
+	return api.NewPreflightConfig(qp.Q.QliksenseHome)
 }
 
 func InitPreflight() (string, []byte, error) {

@@ -31,8 +31,10 @@ const (
 func (q *Qliksense) PullImages(version, profile string) error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if version != "" {
-		if err := q.FetchQK8s(version); err != nil {
-			return err
+		if !qConfig.IsRepoExistForCurrent(version) {
+			if err := q.FetchQK8s(version); err != nil {
+				return err
+			}
 		}
 	}
 	qcr, err := qConfig.GetCurrentCR()
@@ -73,7 +75,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	}
 
 	images := versionOut.Images
-	if err := q.appendOperatorImages(&images); err != nil {
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
 		return err
 	}
 
@@ -91,6 +93,19 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 		}
 	}
 	return nil
+}
+
+func (q *Qliksense) appendGitOpsImage(images *[]string, qcr *qapi.QliksenseCR) {
+	if qcr.Spec.GitOps != nil && qcr.Spec.GitOps.Image != "" {
+		*images = append(*images, qcr.Spec.GitOps.Image)
+	}
+}
+
+func (q *Qliksense) appendPreflightImages(images *[]string) {
+	pf := qapi.NewPreflightConfig(q.QliksenseHome)
+	for _, preflightImage := range pf.GetImageMap() {
+		*images = append(*images, preflightImage)
+	}
 }
 
 func (q *Qliksense) appendOperatorImages(images *[]string) error {
@@ -173,7 +188,7 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	}
 
 	images := versionOut.Images
-	if err := q.appendOperatorImages(&images); err != nil {
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
 		return err
 	}
 
@@ -191,6 +206,15 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 		}
 	}
 
+	return nil
+}
+
+func (q *Qliksense) appendAdditionalImages(images *[]string, qcr *qapi.QliksenseCR) error {
+	if err := q.appendOperatorImages(images); err != nil {
+		return err
+	}
+	q.appendGitOpsImage(images, qcr)
+	q.appendPreflightImages(images)
 	return nil
 }
 
