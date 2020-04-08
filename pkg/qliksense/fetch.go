@@ -1,10 +1,13 @@
 package qliksense
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
+	"strings"
 
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -17,6 +20,7 @@ type FetchCommandOptions struct {
 	AccessToken string
 	Version     string
 	SecretName  string
+	Overwrite   bool
 }
 
 const (
@@ -43,8 +47,22 @@ func (q *Qliksense) FetchK8sWithOpts(opts *FetchCommandOptions) error {
 	if opts.GitUrl != "" {
 		cr.SetFetchUrl(opts.GitUrl)
 	}
+	v := getVersion(opts, cr)
+	if v == "" {
+		return errors.New("Cannot find gitref/tag/branch/version to fetch")
+	}
+	if qConfig.IsRepoExistForCurrent(v) {
+		if opts.Overwrite || getVerionsOverwriteConfirmation(v) == "y" {
+			if err := qConfig.DeleteRepoForCurrent(v); err != nil {
+				return err
+			}
+		} else {
+			// nothing to do
+			return nil
+		}
+	}
 	qConfig.WriteCR(cr)
-	return fetchAndUpdateCR(qConfig, opts.Version)
+	return fetchAndUpdateCR(qConfig, v)
 }
 
 // fetchAndUpdateCR fetch
@@ -63,10 +81,6 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 	// downlaod to temp first
 	tempDest, err := fetchToTempDir(qcr.GetFetchUrl(), version, qcr.GetFetchAccessToken())
 	if err != nil {
-		return err
-	}
-
-	if err := qConfig.DeleteRepoForCurrent(version); err != nil {
 		return err
 	}
 
@@ -100,4 +114,33 @@ func fetchToTempDir(gitUrl, gitRef, accessToken string) (string, error) {
 	} else {
 		return downloadPath, nil
 	}
+}
+
+func getVersion(opts *FetchCommandOptions, qcr *qapi.QliksenseCR) string {
+	if opts.Version == "" {
+		if qcr.GetLabelFromCr("version") != "" {
+			return qcr.GetLabelFromCr("version")
+		}
+	}
+	return opts.Version
+}
+
+func getVerionsOverwriteConfirmation(version string) string {
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Println("The version  [" + version + "] already exist")
+	cfm := "n"
+	for {
+		fmt.Print("Do you want to delete and fetch again [y/N]: ")
+		cfm, _ = reader.ReadString('\n')
+		cfm = strings.Replace(cfm, "\n", "", -1)
+		cfm = strings.TrimSpace(cfm)
+		if cfm == "" {
+			cfm = "n"
+		}
+		cfm = strings.ToLower(cfm)
+		if cfm == "y" || cfm == "n" {
+			break
+		}
+	}
+	return cfm
 }

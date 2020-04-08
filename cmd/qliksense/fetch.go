@@ -24,6 +24,7 @@ func fetchCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&opts.GitUrl, "url", "", "", "git url from where configuration will be pulled")
 	f.StringVarP(&opts.AccessToken, "accessToken", "", "", "access token for git url")
 	f.StringVarP(&opts.SecretName, "secretName", "", "", "kubernetes secret name where a key name accessToken exist")
+	f.BoolVarP(&opts.Overwrite, "overwrite", "", false, "Ovewrite previously fetched veersion as well as local chagnes")
 
 	return c
 }
