@@ -649,13 +649,7 @@ func Test_SetSecrets(t *testing.T) {
 							log.Printf("decode error: %v", err)
 							t.FailNow()
 						}
-						decodedValue, err := b64.StdEncoding.DecodeString(valToBeEncrypted)
-						if err != nil {
-							err := fmt.Errorf("Error occurred while decoding: %v", err)
-							log.Printf("decode error: %v", err)
-							t.FailNow()
-						}
-						decryptedVal, err := api.DecryptData(decodedValue, encryptionKey)
+						decryptedVal, err := api.DecryptData([]byte(valToBeEncrypted), encryptionKey)
 						if err != nil {
 							err := fmt.Errorf("Error occurred while testing decryption: %v", err)
 							log.Printf("No Data in Secret: %v", err)
@@ -696,7 +690,8 @@ func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.Ql
 	}
 	// secret=false
 	if item.Value != "" {
-		return item.Value, nil
+		b, err := b64.RawStdEncoding.DecodeString(item.Value)
+		return string(b), err
 	}
 	err := fmt.Errorf("Both Value and ValueFrom are empty")
 	return "", err
