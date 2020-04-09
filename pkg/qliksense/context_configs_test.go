@@ -37,7 +37,8 @@ type: Opaque
 `
 var decText = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
 
-func setupTargetFileAndPrivateKey() (string, error) {
+func setupTargetFileAndPrivateKey() (string, string, error) {
+
 	secretKeyLocation := filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets)
 	if err := os.MkdirAll(secretKeyLocation, 0777); err != nil {
 		err = fmt.Errorf("Not able to create directories")
@@ -46,11 +47,23 @@ func setupTargetFileAndPrivateKey() (string, error) {
 	os.Setenv("QLIKSENSE_KEY_LOCATION", secretKeyLocation)
 
 	//privKeyFile := filepath.Join(secretKeyLocation, "user_secret_key")
-	key, _ := api.LoadSecretKey(secretKeyLocation)
+	key, err := api.LoadSecretKey(secretKeyLocation)
 	if key == "" {
-		return api.GenerateAndStoreSecretKey(secretKeyLocation)
+		key, err = api.GenerateAndStoreSecretKey(secretKeyLocation)
 	}
-	return key, nil
+	encData, _ := api.EncryptData([]byte(decText), key)
+	encText := b64.StdEncoding.EncodeToString(encData)
+
+	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
+	targetFile := filepath.Join(testDir, "targetfile.yaml")
+	// tests/config.yaml exists
+	err = ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
+	if err != nil {
+		log.Printf("Error while creating file: %v", err)
+		return "", "", err
+	}
+
+	return targetFile, key, err
 }
 
 func setup() func() {
@@ -411,9 +424,14 @@ spec:
 		})
 	}
 }
-
+func removePrivateKey() {
+	err := os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "user_secret_key"))
+	if err != nil {
+		log.Fatalf("Could not delete private key %v", err)
+	}
+	return
+}
 func Test_PrepareK8sSecret(t *testing.T) {
-
 	type fields struct {
 		QliksenseHome string
 	}
@@ -433,8 +451,8 @@ func Test_PrepareK8sSecret(t *testing.T) {
 			wantErr: false,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				key, _ := setupTargetFileAndPrivateKey()
-				return key, tearDown
+				targetFile, _, _ := setupTargetFileAndPrivateKey()
+				return targetFile, tearDown
 			},
 		},
 		{
@@ -446,8 +464,9 @@ func Test_PrepareK8sSecret(t *testing.T) {
 			wantErr: true,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				key, _ := setupTargetFileAndPrivateKey()
-				return key, tearDown
+				targetFile, _, _ := setupTargetFileAndPrivateKey()
+				removePrivateKey()
+				return targetFile, tearDown
 			},
 		},
 		{
@@ -459,7 +478,7 @@ func Test_PrepareK8sSecret(t *testing.T) {
 			wantErr: true,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				_, _ = setupTargetFileAndPrivateKey()
+				setupTargetFileAndPrivateKey()
 				return "", tearDown
 			},
 		},
@@ -592,7 +611,7 @@ func Test_SetSecrets(t *testing.T) {
 		},
 	}
 	tearDown := setup()
-	encryptionKey, err := setupTargetFileAndPrivateKey()
+	_, encryptionKey, err := setupTargetFileAndPrivateKey()
 	if err != nil {
 		t.FailNow()
 	}

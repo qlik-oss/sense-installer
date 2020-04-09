@@ -387,9 +387,9 @@ func (qc *QliksenseConfig) getContextEncryptionKeyLocation(contextName string) (
 		// QLIKSENSE_KEY_LOCATION has not been set, hence storing key pair in default location:
 		// /.qliksense/secrets/contexts/<current-context>/secrets/
 		secretKeyPairLocation = filepath.Join(qc.QliksenseHomePath, qliksenseSecretsDirName, qliksenseContextsDirName, contextName, qliksenseSecretsDirName)
-
 	}
-	return secretKeyPairLocation, nil
+
+	return secretKeyPairLocation, os.MkdirAll(secretKeyPairLocation, os.ModePerm)
 }
 
 func (qc *QliksenseConfig) GetCurrentContextEjsonKeyDir() (string, error) {
@@ -421,6 +421,7 @@ func (qc *QliksenseConfig) GetEncryptionKeyFor(contextName string) (string, erro
 	if key != "" {
 		return key, nil
 	}
+	fmt.Println("Generating new encryption key for the context: " + contextName)
 	return GenerateAndStoreSecretKey(secretKeyLocation)
 }
 

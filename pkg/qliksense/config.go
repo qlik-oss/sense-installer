@@ -146,18 +146,22 @@ func (q *Qliksense) getCurrentCrDependentResourceAsString() (string, error) {
 	var crString strings.Builder
 
 	for svcName, v := range qcr.Spec.Secrets {
+		hasFile := false
 		for _, item := range v {
 			if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
-				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.GetName(), QliksenseSecretsDir, svcName+".yaml")
-
-				if api.FileExists(secretFilePath) {
-					secretFile, err := ioutil.ReadFile(secretFilePath)
-					if err != nil {
-						return "", err
-					}
-					crString.WriteString("\n---\n")
-					crString.Write(secretFile)
+				hasFile = true
+				break
+			}
+		}
+		if hasFile {
+			secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.GetName(), QliksenseSecretsDir, svcName+".yaml")
+			if api.FileExists(secretFilePath) {
+				secretFile, err := ioutil.ReadFile(secretFilePath)
+				if err != nil {
+					return "", err
 				}
+				crString.WriteString("\n---\n")
+				crString.Write(secretFile)
 			}
 		}
 	}
