@@ -1,11 +1,9 @@
 package api
 
 import (
-	"crypto/rsa"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -313,9 +311,9 @@ func (qc *QliksenseConfig) GetCurrentContextSecretsDir() (string, error) {
 func (qc *QliksenseConfig) setDockerConfigJsonSecret(filename string, dockerConfigJsonSecret *DockerConfigJsonSecret) error {
 	if secretsDir, err := qc.GetCurrentContextSecretsDir(); err != nil {
 		return err
-	} else if publicKey, _, err := qc.GetCurrentContextEncryptionKeyPair(); err != nil {
+	} else if encryptionKey, err := qc.GetEncryptionKeyForCurrent(); err != nil {
 		return err
-	} else if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(publicKey); err != nil {
+	} else if dockerConfigJsonSecretYaml, err := dockerConfigJsonSecret.ToYaml(encryptionKey); err != nil {
 		return err
 	} else if err := os.MkdirAll(secretsDir, os.ModePerm); err != nil {
 		return err
@@ -362,9 +360,9 @@ func (qc *QliksenseConfig) getDockerConfigJsonSecret(name string) (*DockerConfig
 		return nil, err
 	} else if dockerConfigJsonSecretYaml, err := ioutil.ReadFile(filepath.Join(secretsDir, name)); err != nil {
 		return nil, err
-	} else if _, privateKey, err := qc.GetCurrentContextEncryptionKeyPair(); err != nil {
+	} else if encryptionKey, err := qc.GetEncryptionKeyForCurrent(); err != nil {
 		return nil, err
-	} else if err := dockerConfigJsonSecret.FromYaml(dockerConfigJsonSecretYaml, privateKey); err != nil {
+	} else if err := dockerConfigJsonSecret.FromYaml(dockerConfigJsonSecretYaml, encryptionKey); err != nil {
 		return nil, err
 	}
 	return dockerConfigJsonSecret, nil
@@ -375,11 +373,11 @@ func (qc *QliksenseConfig) getCurrentContextEncryptionKeyPairLocation() (string,
 	if qcr, err := qc.GetCurrentCR(); err != nil {
 		return "", err
 	} else {
-		return qc.getContextEncryptionKeyPairLocation(qcr.GetName())
+		return qc.getContextEncryptionKeyLocation(qcr.GetName())
 	}
 }
 
-func (qc *QliksenseConfig) getContextEncryptionKeyPairLocation(contextName string) (string, error) {
+func (qc *QliksenseConfig) getContextEncryptionKeyLocation(contextName string) (string, error) {
 	// Check env var: QLIKSENSE_KEY_LOCATION to determine location to store keypair
 	var secretKeyPairLocation string
 	if os.Getenv("QLIKSENSE_KEY_LOCATION") != "" {
@@ -406,52 +404,24 @@ func (qc *QliksenseConfig) GetCurrentContextEjsonKeyDir() (string, error) {
 	}
 }
 
-func (qc *QliksenseConfig) GetCurrentContextEncryptionKeyPair() (*rsa.PublicKey, *rsa.PrivateKey, error) {
+func (qc *QliksenseConfig) GetEncryptionKeyForCurrent() (string, error) {
 	if qcr, err := qc.GetCurrentCR(); err != nil {
-		return nil, nil, err
+		return "", err
 	} else {
-		return qc.GetContextEncryptionKeyPair(qcr.GetName())
+		return qc.GetEncryptionKeyFor(qcr.GetName())
 	}
 }
 
-func (qc *QliksenseConfig) GetContextEncryptionKeyPair(contextName string) (*rsa.PublicKey, *rsa.PrivateKey, error) {
-	secretKeyPairLocation, err := qc.getContextEncryptionKeyPairLocation(contextName)
+func (qc *QliksenseConfig) GetEncryptionKeyFor(contextName string) (string, error) {
+	secretKeyLocation, err := qc.getContextEncryptionKeyLocation(contextName)
 	if err != nil {
-		return nil, nil, err
+		return "", err
 	}
-
-	publicKeyFilePath := filepath.Join(secretKeyPairLocation, QliksensePublicKey)
-	privateKeyFilePath := filepath.Join(secretKeyPairLocation, QliksensePrivateKey)
-	// try to create the dir if it doesn't exist
-	if !FileExists(publicKeyFilePath) || !FileExists(privateKeyFilePath) {
-		LogDebugMessage("Qliksense secretKeyLocation dir does not exist, creating it now: %s", secretKeyPairLocation)
-		if err := os.MkdirAll(secretKeyPairLocation, os.ModePerm); err != nil {
-			err = fmt.Errorf("Not able to create %s dir: %v", secretKeyPairLocation, err)
-			log.Println(err)
-			return nil, nil, err
-		}
-		// generating and storing key-pair
-		err1 := GenerateAndStoreSecretKeypair(secretKeyPairLocation)
-		if err1 != nil {
-			err1 = fmt.Errorf("Not able to generate and store key pair for encryption")
-			log.Println(err1)
-			return nil, nil, err1
-		}
+	key, err := LoadSecretKey(secretKeyLocation)
+	if key != "" {
+		return key, nil
 	}
-
-	if publicKeyBytes, err := ReadKeys(publicKeyFilePath); err != nil {
-		LogDebugMessage("Not able to read public key")
-		return nil, nil, err
-	} else if privateKeyBytes, err := ReadKeys(privateKeyFilePath); err != nil {
-		LogDebugMessage("Not able to read private key")
-		return nil, nil, err
-	} else if rsaPublicKey, err := DecodeToPublicKey(publicKeyBytes); err != nil {
-		return nil, nil, err
-	} else if rsaPrivateKey, err := DecodeToPrivateKey(privateKeyBytes); err != nil {
-		return nil, nil, err
-	} else {
-		return rsaPublicKey, rsaPrivateKey, nil
-	}
+	return GenerateAndStoreSecretKey(secretKeyLocation)
 }
 
 func (cr *QliksenseCR) AddLabelToCr(key, value string) {
@@ -524,7 +494,7 @@ func (cr *QliksenseCR) GetCustomCrdsPath() string {
 func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error) {
 	newCr := &QliksenseCR{}
 	copier.Copy(newCr, cr)
-	_, rsaPrivateKey, err := qc.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qc.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return nil, err
 	}
@@ -537,7 +507,7 @@ func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error)
 				if err != nil {
 					return nil, err
 				}
-				db, err := Decrypt(b, rsaPrivateKey)
+				db, err := DecryptData(b, encryptionKey)
 				if err != nil {
 					return nil, err
 				}

@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"crypto/rsa"
 	"fmt"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -49,7 +48,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 
 	// Metadata name in qliksense CR is the name of the current context
 	api.LogDebugMessage("Current context: %s", qliksenseCR.GetName())
-	rsaPublicKey, _, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	}
 	for _, ra := range resultArgs {
 		api.LogDebugMessage("value args to be encrypted: %s", ra.Value)
-		if err := q.processSecret(ra, rsaPublicKey, qliksenseCR, isSecretSet); err != nil {
+		if err := q.processSecret(ra, encryptionKey, qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
 	}
@@ -67,14 +66,12 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	return qConfig.WriteCR(qliksenseCR)
 }
 
-func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
-	// encrypt value with RSA key pair
-	valueBytes := []byte(ra.Value)
-	cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
+func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, encryptionKey string, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
+	cipherText, e2 := api.EncryptData([]byte(ra.Value), encryptionKey)
 	if e2 != nil {
 		return e2
 	}
-	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
+	base64EncodedSecret := b64.StdEncoding.EncodeToString([]byte(cipherText))
 	secretName := ""
 	if isSecretSet {
 		secretFolder := qliksenseCR.GetK8sSecretsFolder(q.QliksenseHome)
@@ -433,7 +430,7 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 		return "", err
 	}
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return "", err
 	}
@@ -456,12 +453,12 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 			err := fmt.Errorf("Not able to decode message: %v", err)
 			return "", err
 		}
-		decryptedString, err := api.Decrypt(ba, rsaPrivateKey)
+		decryptedString, err := api.DecryptData(ba, encryptionKey)
 		if err != nil {
 			err := fmt.Errorf("Not able to decrypt message: %v", err)
 			return "", err
 		}
-		resultMap[k] = decryptedString
+		resultMap[k] = []byte(decryptedString)
 	}
 
 	// putting the above map back into the k8sSecret struct
