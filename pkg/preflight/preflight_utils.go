@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,11 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/kubectl/pkg/scheme"
 )
 
 var gracePeriod int64 = 0
@@ -371,41 +367,6 @@ func getPodLogs(clientset *kubernetes.Clientset, pod *apiv1.Pod) (string, error)
 	}
 	api.LogDebugMessage("Log from pod: %s\n", buf.String())
 	return buf.String(), nil
-}
-
-func execute(method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
-	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
-	if err != nil {
-		return err
-	}
-	return exec.Stream(remotecommand.StreamOptions{
-		Stdin:  stdin,
-		Stdout: stdout,
-		Stderr: stderr,
-		Tty:    tty,
-	})
-}
-
-func executeRemoteCommand(clientset *kubernetes.Clientset, config *rest.Config, podName, containerName, namespace string, command []string) (string, string, error) {
-	tty := false
-	req := clientset.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(namespace).
-		SubResource("exec").
-		Param("container", containerName)
-	req.VersionedParams(&apiv1.PodExecOptions{
-		Container: containerName,
-		Command:   command,
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       tty,
-	}, scheme.ParameterCodec)
-
-	var stdout, stderr bytes.Buffer
-	err := execute("POST", req.URL(), config, nil, &stdout, &stderr, tty)
-	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }
 
 func waitForResource(checkFunc func() (interface{}, error), validateFunc func(interface{}) bool) error {
