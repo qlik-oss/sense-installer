@@ -408,30 +408,48 @@ func executeRemoteCommand(clientset *kubernetes.Clientset, config *rest.Config, 
 	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
 }
 
-func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDeployment *appsv1.Deployment) error {
+func waitForResource(checkFunc func() (interface{}, error), validateFunc func(interface{}) bool) error {
 	timeout := time.NewTicker(2 * time.Minute)
 	defer timeout.Stop()
-	var d *appsv1.Deployment
-	var err error
-WAIT:
+OUT:
 	for {
-		d, err = getDeployment(clientset, namespace, pfDeployment.GetName())
+		r, err := checkFunc()
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", pfDeployment.GetName())
-			fmt.Println(err)
 			return err
 		}
 		select {
 		case <-timeout.C:
-			break WAIT
+			break OUT
 		default:
-			if int(d.Status.ReadyReplicas) > 0 {
-				break WAIT
+			if validateFunc(r) {
+				break OUT
 			}
 		}
 		time.Sleep(5 * time.Second)
 	}
-	if int(d.Status.ReadyReplicas) == 0 {
+	return nil
+}
+
+func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDeployment *appsv1.Deployment) error {
+	var err error
+	depName := pfDeployment.GetName()
+	checkFunc := func() (interface{}, error) {
+		pfDeployment, err = getDeployment(clientset, namespace, depName)
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", depName)
+			fmt.Println(err)
+			return nil, err
+		}
+		return pfDeployment, nil
+	}
+	validateFunc := func(data interface{}) bool {
+		d := data.(*appsv1.Deployment)
+		return int(d.Status.ReadyReplicas) > 0
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return err
+	}
+	if int(pfDeployment.Status.ReadyReplicas) == 0 {
 		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
 		fmt.Println(err)
 		return err
@@ -441,109 +459,93 @@ WAIT:
 
 func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
 	var err error
-	if len(pod.Spec.Containers) > 0 {
-		timeout := time.NewTicker(2 * time.Minute)
-		defer timeout.Stop()
-		podName := pod.Name
-	OUT:
-		for {
-			pod, err = getPod(clientset, namespace, podName)
-			if err != nil {
-				err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-				fmt.Println(err)
-				return err
-			}
-			select {
-			case <-timeout.C:
-				break OUT
-			default:
-				if len(pod.Status.ContainerStatuses) > 0 && pod.Status.ContainerStatuses[0].Ready {
-					break OUT
-				}
-			}
-			time.Sleep(5 * time.Second)
-		}
-		if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
-			err = fmt.Errorf("error: container is taking much longer than expected")
-			fmt.Println(err)
-			return err
-		}
-		return nil
+	if len(pod.Spec.Containers) == 0 {
+		err = fmt.Errorf("error: there are no containers in the pod")
+		fmt.Println(err)
+		return err
 	}
-	err = fmt.Errorf("error: there are no containers in the pod")
-	fmt.Println(err)
-	return err
-}
-
-func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
-	var err error
 	podName := pod.Name
-	timeout := time.NewTicker(2 * time.Minute)
-	defer timeout.Stop()
-OUT:
-	for {
+	checkFunc := func() (interface{}, error) {
 		pod, err = getPod(clientset, namespace, podName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
 			fmt.Println(err)
-			return err
+			return nil, err
 		}
-		fmt.Println("pod status:", pod.Status.Phase)
-		select {
-		case <-timeout.C:
-			break OUT
-		default:
-			if pod.Status.Phase == apiv1.PodFailed || pod.Status.Phase == apiv1.PodSucceeded {
-				break OUT
-			}
+		return pod, nil
+	}
+	validateFunc := func(data interface{}) bool {
+		po := data.(*apiv1.Pod)
+		return len(po.Status.ContainerStatuses) > 0 && po.Status.ContainerStatuses[0].Ready
+	}
+
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return err
+	}
+	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
+		err = fmt.Errorf("error: container is taking much longer than expected")
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
+	podName := pod.Name
+	checkFunc := func() (interface{}, error) {
+		po, err := getPod(clientset, namespace, podName)
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+			fmt.Println(err)
+			return nil, err
 		}
-		time.Sleep(5 * time.Second)
+		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
+		return po, nil
+	}
+	validateFunc := func(r interface{}) bool {
+		po := r.(*apiv1.Pod)
+		return po.Status.Phase == apiv1.PodFailed || po.Status.Phase == apiv1.PodSucceeded
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return err
 	}
 	return nil
 }
 
 func waitForPodToDelete(clientset *kubernetes.Clientset, namespace, podName string) error {
-	var err error
-	timeout := time.NewTicker(2 * time.Minute)
-	defer timeout.Stop()
-OUT:
-	for {
-		_, err = getPod(clientset, namespace, podName)
+	checkFunc := func() (interface{}, error) {
+		po, err := getPod(clientset, namespace, podName)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		select {
-		case <-timeout.C:
-			break OUT
-		default:
-
-		}
-		time.Sleep(5 * time.Second)
+		return po, nil
 	}
-	err = fmt.Errorf("error: delete pod is taking unusually long")
+	validateFunc := func(po interface{}) bool {
+		return false
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return nil
+	}
+	err := fmt.Errorf("error: delete pod is taking unusually long")
 	fmt.Println(err)
 	return err
 }
 
 func waitForDeploymentToDelete(clientset *kubernetes.Clientset, namespace, deploymentName string) error {
-	var err error
-	timeout := time.NewTicker(2 * time.Minute)
-	defer timeout.Stop()
-OUT:
-	for {
-		_, err = getDeployment(clientset, namespace, deploymentName)
+	checkFunc := func() (interface{}, error) {
+		dep, err := getDeployment(clientset, namespace, deploymentName)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		select {
-		case <-timeout.C:
-			break OUT
-		default:
-
-		}
-		time.Sleep(5 * time.Second)
+		return dep, nil
 	}
-	err = fmt.Errorf("error: delete deployment is taking unusually long")
+	validateFunc := func(po interface{}) bool {
+		return false
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return nil
+	}
+	err := fmt.Errorf("error: delete deployment is taking unusually long")
 	fmt.Println(err)
 	return err
 }
