@@ -60,7 +60,7 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	repo2Manifest, err := kuz(repoPath2)
+	repo2Manifest, err := kuz(path.Join(repoPath2, "manifests", "docker-desktop"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	repo1Manifest, err := kuz(repoPath1)
+	repo1Manifest, err := kuz(path.Join(repoPath1, "manifests", "docker-desktop"))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
