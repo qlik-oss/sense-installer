@@ -129,7 +129,7 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpQlikSenseHome)
 
-			if err := setupQlikSenseHome(tmpQlikSenseHome, registry, testCase.clientAuth); err != nil {
+			if err := setupQlikSenseHome(t, tmpQlikSenseHome, registry, testCase.clientAuth); err != nil {
 				t.Fatalf("unexpected error setting up qliksense home: %v", err)
 			}
 			q := &Qliksense{
@@ -180,26 +180,7 @@ func Test_appendAdditionalImages(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpQlikSenseHome)
 
-	if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(`
-apiVersion: config.qlik.com/v1
-kind: QliksenseConfig
-metadata:
-  name: QliksenseConfigMetadata
-spec:
-  contexts:
-  - name: qlik-default
-    crFile: contexts/qlik-default/qlik-default.yaml
-  currentContext: qlik-default
-`), os.ModePerm); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	defaultContextDir := path.Join(tmpQlikSenseHome, "contexts", "qlik-default")
-	if err := os.MkdirAll(defaultContextDir, os.ModePerm); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if err := ioutil.WriteFile(path.Join(defaultContextDir, "qlik-default.yaml"), []byte(`
+	setupQliksenseTestDefaultContext(t, tmpQlikSenseHome, `
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -207,9 +188,7 @@ metadata:
 spec:
   gitOps:
     image: some-gitops-image
-`), os.ModePerm); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+`)
 
 	q := &Qliksense{
 		QliksenseHome: tmpQlikSenseHome,
@@ -272,29 +251,10 @@ spec:
 	}
 }
 
-func setupQlikSenseHome(tmpQlikSenseHome string, registry *testRegistryV2, clientAuth clientAuthType) error {
-	if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(`
-apiVersion: config.qlik.com/v1
-kind: QliksenseConfig
-metadata:
-  name: QliksenseConfigMetadata
-spec:
-  contexts:
-  - name: qlik-default
-    crFile: contexts/qlik-default/qlik-default.yaml
-  currentContext: qlik-default
-`), os.ModePerm); err != nil {
-		return err
-	}
-
-	defaultContextDir := path.Join(tmpQlikSenseHome, "contexts", "qlik-default")
-	if err := os.MkdirAll(defaultContextDir, os.ModePerm); err != nil {
-		return err
-	}
-
+func setupQlikSenseHome(t *testing.T, tmpQlikSenseHome string, registry *testRegistryV2, clientAuth clientAuthType) error {
 	version := "foo"
-	manifestsRootDir := fmt.Sprintf("%s/repo/%s", defaultContextDir, version)
-	if err := ioutil.WriteFile(path.Join(defaultContextDir, "qlik-default.yaml"), []byte(fmt.Sprintf(`
+	manifestsRootDir := filepath.ToSlash(path.Join(tmpQlikSenseHome, "contexts", "qlik-default", "repo", version))
+	cr := fmt.Sprintf(`
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -310,9 +270,8 @@ spec:
   manifestsRoot: %s
   rotateKeys: "yes"
   releaseName: qlik-default
-`, version, registry.url, manifestsRootDir)), os.ModePerm); err != nil {
-		return err
-	}
+`, version, registry.url, manifestsRootDir)
+	setupQliksenseTestDefaultContext(t, tmpQlikSenseHome, cr)
 
 	if clientAuth == clientAuthProvided || clientAuth == clientAuthProvidedButIncorrect {
 		if registry.username == "" || clientAuth == clientAuthProvidedButIncorrect {
