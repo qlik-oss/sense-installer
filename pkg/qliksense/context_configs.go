@@ -33,8 +33,10 @@ const (
 	MaxContextNameLength    = 17
 	QliksenseSecretsDir     = "secrets"
 
-	imageRegistryConfigKey = "imageRegistry"
-	pullSecretName         = "artifactory-docker-secret"
+	imageRegistryConfigKey     = "imageRegistry"
+	pullSecretName             = "artifactory-docker-secret"
+	qliksenseOperatorImageRepo = "qlik-docker-oss.bintray.io"
+	qliksenseOperatorImageName = "qliksense-operator"
 )
 
 // SetSecrets - set-secrets <key>=<value> commands
