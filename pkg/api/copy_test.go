@@ -28,6 +28,10 @@ func TestCopyDirectory(t *testing.T) {
 }
 
 func TestCopyDirectory_withGit_withKuz(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping in short test mode")
+	}
+
 	tmpDir1, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -75,8 +79,8 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 	}
 
 	if string(repo2Manifest) != string(repo1Manifest) {
-		t.Logf("manifest generated on oncopied config:\n%v", string(repo1Manifest))
-		t.Logf("manifest generated on copied config:\n%v", string(repo2Manifest))
+		t.Logf("manifest generated on the original config:\n%v", string(repo1Manifest))
+		t.Logf("manifest generated on the copied config:\n%v", string(repo2Manifest))
 		t.Fatal("expected manifests to be equal, but they were not")
 	}
 }
