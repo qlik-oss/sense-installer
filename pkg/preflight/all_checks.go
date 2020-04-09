@@ -2,7 +2,6 @@ package preflight
 
 import (
 	"fmt"
-	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte, mongodbUrl string) {

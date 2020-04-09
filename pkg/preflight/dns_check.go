@@ -43,7 +43,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// create a pod
 	podName := "pf-pod-1"
-	commandToRun := []string{"sh", "-c", "sleep 10; echo \"Service name to ping: " + dnsService.Name + "\"; nc -z -v -w 1 " + dnsService.Name + " 80"}
+	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
 	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(netcat), commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
