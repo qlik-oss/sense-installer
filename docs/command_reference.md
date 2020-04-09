@@ -1,5 +1,44 @@
 # CLI reference
 
+### qliksense preflight
+
+Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
+
+The suite consists of a set of `collectors` which run the specifications of every test and `analyzers` which analyze the results of every test run by the collector.
+We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
+
+Run the following command to view help about the commands supported by preflight at any moment:
+```shell
+$ qliksense preflight
+perform preflight checks on the cluster
+
+Usage:
+  qliksense preflight [command]
+
+Examples:
+qliksense preflight <preflight_check_to_run>
+
+Available Commands:
+  all         perform all checks
+  dns         perform preflight dns check
+  k8s-version check k8s version
+
+Flags:
+  -h, --help   help for preflight
+```
+
+#### Running all checks
+Run the command shown below to execute all preflight checks.
+```shell
+qliksense preflight all
+```
+
+#### Running specific check
+Run the command shown below to execute all preflight checks.
+```shell
+qliksense preflight dns
+```
+
 ### qliksense apply
 
 `qliksense apply` command takes input from a file or from pipe
