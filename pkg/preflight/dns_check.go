@@ -73,7 +73,8 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	if strings.HasSuffix(strings.TrimSpace(logStr), "succeeded!") {
 		fmt.Println("Preflight DNS check: PASSED")
 	} else {
-		fmt.Println("Preflight DNS check: FAILED")
+		err = fmt.Errorf("Expected response not found\n")
+		return err
 	}
 
 	fmt.Println("Completed preflight DNS check")

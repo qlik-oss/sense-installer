@@ -51,8 +51,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	commandToRun := []string{"sh", "-c", "sleep 10;mongo " + mongodbUrl}
 	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(mongo), commandToRun)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
-		fmt.Println("Preflight mongo check: FAILED")
+		err = fmt.Errorf("error: unable to create pod : %v\n", err)
 		return err
 	}
 	defer deletePod(clientset, namespace, podName)
@@ -61,23 +60,24 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		return err
 	}
 	if len(mongoPod.Spec.Containers) == 0 {
-		err := fmt.Errorf("error: there are no containers in the pod")
+		err := fmt.Errorf("error: there are no containers in the pod- %v\n", err)
 		fmt.Println(err)
 		return err
 	}
 	waitForPodToDie(clientset, namespace, mongoPod)
 	logStr, err := getPodLogs(clientset, mongoPod)
 	if err != nil {
-		err = fmt.Errorf("error: unable to execute mongo check in the cluster: %v", err)
+		err = fmt.Errorf("error: unable to execute mongo check in the cluster: %v\n", err)
 		fmt.Println(err)
 		return err
 	}
 
-	stringToCheck := "Implicit session"
+	stringToCheck := "Implicit session:"
 	if strings.Contains(logStr, stringToCheck) {
 		fmt.Println("Preflight mongo check: PASSED")
 	} else {
-		fmt.Println("Preflight mongo check: FAILED")
+		err = fmt.Errorf("Expected response not found\n")
+		return err
 	}
 	return nil
 }
