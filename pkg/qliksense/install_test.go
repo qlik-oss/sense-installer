@@ -1,11 +1,20 @@
 package qliksense
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"sigs.k8s.io/kustomize/api/k8sdeps/kunstruct"
+	"sigs.k8s.io/kustomize/api/resid"
+	"sigs.k8s.io/kustomize/api/resmap"
+	"sigs.k8s.io/kustomize/api/resource"
+
+	"github.com/gobuffalo/packr/v2"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -62,4 +71,107 @@ spec:
 		t.FailNow()
 	}
 	td()
+}
+
+func setupQliksenseTestDefaultContext(t *testing.T, tmpQlikSenseHome, CR string) {
+	if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(`
+apiVersion: config.qlik.com/v1
+kind: QliksenseConfig
+metadata:
+  name: QliksenseConfigMetadata
+spec:
+  contexts:
+  - name: qlik-default
+    crFile: contexts/qlik-default/qlik-default.yaml
+  currentContext: qlik-default
+`), os.ModePerm); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	defaultContextDir := path.Join(tmpQlikSenseHome, "contexts", "qlik-default")
+	if err := os.MkdirAll(defaultContextDir, os.ModePerm); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := ioutil.WriteFile(path.Join(defaultContextDir, "qlik-default.yaml"), []byte(CR), os.ModePerm); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func Test_getProcessedOperatorControllerString(t *testing.T) {
+	tmpQlikSenseHome, err := ioutil.TempDir("", "tmp-qlik-sense-home-")
+	if err != nil {
+		t.Fatalf("unexpected error creating tmp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpQlikSenseHome)
+
+	registry := "registryFoo"
+	setupQliksenseTestDefaultContext(t, tmpQlikSenseHome, fmt.Sprintf(`
+apiVersion: qlik.com/v1
+kind: Qliksense
+metadata:
+  name: qlik-default
+spec:
+  configs:
+    qliksense:
+    - name: imageRegistry
+      value: %v
+`, registry))
+
+	q := &Qliksense{
+		QliksenseHome: tmpQlikSenseHome,
+		CrdBox:        packr.New("crds", "./crds"),
+	}
+
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCurrentCR()
+	if err != nil {
+		t.Fatalf("unexpected error getting current CR: %v", err)
+	}
+
+	originalOperatorString := q.GetOperatorControllerString()
+
+	processedOperatorString, err := q.getProcessedOperatorControllerString(qcr)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	controllerImageChecks := map[string]func(t *testing.T, controllerImage string){
+		originalOperatorString: func(t *testing.T, controllerImage string) {
+			expectedControllerImagePrefix := fmt.Sprintf("%v/%v:", qliksenseOperatorImageRepo, qliksenseOperatorImageName)
+			if !strings.HasPrefix(controllerImage, expectedControllerImagePrefix) {
+				t.Fatalf("expected controller image: %v to have prefix: %v", controllerImage, expectedControllerImagePrefix)
+			}
+		},
+		processedOperatorString: func(t *testing.T, controllerImage string) {
+			expectedControllerImagePrefix := fmt.Sprintf("%v/%v:", registry, qliksenseOperatorImageName)
+			if !strings.HasPrefix(controllerImage, expectedControllerImagePrefix) {
+				t.Fatalf("expected controller image: %v to have prefix: %v", controllerImage, expectedControllerImagePrefix)
+			}
+		},
+	}
+
+	resourceFactory := resmap.NewFactory(resource.NewFactory(kunstruct.NewKunstructuredFactoryImpl()), nil)
+	for operatorString, controllerImageCheck := range controllerImageChecks {
+		resMap, err := resourceFactory.NewResMapFromBytes([]byte(operatorString))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		res, err := resMap.GetById(resid.NewResId(resid.Gvk{
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "Deployment",
+		}, "qliksense-operator"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		controllerImage, err := res.GetString("spec.template.spec.containers[0].image")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		controllerImageCheck(t, controllerImage)
+	}
 }
