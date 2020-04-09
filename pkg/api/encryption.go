@@ -18,10 +18,10 @@ const (
 )
 
 // GenerateAndStoreSecretKey generates and stores key
-func GenerateAndStoreSecretKey(secretsPath string) (string, error) {
+func GenerateAndStoreSecretKey(secretsDir string) (string, error) {
 	// creating contexts/qlik-default/secrets/user_secret_key
-	keyFile := filepath.Join(secretsPath, key_file_name)
-	key, err := generateKey()
+	keyFile := filepath.Join(secretsDir, key_file_name)
+	key, err := GenerateKey()
 	if err != nil {
 		return "", err
 	}
@@ -30,8 +30,8 @@ func GenerateAndStoreSecretKey(secretsPath string) (string, error) {
 	}
 	return key, nil
 }
-func LoadSecretKey(secretsPath string) (string, error) {
-	keyFile := filepath.Join(secretsPath, key_file_name)
+func LoadSecretKey(secretsDir string) (string, error) {
+	keyFile := filepath.Join(secretsDir, key_file_name)
 	by, err := ioutil.ReadFile(keyFile)
 	if err != nil {
 		return "", err
@@ -49,7 +49,7 @@ func writeContentToFile(keyData []byte, fileName string) error {
 	return nil
 }
 
-func generateKey() (string, error) {
+func GenerateKey() (string, error) {
 	salt := make([]byte, 32)
 	if _, err := rand.Read(salt); err != nil {
 		return "", err

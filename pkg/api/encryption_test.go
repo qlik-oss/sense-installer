@@ -5,7 +5,7 @@ import (
 )
 
 func Test_encrypt_decrypt(t *testing.T) {
-	key, err := generateKey()
+	key, err := GenerateKey()
 	if err != nil {
 		t.Log(err)
 		t.FailNow()

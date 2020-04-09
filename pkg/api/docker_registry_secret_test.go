@@ -21,7 +21,7 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 	dockerConfigJsonSecretFromYaml := DockerConfigJsonSecret{}
 	validYamlMap := map[string]interface{}{}
 
-	encryptionKey, err := generateKey()
+	encryptionKey, err := GenerateKey()
 	if err != nil {
 		t.Fatalf("error generating RSA private key: %v\n", err)
 	}
