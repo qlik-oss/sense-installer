@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	Q_INIT_CRD_PATH   = "manifests/base/manifests/qliksense-init"
+	Q_INIT_CRD_PATH   = "manifests/base/crds"
 	agreementTempalte = `
 	Please read the agreement at https://www.qlik.com/us/legal/license-terms
 	Accept the end user license agreement by providing acceptEULA=yes
