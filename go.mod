@@ -40,6 +40,7 @@ require (
 	github.com/mattn/go-tty v0.0.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/otiai10/copy v1.1.1
 	github.com/pkg/errors v0.8.1
 	github.com/qlik-oss/k-apis v0.0.36
 	github.com/robfig/cron/v3 v3.0.1

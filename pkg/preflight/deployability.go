@@ -66,7 +66,8 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string) error {
 	// create a pod
 	podName := "pod-pf-check"
-	pod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(nginx))
+	commandToRun := []string{}
+	pod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(nginx), commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod %s - %v\n", podName, err)
 		return err

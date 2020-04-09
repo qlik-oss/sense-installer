@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,11 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/client-go/util/retry"
-	"k8s.io/kubectl/pkg/scheme"
 )
 
 var gracePeriod int64 = 0
@@ -305,7 +301,7 @@ func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
 	return nil
 }
 
-func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string) (*apiv1.Pod, error) {
+func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string, commandToRun []string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
@@ -316,15 +312,13 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, p
 			},
 		},
 		Spec: apiv1.PodSpec{
+			RestartPolicy: apiv1.RestartPolicyNever,
 			Containers: []apiv1.Container{
 				{
 					Name:            "cnt",
 					Image:           imageName,
 					ImagePullPolicy: apiv1.PullIfNotPresent,
-					Command: []string{
-						"sleep",
-						"3600",
-					},
+					Command:         commandToRun,
 				},
 			},
 		},
@@ -355,65 +349,68 @@ func getPod(clientset *kubernetes.Clientset, namespace, podName string) (*apiv1.
 	return pod, nil
 }
 
-func execute(method string, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
-	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
+func getPodLogs(clientset *kubernetes.Clientset, pod *apiv1.Pod) (string, error) {
+	podLogOpts := apiv1.PodLogOptions{}
+
+	api.LogDebugMessage("Retrieving logs for pod: %s   namespace: %s\n", pod.GetName(), pod.Namespace)
+	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &podLogOpts)
+	podLogs, err := req.Stream()
 	if err != nil {
-		return err
+		return "", err
 	}
-	return exec.Stream(remotecommand.StreamOptions{
-		Stdin:  stdin,
-		Stdout: stdout,
-		Stderr: stderr,
-		Tty:    tty,
-	})
+	defer podLogs.Close()
+	time.Sleep(15 * time.Second)
+	buf := new(bytes.Buffer)
+	_, err = io.Copy(buf, podLogs)
+	if err != nil {
+		return "", err
+	}
+	api.LogDebugMessage("Log from pod: %s\n", buf.String())
+	return buf.String(), nil
 }
 
-func executeRemoteCommand(clientset *kubernetes.Clientset, config *rest.Config, podName, containerName, namespace string, command []string) (string, string, error) {
-	tty := false
-	req := clientset.CoreV1().RESTClient().Post().
-		Resource("pods").
-		Name(podName).
-		Namespace(namespace).
-		SubResource("exec").
-		Param("container", containerName)
-	req.VersionedParams(&apiv1.PodExecOptions{
-		Container: containerName,
-		Command:   command,
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       tty,
-	}, scheme.ParameterCodec)
-
-	var stdout, stderr bytes.Buffer
-	err := execute("POST", req.URL(), config, nil, &stdout, &stderr, tty)
-	return strings.TrimSpace(stdout.String()), strings.TrimSpace(stderr.String()), err
-}
-
-func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDeployment *appsv1.Deployment) error {
+func waitForResource(checkFunc func() (interface{}, error), validateFunc func(interface{}) bool) error {
 	timeout := time.NewTicker(2 * time.Minute)
 	defer timeout.Stop()
-	var d *appsv1.Deployment
-	var err error
-WAIT:
+OUT:
 	for {
-		d, err = getDeployment(clientset, namespace, pfDeployment.GetName())
+		r, err := checkFunc()
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", pfDeployment.GetName())
-			fmt.Println(err)
 			return err
 		}
 		select {
 		case <-timeout.C:
-			break WAIT
+			break OUT
 		default:
-			if int(d.Status.ReadyReplicas) > 0 {
-				break WAIT
+			if validateFunc(r) {
+				break OUT
 			}
 		}
 		time.Sleep(5 * time.Second)
 	}
-	if int(d.Status.ReadyReplicas) == 0 {
+	return nil
+}
+
+func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDeployment *appsv1.Deployment) error {
+	var err error
+	depName := pfDeployment.GetName()
+	checkFunc := func() (interface{}, error) {
+		pfDeployment, err = getDeployment(clientset, namespace, depName)
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", depName)
+			fmt.Println(err)
+			return nil, err
+		}
+		return pfDeployment, nil
+	}
+	validateFunc := func(data interface{}) bool {
+		d := data.(*appsv1.Deployment)
+		return int(d.Status.ReadyReplicas) > 0
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return err
+	}
+	if int(pfDeployment.Status.ReadyReplicas) == 0 {
 		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
 		fmt.Println(err)
 		return err
@@ -423,82 +420,93 @@ WAIT:
 
 func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
 	var err error
-	if len(pod.Spec.Containers) > 0 {
-		timeout := time.NewTicker(2 * time.Minute)
-		defer timeout.Stop()
-		podName := pod.Name
-	OUT:
-		for {
-			pod, err = getPod(clientset, namespace, podName)
-			if err != nil {
-				err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-				fmt.Println(err)
-				return err
-			}
-			select {
-			case <-timeout.C:
-				break OUT
-			default:
-				if len(pod.Status.ContainerStatuses) > 0 && pod.Status.ContainerStatuses[0].Ready {
-					break OUT
-				}
-			}
-			time.Sleep(5 * time.Second)
-		}
-		if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
-			err = fmt.Errorf("error: container is taking much longer than expected")
-			fmt.Println(err)
-			return err
-		}
-		return nil
+	if len(pod.Spec.Containers) == 0 {
+		err = fmt.Errorf("error: there are no containers in the pod")
+		fmt.Println(err)
+		return err
 	}
-	err = fmt.Errorf("error: there are no containers in the pod")
-	fmt.Println(err)
-	return err
+	podName := pod.Name
+	checkFunc := func() (interface{}, error) {
+		pod, err = getPod(clientset, namespace, podName)
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+			fmt.Println(err)
+			return nil, err
+		}
+		return pod, nil
+	}
+	validateFunc := func(data interface{}) bool {
+		po := data.(*apiv1.Pod)
+		return len(po.Status.ContainerStatuses) > 0 && po.Status.ContainerStatuses[0].Ready
+	}
+
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return err
+	}
+	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
+		err = fmt.Errorf("error: container is taking much longer than expected")
+		fmt.Println(err)
+		return err
+	}
+	return nil
+}
+
+func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
+	podName := pod.Name
+	checkFunc := func() (interface{}, error) {
+		po, err := getPod(clientset, namespace, podName)
+		if err != nil {
+			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+			fmt.Println(err)
+			return nil, err
+		}
+		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
+		return po, nil
+	}
+	validateFunc := func(r interface{}) bool {
+		po := r.(*apiv1.Pod)
+		return po.Status.Phase == apiv1.PodFailed || po.Status.Phase == apiv1.PodSucceeded
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return err
+	}
+	return nil
 }
 
 func waitForPodToDelete(clientset *kubernetes.Clientset, namespace, podName string) error {
-	var err error
-	timeout := time.NewTicker(2 * time.Minute)
-	defer timeout.Stop()
-OUT:
-	for {
-		_, err = getPod(clientset, namespace, podName)
+	checkFunc := func() (interface{}, error) {
+		po, err := getPod(clientset, namespace, podName)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		select {
-		case <-timeout.C:
-			break OUT
-		default:
-
-		}
-		time.Sleep(5 * time.Second)
+		return po, nil
 	}
-	err = fmt.Errorf("error: delete pod is taking unusually long")
+	validateFunc := func(po interface{}) bool {
+		return false
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return nil
+	}
+	err := fmt.Errorf("error: delete pod is taking unusually long")
 	fmt.Println(err)
 	return err
 }
 
 func waitForDeploymentToDelete(clientset *kubernetes.Clientset, namespace, deploymentName string) error {
-	var err error
-	timeout := time.NewTicker(2 * time.Minute)
-	defer timeout.Stop()
-OUT:
-	for {
-		_, err = getDeployment(clientset, namespace, deploymentName)
+	checkFunc := func() (interface{}, error) {
+		dep, err := getDeployment(clientset, namespace, deploymentName)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		select {
-		case <-timeout.C:
-			break OUT
-		default:
-
-		}
-		time.Sleep(5 * time.Second)
+		return dep, nil
 	}
-	err = fmt.Errorf("error: delete deployment is taking unusually long")
+	validateFunc := func(po interface{}) bool {
+		return false
+	}
+	if err := waitForResource(checkFunc, validateFunc); err != nil {
+		return nil
+	}
+	err := fmt.Errorf("error: delete deployment is taking unusually long")
 	fmt.Println(err)
 	return err
 }

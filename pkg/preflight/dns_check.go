@@ -3,8 +3,6 @@ package preflight
 import (
 	"fmt"
 	"strings"
-
-	"github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 const (
@@ -13,7 +11,7 @@ const (
 )
 
 func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
-	clientset, clientConfig, err := getK8SClientSet(kubeConfigContents, "")
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
 		fmt.Println(err)
@@ -45,11 +43,13 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// create a pod
 	podName := "pf-pod-1"
-	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(netcat))
+	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
+	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(netcat), commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
 		return err
 	}
+
 	defer deletePod(clientset, namespace, podName)
 
 	if err := waitForPod(clientset, namespace, dnsPod); err != nil {
@@ -60,18 +60,21 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 		fmt.Println(err)
 		return err
 	}
-	api.LogDebugMessage("Exec-ing into the container...")
-	stdout, stderr, err := executeRemoteCommand(clientset, clientConfig, dnsPod.Name, dnsPod.Spec.Containers[0].Name, namespace, []string{"nc", "-z", "-v", "-w 1", dnsService.Name, "80"})
+
+	waitForPodToDie(clientset, namespace, dnsPod)
+
+	logStr, err := getPodLogs(clientset, dnsPod)
 	if err != nil {
 		err = fmt.Errorf("error: unable to execute dns check in the cluster: %v", err)
 		fmt.Println(err)
 		return err
 	}
 
-	if strings.HasSuffix(stdout, "succeeded!") || strings.HasSuffix(stderr, "succeeded!") {
+	if strings.HasSuffix(strings.TrimSpace(logStr), "succeeded!") {
 		fmt.Println("Preflight DNS check: PASSED")
 	} else {
-		fmt.Println("Preflight DNS check: FAILED")
+		err = fmt.Errorf("Expected response not found\n")
+		return err
 	}
 
 	fmt.Println("Completed preflight DNS check")
