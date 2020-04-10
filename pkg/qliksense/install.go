@@ -126,7 +126,7 @@ func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) 
 
 func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
 	if pullDockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
-		if dockerConfigJsonSecretYaml, err := pullDockerConfigJsonSecret.ToYaml(nil); err != nil {
+		if dockerConfigJsonSecretYaml, err := pullDockerConfigJsonSecret.ToYaml(""); err != nil {
 			return err
 		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
 			return err
@@ -135,7 +135,7 @@ func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
 		deleteDockerConfigJsonSecret := qapi.DockerConfigJsonSecret{
 			Name: pullSecretName,
 		}
-		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(nil); err != nil {
+		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(""); err != nil {
 			return err
 		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), ""); err != nil {
 			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)

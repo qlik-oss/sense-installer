@@ -194,8 +194,10 @@ func getImageList(yamlContent []byte) ([]string, error) {
 		})
 	}
 	var sortedImageList []string
-	for image, _ := range imageMap {
+	for image, v := range imageMap {
 		sortedImageList = append(sortedImageList, image)
+		// a warning "simplify range expression" if written like this 'for image _ :=range imageMap'
+		_ = v
 	}
 	sort.Strings(sortedImageList)
 	return sortedImageList, nil

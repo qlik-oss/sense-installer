@@ -1,7 +1,6 @@
 package api
 
 import (
-	"crypto/rsa"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -27,14 +26,14 @@ func (kdcjt *k8sDockerConfigJsonType) GenerateAuth() {
 }
 
 type DockerConfigJsonSecret struct {
-	Name      string
-	Uri       string
-	Username  string
-	Password  string
-	Email     string
+	Name     string
+	Uri      string
+	Username string
+	Password string
+	Email    string
 }
 
-func (d *DockerConfigJsonSecret) ToYaml(encryptionKey *rsa.PublicKey) ([]byte, error) {
+func (d *DockerConfigJsonSecret) ToYaml(encryptionKey string) ([]byte, error) {
 	k8sDockerConfigJson := k8sDockerConfigJsonType{
 		Username: d.Username,
 		Password: d.Password,
@@ -51,8 +50,8 @@ func (d *DockerConfigJsonSecret) ToYaml(encryptionKey *rsa.PublicKey) ([]byte, e
 		return nil, err
 	}
 	var k8sDockerConfigJsonMapMaybeEncryptedBytes []byte
-	if encryptionKey != nil {
-		if k8sDockerConfigJsonMapMaybeEncryptedBytes, err = Encrypt(k8sDockerConfigJsonMapBytes, encryptionKey); err != nil {
+	if encryptionKey != "" {
+		if k8sDockerConfigJsonMapMaybeEncryptedBytes, err = EncryptData(k8sDockerConfigJsonMapBytes, encryptionKey); err != nil {
 			return nil, err
 		}
 	} else {
@@ -65,7 +64,7 @@ func (d *DockerConfigJsonSecret) ToYaml(encryptionKey *rsa.PublicKey) ([]byte, e
 			Kind:       "Secret",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      d.Name,
+			Name: d.Name,
 		},
 		Type: v1.SecretTypeDockerConfigJson,
 		Data: map[string][]byte{
@@ -76,7 +75,7 @@ func (d *DockerConfigJsonSecret) ToYaml(encryptionKey *rsa.PublicKey) ([]byte, e
 	return K8sSecretToYaml(k8sSecret)
 }
 
-func (d *DockerConfigJsonSecret) FromYaml(secretBytes []byte, decryptionKey *rsa.PrivateKey) error {
+func (d *DockerConfigJsonSecret) FromYaml(secretBytes []byte, decryptionKey string) error {
 	k8sDockerConfigJsonMap := k8sDockerConfigJsonMapType{}
 	if k8sSecret, err := K8sSecretFromYaml(secretBytes); err != nil {
 		return err
@@ -86,7 +85,7 @@ func (d *DockerConfigJsonSecret) FromYaml(secretBytes []byte, decryptionKey *rsa
 		return errors.New("not a kubernetes.io/dockerconfigjson type")
 	} else if k8sDockerConfigJsonMapEncryptedBytes, ok := k8sSecret.Data[".dockerconfigjson"]; !ok {
 		return errors.New("secret data is missing a value for the .dockerconfigjson key")
-	} else if k8sDockerConfigJsonMapBytes, err := Decrypt(k8sDockerConfigJsonMapEncryptedBytes, decryptionKey); err != nil {
+	} else if k8sDockerConfigJsonMapBytes, err := DecryptData(k8sDockerConfigJsonMapEncryptedBytes, decryptionKey); err != nil {
 		return errors.New("secret data is missing a value for the .dockerconfigjson key")
 	} else if err := json.Unmarshal(k8sDockerConfigJsonMapBytes, &k8sDockerConfigJsonMap); err != nil {
 		return err

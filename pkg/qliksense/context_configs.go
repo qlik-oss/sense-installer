@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"crypto/rsa"
 	"fmt"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -49,7 +48,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 
 	// Metadata name in qliksense CR is the name of the current context
 	api.LogDebugMessage("Current context: %s", qliksenseCR.GetName())
-	rsaPublicKey, _, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return err
 	}
@@ -59,7 +58,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	}
 	for _, ra := range resultArgs {
 		api.LogDebugMessage("value args to be encrypted: %s", ra.Value)
-		if err := q.processSecret(ra, rsaPublicKey, qliksenseCR, isSecretSet); err != nil {
+		if err := q.processSecret(ra, encryptionKey, qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
 	}
@@ -67,14 +66,11 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	return qConfig.WriteCR(qliksenseCR)
 }
 
-func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
-	// encrypt value with RSA key pair
-	valueBytes := []byte(ra.Value)
-	cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
+func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, encryptionKey string, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
+	cipherText, e2 := api.EncryptData([]byte(ra.Value), encryptionKey)
 	if e2 != nil {
 		return e2
 	}
-	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
 	secretName := ""
 	if isSecretSet {
 		secretFolder := qliksenseCR.GetK8sSecretsFolder(q.QliksenseHome)
@@ -106,7 +102,8 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 		if k8sSecret.Data == nil {
 			k8sSecret.Data = map[string][]byte{}
 		}
-		k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
+		// v1.Secret does enconding, so no need to encode again
+		k8sSecret.Data[ra.Key] = []byte(cipherText)
 
 		// Write secret to file
 		k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret)
@@ -119,11 +116,8 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 			return err
 		}
 		api.LogDebugMessage("Created a Kubernetes secret")
-
-		// Prepare args to update CR in the next step
-		base64EncodedSecret = ""
 	}
-
+	base64EncodedSecret := b64.StdEncoding.EncodeToString([]byte(cipherText))
 	// write into CR the keyref of the secret
 	qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret, secretName)
 	return nil
@@ -424,7 +418,8 @@ func validateInput(input string) (string, error) {
 	return input, err
 }
 
-// PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
+// PrepareK8sSecret targetFile contains base64 encoded value of encrypted value.
+// this method decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
 func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 	// check if targetFile exists
 	if !api.FileExists(targetFile) {
@@ -433,7 +428,7 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 		return "", err
 	}
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return "", err
 	}
@@ -451,17 +446,13 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 	dataMap := k8sSecret1.Data
 	var resultMap = make(map[string][]byte)
 	for k, v := range dataMap {
-		ba, err := b64.StdEncoding.DecodeString(string(v))
-		if err != nil {
-			err := fmt.Errorf("Not able to decode message: %v", err)
-			return "", err
-		}
-		decryptedString, err := api.Decrypt(ba, rsaPrivateKey)
+		//k8s secrets has already base64 decoed value
+		decryptedString, err := api.DecryptData(v, encryptionKey)
 		if err != nil {
 			err := fmt.Errorf("Not able to decrypt message: %v", err)
 			return "", err
 		}
-		resultMap[k] = decryptedString
+		resultMap[k] = []byte(decryptedString)
 	}
 
 	// putting the above map back into the k8sSecret struct

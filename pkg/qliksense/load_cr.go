@@ -51,7 +51,7 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingCo
 	}
 
 	// encrypt the secrets and do base64 then update the CR
-	rsaPublicKey, _, err := qConfig.GetContextEncryptionKeyPair(cr.GetName())
+	encryptionKey, err := qConfig.GetEncryptionKeyFor(cr.GetName())
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +63,7 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingCo
 					Value:   nv.Value,
 					SvcName: svc,
 				}
-				if err := q.processSecret(skv, rsaPublicKey, cr, false); err != nil {
+				if err := q.processSecret(skv, encryptionKey, cr, false); err != nil {
 					return cr.GetName(), err
 				}
 			}

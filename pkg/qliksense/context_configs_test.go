@@ -35,119 +35,35 @@ metadata:
   name: testctx-qliksense-senseinstaller
 type: Opaque
 `
-var encText = "SFpVZ2t5SGsrN2lLQjlTYm9rbFUxSDFRcmVYdUxhTW9MUHlQOGtGditxMEcwZTlIZDl1dVRrV0tEYm5qUURSWFp3dStuNklueGk3anI2c1djSVdsbWlKTHdWQUJwdUg0a1NXd3llMUlMa2oxK3FRSFlMM2dQUExvN1pBYkVDeDROMUVvam12M0t0NmQwbkdhSXlWWEpmWWJUVVFDM1Y4L0ZTVXBVN0JUb0l4OVZWdmlPam5HTHk4RlF2a3RUaHJxWTUvZEh2N3pVUmhiOTc2Q2YwbEovZ3I2L2NwRk9RMUFXVXdodVhrTG9lYjVzNFdtTEZzNldqT3k0bWlKM1J6VllLaWVUSFJ2SE85eDB6dUthanRwSGEzWEZkaE5QNnpySVJJNTRFalUyblVYYUNlYXVnWnZEOUxjdWluOFhFcjExbkFINURCUDAycXhoZk5BejVoMlV2eFNWVmR0aW1QTDBhMVBJTUxGQTgyWUkrQkFOQkhkSUNnZGU5SkxIRFBoTzR6c0llaE1LRmhVQkNoOUhQa3kyRnhTeDJ3YWp3M1UycEsvcFJVZUxDazRUbkhmL25LN3h5ekdpV3dSUFFFZHdsWE5JbUhjVlVPV3gvNWh4WlJCUTZtb3pGYk1HbXR1Mkh5Z3RVV2gzNFYzd1BhS01TNFRsa0hyODFjRjVCWVpxenBFK1pKWnVyLy8zbzJsU0tFMjMxTG1pcGk1K0FqbXZvUVcyWHBocjFNVWJQY1pXUkJFRkkyQXBCM0FhQXFPa0k1MkRqNG43Mko5bCtaMzdydTk1aHk5K1lzY0FxMjZVbExYRlc0S3RUUkRLSjlMNnVmdlIrUUNudER3em5UTFRHUnEwZU5COWt6S0Q4MFlUdXozeHNXK3cxdjlHbDJaMnBZMTZWTCtEV1k9"
 var decText = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
 
-func setupTargetFileAndPrivateKey() ([]byte, []byte, string, error) {
-	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
-	privKeyBytes := []byte(`-----BEGIN RSA PRIVATE KEY-----
-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
------END RSA PRIVATE KEY-----
-`)
+func setupTargetFileAndPrivateKey() (string, string, error) {
 
-	publicKeyBytes := []byte(`-----BEGIN RSA PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEApFf3qCQhAr2QLRRZdhLy
-B8exLjrQiXLr8hwDe0xHSLJX3w7v5z4ujJWrHUulQ2/hvS8uffxMVrp2YqeA4sjy
-/ku1KqZVQv/WNTdL2v9Z1ewbRnBjDQvmkWDKZ+cP8VPdHGzQ4iM2z6BZ4RQTkdQM
-KqsVwUsLO9amI2TOny/M696eFRW0pk4+W3QZZRawT0HqJPvKKXKqoO2+62W54rOV
-8glJi29Do06e4S6CZUl1hBUy0VlLtrLlRSOHTois0dF2a9f7+GGgU11MHO6w1k1N
-esSlfZ0vnrrkW8WFLqewk+Jj+w1xeQnYHOeHjx6zi9f9DC96eSylSB3iJ71NmXcM
-c0IEZ2LiQIqTL83BLOgMBCsK3FSlGMakQUR2GJ+M0I/selYkRMhid6eOmhlsTNMP
-bpcTHxZ+ReIzS+5B1X0FZ7RIL+jSL9mFcxmD3dxurrrt/DkLpXcuWdi1s1bpVn3j
-IQhU0+bgA6hT0k8Kj2f3Q9QnvkHSEff+XyLvLwQeSsSAcnM+1I7fNSPEo2cq0au6
-ZtjHcirXmMminAQ6cKW1XrEvJBefHHibtjJjIM4bHH7MKRA5H3km/J4CCwI1VogS
-TcE05Z6ypAFU2TCrnec9c9VXkRDP94h0GuoG8sdhmQudqvghr/8T7CV+sGRQbdeq
-rXwanfnGPrjcMVIO/dSOxOUCAwEAAQ==
------END RSA PUBLIC KEY-----
-`)
-
-	targetFile := filepath.Join(testDir, "targetfile.yaml")
-	// tests/config.yaml exists
-	err := ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
-	if err != nil {
-		log.Printf("Error while creating file: %v", err)
-		return nil, nil, "", err
-	}
-
-	secretKeyPairDir := filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets)
-	if err := os.MkdirAll(secretKeyPairDir, 0777); err != nil {
+	secretKeyLocation := filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets)
+	if err := os.MkdirAll(secretKeyLocation, 0777); err != nil {
 		err = fmt.Errorf("Not able to create directories")
 		log.Fatal(err)
 	}
-	os.Setenv("QLIKSENSE_KEY_LOCATION", secretKeyPairDir)
+	os.Setenv("QLIKSENSE_KEY_LOCATION", secretKeyLocation)
 
-	privKeyFile := filepath.Join(secretKeyPairDir, "qliksensePriv")
-	// construct and write priv key file into secretsDir location
-	err = ioutil.WriteFile(privKeyFile, privKeyBytes, 0777)
+	//privKeyFile := filepath.Join(secretKeyLocation, "user_secret_key")
+	key, err := api.LoadSecretKey(secretKeyLocation)
+	if key == "" {
+		key, err = api.GenerateAndStoreSecretKey(secretKeyLocation)
+	}
+	encData, _ := api.EncryptData([]byte(decText), key)
+	encText := b64.StdEncoding.EncodeToString(encData)
+
+	targetFileString := fmt.Sprintf(targetFileStringTemplate, encText)
+	targetFile := filepath.Join(testDir, "targetfile.yaml")
+	// tests/config.yaml exists
+	err = ioutil.WriteFile(targetFile, []byte(targetFileString), 0777)
 	if err != nil {
 		log.Printf("Error while creating file: %v", err)
-		return nil, nil, "", err
+		return "", "", err
 	}
-	pubKeyFile := filepath.Join(secretKeyPairDir, "qliksensePub")
-	api.LogDebugMessage("Test setup - \npub key path: %s\n, priv key path: %s\n", pubKeyFile, privKeyFile)
-	// construct and write pub key file into secretsDir location
-	err = ioutil.WriteFile(pubKeyFile, publicKeyBytes, 0777)
-	if err != nil {
-		log.Printf("Error while creating file: %v", err)
-		return nil, nil, "", err
-	}
-	return publicKeyBytes, privKeyBytes, targetFile, nil
-}
 
-func removePrivateKey() {
-	err := os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "qliksensePriv"))
-	if err != nil {
-		log.Fatalf("Could not delete private key %v", err)
-	}
-	return
+	return targetFile, key, err
 }
 
 func setup() func() {
@@ -508,9 +424,14 @@ spec:
 		})
 	}
 }
-
+func removePrivateKey() {
+	err := os.Remove(filepath.Join(testDir, secrets, contexts, qlikDefaultContext, secrets, "user_secret_key"))
+	if err != nil {
+		log.Fatalf("Could not delete private key %v", err)
+	}
+	return
+}
 func Test_PrepareK8sSecret(t *testing.T) {
-
 	type fields struct {
 		QliksenseHome string
 	}
@@ -530,7 +451,7 @@ func Test_PrepareK8sSecret(t *testing.T) {
 			wantErr: false,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				_, _, targetFile, _ := setupTargetFileAndPrivateKey()
+				targetFile, _, _ := setupTargetFileAndPrivateKey()
 				return targetFile, tearDown
 			},
 		},
@@ -543,7 +464,7 @@ func Test_PrepareK8sSecret(t *testing.T) {
 			wantErr: true,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				_, _, targetFile, _ := setupTargetFileAndPrivateKey()
+				targetFile, _, _ := setupTargetFileAndPrivateKey()
 				removePrivateKey()
 				return targetFile, tearDown
 			},
@@ -557,8 +478,7 @@ func Test_PrepareK8sSecret(t *testing.T) {
 			wantErr: true,
 			setup: func() (string, func()) {
 				tearDown := setup()
-				_, _, _, _ = setupTargetFileAndPrivateKey()
-				removePrivateKey()
+				setupTargetFileAndPrivateKey()
 				return "", tearDown
 			},
 		},
@@ -691,16 +611,11 @@ func Test_SetSecrets(t *testing.T) {
 		},
 	}
 	tearDown := setup()
-	_, privateKeyBytes, _, err := setupTargetFileAndPrivateKey()
+	_, encryptionKey, err := setupTargetFileAndPrivateKey()
 	if err != nil {
 		t.FailNow()
 	}
 	defer tearDown()
-
-	privKey, err := api.DecodeToPrivateKey(privateKeyBytes)
-	if err != nil {
-		t.FailNow()
-	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := &Qliksense{
@@ -734,13 +649,7 @@ func Test_SetSecrets(t *testing.T) {
 							log.Printf("decode error: %v", err)
 							t.FailNow()
 						}
-						decodedValue, err := b64.StdEncoding.DecodeString(valToBeEncrypted)
-						if err != nil {
-							err := fmt.Errorf("Error occurred while decoding: %v", err)
-							log.Printf("decode error: %v", err)
-							t.FailNow()
-						}
-						decryptedVal, err := api.Decrypt(decodedValue, privKey)
+						decryptedVal, err := api.DecryptData([]byte(valToBeEncrypted), encryptionKey)
 						if err != nil {
 							err := fmt.Errorf("Error occurred while testing decryption: %v", err)
 							log.Printf("No Data in Secret: %v", err)
@@ -781,7 +690,8 @@ func getValueToBeDecodedForSetSecrets(item config.NameValue, qliksenseCR *api.Ql
 	}
 	// secret=false
 	if item.Value != "" {
-		return item.Value, nil
+		b, err := b64.RawStdEncoding.DecodeString(item.Value)
+		return string(b), err
 	}
 	err := fmt.Errorf("Both Value and ValueFrom are empty")
 	return "", err
