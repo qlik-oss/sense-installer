@@ -1,7 +1,9 @@
 package qliksense
 
 import (
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
 	"github.com/robfig/cron/v3"
@@ -38,8 +40,21 @@ const (
 	qliksenseOperatorImageName = "qliksense-operator"
 )
 
+func (q *Qliksense) SetSecretsFromReader(arg string, reader io.Reader, createSecret, base64Encoded bool) error {
+	//take only name from the arguments, value should be from reader
+	argName := strings.SplitN(arg, "=", 1)
+	if len(argName) != 1 {
+		return errors.New("can only have one argument from pipe")
+	}
+	valueBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	return q.SetSecrets([]string{argName[0] + "=" + string(valueBytes)}, createSecret, base64Encoded)
+}
+
 // SetSecrets - set-secrets <key>=<value> commands
-func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
+func (q *Qliksense) SetSecrets(args []string, isSecretSet bool, base64Encoded bool) error {
 	qConfig := api.NewQConfig(q.QliksenseHome)
 	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
@@ -52,7 +67,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
 	if err != nil {
 		return err
 	}
-	resultArgs, err := api.ProcessConfigArgs(args)
+	resultArgs, err := api.ProcessConfigArgs(args, base64Encoded)
 	if err != nil {
 		return err
 	}
@@ -123,8 +138,21 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, encryptionKey string,
 	return nil
 }
 
+func (q *Qliksense) SetConfigFromReader(arg string, reader io.Reader, base64Encoded bool) error {
+	//take only name from the arguments, value should be from reader
+	argName := strings.SplitN(arg, "=", 1)
+	if len(argName) != 1 {
+		return errors.New("can only have one argument from pipe")
+	}
+	valueBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	return q.SetConfigs([]string{argName[0] + "=" + string(valueBytes)}, base64Encoded)
+}
+
 // SetConfigs - set-configs <key>=<value> commands
-func (q *Qliksense) SetConfigs(args []string) error {
+func (q *Qliksense) SetConfigs(args []string, base64Encoded bool) error {
 	// retieve current context from config.yaml
 	qConfig := api.NewQConfig(q.QliksenseHome)
 	qliksenseCR, err := qConfig.GetCurrentCR()
@@ -132,7 +160,7 @@ func (q *Qliksense) SetConfigs(args []string) error {
 		return err
 	}
 
-	resultArgs, err := api.ProcessConfigArgs(args)
+	resultArgs, err := api.ProcessConfigArgs(args, base64Encoded)
 	if err != nil {
 		return err
 	}
@@ -397,7 +425,7 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	}
 
 	// set the encrypted default mongo
-	return q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
+	return q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false, false)
 }
 
 func validateInput(input string) (string, error) {
