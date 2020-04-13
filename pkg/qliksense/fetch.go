@@ -39,7 +39,13 @@ func (q *Qliksense) FetchK8sWithOpts(opts *FetchCommandOptions) error {
 		return err
 	}
 	if opts.AccessToken != "" {
-		cr.SetFetchAccessToken(opts.AccessToken)
+		encKey, err := qConfig.GetEncryptionKeyFor(cr.GetName())
+		if err != nil {
+			return err
+		}
+		if err := cr.SetFetchAccessToken(opts.AccessToken, encKey); err != nil {
+			return err
+		}
 	}
 	if opts.SecretName != "" {
 		cr.SetFetchAccessSecretName(opts.SecretName)
@@ -78,8 +84,12 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 		}
 		version = qcr.GetLabelFromCr("version")
 	}
+	encKey, err := qConfig.GetEncryptionKeyFor(qcr.GetName())
+	if err != nil {
+		return err
+	}
 	// downlaod to temp first
-	tempDest, err := fetchToTempDir(qcr.GetFetchUrl(), version, qcr.GetFetchAccessToken())
+	tempDest, err := fetchToTempDir(qcr.GetFetchUrl(), version, qcr.GetFetchAccessToken(encKey))
 	if err != nil {
 		return err
 	}

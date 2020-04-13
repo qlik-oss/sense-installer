@@ -795,8 +795,10 @@ github.com/ostreedev/ostree-go v0.0.0-20190702140239-759a8c1ac913/go.mod h1:J6OG
 github.com/otiai10/copy v1.1.1 h1:PH7IFlRQ6Fv9vYmuXbDRLdgTHoP1w483kPNUP2bskpo=
 github.com/otiai10/copy v1.1.1/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
+github.com/otiai10/curr v1.0.0 h1:TJIWdbX0B+kpNagQrjgq8bCMrbhiuX73M2XwgtDMoOI=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
 github.com/otiai10/mint v1.3.0/go.mod h1:F5AjcsTsWUqX+Na9fpHb52P8pcRX2CI6A3ctIT91xUo=
+github.com/otiai10/mint v1.3.1 h1:BCmzIS3n71sGfHB5NMNDB3lHYPz8fWSkCAErHed//qc=
 github.com/otiai10/mint v1.3.1/go.mod h1:/yxELlJQ0ufhjUwhshSj+wFjZ78CnZ48/1wtmBH1OTc=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pascaldekloe/goe v0.1.0 h1:cBOtyMzM9HTpWjXfbbunk26uA6nG3a8n06Wieeh0MwY=
@@ -862,6 +864,8 @@ github.com/qlik-oss/k-apis v0.0.35 h1:LdxfN43UE4Fy4LAmFcsv2nXCuxfxowKY66rpUQHAyD
 github.com/qlik-oss/k-apis v0.0.35/go.mod h1:DNiWYqCqPIN216l7+1rccArNIYPb1Le7kYDcPSyNp+Q=
 github.com/qlik-oss/k-apis v0.0.36 h1:Ztd31rKn4uR3AQRb9QxYf1KEll4+Ku1E8DzCpplBw/g=
 github.com/qlik-oss/k-apis v0.0.36/go.mod h1:yoYGgPJ/H0t9H3NSq64dWfyQY6QWi2L9c+hCJoVO03U=
+github.com/qlik-oss/k-apis v0.0.39 h1:fIGCC7f9kU7319VTSJKr3fLoA9E4MjusRFmOjX3ypis=
+github.com/qlik-oss/k-apis v0.0.39/go.mod h1:yoYGgPJ/H0t9H3NSq64dWfyQY6QWi2L9c+hCJoVO03U=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200402170547-2e8140160c36 h1:BuT+cnXPQ6mcOWTDS1S8GXy65LAEMdPuNQCC36rMq28=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200402170547-2e8140160c36/go.mod h1:tSQaDZ4Jt9KwYvD7LlMUPi5nkiGOno3PAKl5/XqEfxs=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=

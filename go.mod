@@ -42,14 +42,14 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/otiai10/copy v1.1.1
 	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.36
+	github.com/qlik-oss/k-apis v0.0.39
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	github.com/src-d/go-git v4.7.0+incompatible
 	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
+	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
@@ -62,7 +62,6 @@ require (
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0
 )

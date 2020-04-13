@@ -240,41 +240,128 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 	}
 
 	for _, arg := range args {
-		argsString := strings.Split(arg, "=")
-		key := strings.ToLower(argsString[0])
-		value := argsString[1]
-		// check if key is for git or gitops (sub objects)
-		keySplit := strings.Split(key, ".")
-		key = keySplit[0]
-		keySub := ""
-
-		if len(keySplit) == 2 {
-			keySub = strings.ToLower(keySplit[1])
-		}
-
-		valid := true
-		valid, qliksenseCR = validateCR(key, keySub, value, qliksenseCR)
-		field := caseInsenstiveFieldByName(reflect.Indirect(reflect.ValueOf(qliksenseCR.Spec)), key)
-		if !valid {
-			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
-			return err
-		} else if strings.EqualFold("", keySub) {
-			// set spec for everything excluding git and gitops
-			if field.CanSet() {
-				field.SetString(value)
+		if strings.HasPrefix(arg, "fetchSource.") {
+			if err := q.processSetFetchSource(arg, qliksenseCR); err != nil {
+				return err
+			}
+		} else if strings.HasPrefix(arg, "git.") {
+			if err := q.processSetGit(arg, qliksenseCR); err != nil {
+				return err
+			}
+		} else if strings.HasPrefix(arg, "gitOps.") {
+			if err := q.processSetGitOps(arg, qliksenseCR); err != nil {
+				return err
 			}
 		} else {
-			// set spec for git or gitops
-			subField := caseInsenstiveFieldByName(reflect.Indirect(field), keySub)
-			if subField.CanSet() {
-				subField.SetString(value)
+			if err := processSetSingleArg(arg, qliksenseCR); err != nil {
+				return err
 			}
 		}
-
 		fmt.Println(chalk.Green.Color("Successfully added to Custom Resource Spec"))
 	}
+
 	// write modified content into context.yaml
 	return qConfig.WriteCR(qliksenseCR)
+}
+
+func processSetSingleArg(arg string, cr *api.QliksenseCR) error {
+	nv := strings.Split(arg, "=")
+	switch nv[0] {
+	case "manifestsRoot":
+		cr.Spec.ManifestsRoot = nv[1]
+	case "profile":
+		cr.Spec.Profile = nv[1]
+	case "storageClassName":
+		cr.Spec.StorageClassName = nv[1]
+	case "rotateKeys":
+		valid := false
+		for _, v := range []string{"yes", "no", "None"} {
+			if nv[1] == v {
+				valid = true
+			}
+		}
+		if !valid {
+			return errors.New("please povide rotateKeys=yes|no|None")
+		}
+		cr.Spec.RotateKeys = nv[1]
+	default:
+		return errors.New("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot to configure the current context")
+	}
+	return nil
+}
+
+func (q *Qliksense) processSetFetchSource(arg string, cr *api.QliksenseCR) error {
+	args := strings.Split(arg, "=")
+	subs := strings.Split(args[0], ".")
+	if cr.Spec.FetchSource == nil {
+		cr.Spec.FetchSource = &config.Repo{}
+	}
+	switch subs[1] {
+	case "repository":
+		cr.Spec.FetchSource.Repository = args[1]
+	case "accessToken":
+		qConfig := api.NewQConfig(q.QliksenseHome)
+		key, err := qConfig.GetEncryptionKeyFor(cr.GetName())
+		if err != nil {
+			return err
+		}
+		return cr.SetFetchAccessToken(args[1], key)
+	case "secretName":
+		cr.Spec.FetchSource.SecretName = args[1]
+	case "userName":
+		cr.Spec.FetchSource.UserName = args[1]
+	default:
+		return errors.New(arg + " does not match any cr spec")
+	}
+	return nil
+}
+
+func (q *Qliksense) processSetGit(arg string, cr *api.QliksenseCR) error {
+	args := strings.Split(arg, "=")
+	subs := strings.Split(args[0], ".")
+	if cr.Spec.Git == nil {
+		cr.Spec.Git = &config.Repo{}
+	}
+	switch subs[1] {
+	case "repository":
+		cr.Spec.Git.Repository = args[1]
+	case "accessToken":
+		cr.Spec.Git.AccessToken = args[1]
+	case "secretName":
+		cr.Spec.Git.SecretName = args[1]
+	case "userName":
+		cr.Spec.Git.UserName = args[1]
+	default:
+		return errors.New(arg + " does not match any cr spec")
+	}
+	return nil
+}
+
+func (q *Qliksense) processSetGitOps(arg string, cr *api.QliksenseCR) error {
+	args := strings.Split(arg, "=")
+	subs := strings.Split(args[0], ".")
+	if cr.Spec.Git == nil {
+		cr.Spec.GitOps = &config.GitOps{}
+	}
+	switch subs[1] {
+	case "enabled":
+		if args[1] != "yes" && args[1] != "no" {
+			return errors.New("Please use yes or no for key enabled")
+		}
+		cr.Spec.GitOps.Enabled = args[1]
+	case "schedule":
+		if _, err := cron.ParseStandard(args[1]); err != nil {
+			return errors.New("Please enter string with standard cron scheduling syntax ")
+		}
+		cr.Spec.GitOps.Schedule = args[1]
+	case "watchBranch":
+		cr.Spec.GitOps.WatchBranch = args[1]
+	case "image":
+		cr.Spec.GitOps.Image = args[1]
+	default:
+		return errors.New(arg + " does not match any cr spec")
+	}
+	return nil
 }
 
 // SetContextConfig - set the context for qliksense kubernetes resources to live in
