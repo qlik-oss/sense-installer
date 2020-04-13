@@ -323,7 +323,7 @@ func askForConfirmation(s string) bool {
 
 		if strings.EqualFold(strings.ToLower(response), "y") || strings.EqualFold(strings.ToLower(response), "yes") {
 			return true
-		} else if strings.EqualFold(strings.ToLower(response), "y") || strings.EqualFold(strings.ToLower(response), "n") {
+		} else if strings.EqualFold(strings.ToLower(response), "n") || strings.EqualFold(strings.ToLower(response), "n") {
 			return false
 		}
 	}
@@ -356,7 +356,7 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 				err = fmt.Errorf("No Secrets Folder Detected")
 				log.Println(err)
 				return err
-			} else if conf := askForConfirmation("Are you sure? "); conf == true {
+			} else {
 				currentLength := len(qliksenseConfig.Spec.Contexts)
 				if currentLength > 0 {
 					temp := qliksenseConfig.Spec.Contexts
@@ -371,9 +371,15 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 					}
 					newLength := len(qliksenseConfig.Spec.Contexts)
 					if currentLength != newLength {
-						api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
-						fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
-						fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
+
+						conf := askForConfirmation("Are you sure? ")
+						if conf == true {
+							api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
+							fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
+							fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
+						} else {
+							return nil
+						}
 					} else {
 						err := fmt.Errorf(chalk.Red.Color("Context not found"))
 						return err
