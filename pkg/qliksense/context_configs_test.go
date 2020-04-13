@@ -929,7 +929,6 @@ func TestDeleteContexts(t *testing.T) {
 			var arg []string
 			arg = append(arg, tt.args.contextName)
 			if err := q.DeleteContextConfig(arg); (err != nil) != tt.wantErr {
-				print(err)
 				t.Errorf("DeleteContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
