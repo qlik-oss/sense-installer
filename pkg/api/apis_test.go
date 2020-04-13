@@ -109,10 +109,7 @@ func TestGetDecryptedCr(t *testing.T) {
 	b := b64.StdEncoding.EncodeToString(ecn)
 	qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", b, "")
 
-	if err != nil {
-		t.Fail()
-		t.Log(err)
-	}
+	qcr.SetFetchAccessToken("mytoken", key)
 
 	newCr, err := qct.GetDecryptedCr(qcr)
 	if err != nil {
@@ -128,6 +125,9 @@ func TestGetDecryptedCr(t *testing.T) {
 		t.Log(b)
 	}
 	if decryptedValue == orignalValue {
+		t.Fail()
+	}
+	if newCr.Spec.FetchSource.AccessToken != "mytoken" {
 		t.Fail()
 	}
 	td()
@@ -146,4 +146,27 @@ func setupGenerateKey(homeDir string) (string, error) {
 		return GenerateAndStoreSecretKey(secretKeyPairDir)
 	}
 	return key, nil
+}
+
+func Test_set_and_get_fetch_access_token(t *testing.T) {
+	td, homeDir := setup()
+	defer td()
+	createCRFile(homeDir)
+	crFile := filepath.Join("contexts", "contx1", "contx1.yaml")
+	qConfig := NewQConfig(homeDir)
+	newQ, _ := qConfig.SetCrLocation("contx1", crFile)
+	newQ.Write()
+	qConfig = NewQConfig(homeDir)
+	qcr, _ := qConfig.GetCurrentCR()
+	key, _ := qConfig.GetEncryptionKeyFor(qcr.GetName())
+	if err := qcr.SetFetchAccessToken("mytokenbeforeencryption", key); err != nil {
+		t.Log(err)
+		t.FailNow()
+	}
+	tok := qcr.GetFetchAccessToken(key)
+	if tok != "mytokenbeforeencryption" {
+		t.Log("Expected: mytokenbeforeencryption, got: " + tok)
+		t.Fail()
+	}
+
 }

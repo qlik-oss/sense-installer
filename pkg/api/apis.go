@@ -150,15 +150,21 @@ func (cr *QliksenseCR) GetFetchUrl() string {
 	return cr.Spec.FetchSource.Repository
 }
 
-func (cr *QliksenseCR) GetFetchAccessToken() string {
-	if cr.Spec.FetchSource == nil || cr.Spec.FetchSource.Repository == "" {
+func (cr *QliksenseCR) GetFetchAccessToken(encryptionKey string) string {
+	if cr.Spec.FetchSource == nil {
 		return ""
 	}
 	if tok, err := cr.Spec.FetchSource.GetAccessToken(); err != nil {
 		fmt.Println(err)
 		return ""
 	} else {
-		return tok
+		by, _ := b64.StdEncoding.DecodeString(tok)
+		res, err := DecryptData(by, encryptionKey)
+		if err != nil {
+			fmt.Println(err)
+			return ""
+		}
+		return string(res)
 	}
 }
 
@@ -169,11 +175,16 @@ func (cr *QliksenseCR) SetFetchUrl(url string) {
 	cr.Spec.FetchSource.Repository = url
 }
 
-func (cr *QliksenseCR) SetFetchAccessToken(token string) {
+func (cr *QliksenseCR) SetFetchAccessToken(token, encryptionKey string) error {
 	if cr.Spec.FetchSource == nil {
 		cr.Spec.FetchSource = &config.Repo{}
 	}
-	cr.Spec.FetchSource.AccessToken = token
+	res, err := EncryptData([]byte(token), encryptionKey)
+	if err != nil {
+		return err
+	}
+	cr.Spec.FetchSource.AccessToken = b64.StdEncoding.EncodeToString(res)
+	return nil
 }
 
 func (cr *QliksenseCR) SetFetchAccessSecretName(sec string) {
@@ -495,7 +506,7 @@ func (cr *QliksenseCR) GetCustomCrdsPath() string {
 func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error) {
 	newCr := &QliksenseCR{}
 	copier.Copy(newCr, cr)
-	encryptionKey, err := qc.GetEncryptionKeyForCurrent()
+	encryptionKey, err := qc.GetEncryptionKeyFor(cr.GetName())
 	if err != nil {
 		return nil, err
 	}
@@ -521,6 +532,11 @@ func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error)
 		finalSecrets[k] = newNvs
 	}
 	newCr.Spec.Secrets = finalSecrets
+
+	if newCr.Spec.FetchSource != nil && newCr.Spec.FetchSource.AccessToken != "" {
+		decData := cr.GetFetchAccessToken(encryptionKey)
+		newCr.Spec.FetchSource.AccessToken = decData
+	}
 	return newCr, nil
 }
 
