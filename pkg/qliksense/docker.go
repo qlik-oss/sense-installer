@@ -170,7 +170,7 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			dockerConfigJsonSecret = &qapi.DockerConfigJsonSecret{
-				Uri: qcr.GetImageRegistry(),
+				Uri: qcr.Spec.GetImageRegistry(),
 			}
 		} else {
 			return err

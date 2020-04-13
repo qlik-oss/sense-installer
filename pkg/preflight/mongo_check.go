@@ -49,7 +49,11 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	// create a pod
 	podName := "pf-mongo-pod"
 	commandToRun := []string{"sh", "-c", "sleep 10;mongo " + mongodbUrl}
-	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(mongo), commandToRun)
+	imageName, err := qp.GetPreflightConfigObj().GetImageName(mongo, true)
+	if err != nil {
+		return err
+	}
+	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, imageName, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %v\n", err)
 		return err

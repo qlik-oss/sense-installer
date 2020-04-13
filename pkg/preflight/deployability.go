@@ -67,7 +67,12 @@ func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namesp
 	// create a pod
 	podName := "pod-pf-check"
 	commandToRun := []string{}
-	pod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(nginx), commandToRun)
+
+	imageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
+	if err != nil {
+		return err
+	}
+	pod, err := createPreflightTestPod(clientset, namespace, podName, imageName, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod %s - %v\n", podName, err)
 		return err
@@ -104,7 +109,11 @@ func checkPfService(clientset *kubernetes.Clientset, namespace string) error {
 
 func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace, depName string) error {
 	// check if we are able to create a deployment
-	pfDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, qp.GetPreflightConfigObj().GetImageName(nginx))
+	imageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
+	if err != nil {
+		return err
+	}
+	pfDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, imageName)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
 		return err
