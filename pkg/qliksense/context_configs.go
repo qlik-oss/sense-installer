@@ -312,23 +312,6 @@ func (q *Qliksense) ListContextConfigs() error {
 	return nil
 }
 
-func askForConfirmation(s string) bool {
-	for {
-		fmt.Printf("%s [y/n]: ", s)
-		var response string
-		_, err := fmt.Scanln(&response)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if strings.EqualFold(strings.ToLower(response), "y") || strings.EqualFold(strings.ToLower(response), "yes") {
-			return true
-		} else if strings.EqualFold(strings.ToLower(response), "n") || strings.EqualFold(strings.ToLower(response), "n") {
-			return false
-		}
-	}
-}
-
 func (q *Qliksense) DeleteContextConfig(args []string) error {
 	if len(args) == 1 {
 		qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
@@ -372,7 +355,7 @@ func (q *Qliksense) DeleteContextConfig(args []string) error {
 					newLength := len(qliksenseConfig.Spec.Contexts)
 					if currentLength != newLength {
 
-						conf := askForConfirmation("Are you sure? ")
+						conf := AskForConfirmation("Are you sure? ")
 						if conf == true {
 							api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 							fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
