@@ -69,7 +69,11 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingCo
 			}
 		}
 	}
-
+	if cr.Spec.FetchSource != nil && cr.Spec.FetchSource.AccessToken != "" {
+		if err := cr.SetFetchAccessToken(cr.Spec.FetchSource.AccessToken, encryptionKey); err != nil {
+			return "", err
+		}
+	}
 	// update manifestsRoot in case already exist
 	if existingCr, err := qConfig.GetCR(cr.GetName()); err == nil {
 		// cr exists, so update the manifestsRoot if version exist
