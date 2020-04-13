@@ -42,7 +42,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/otiai10/copy v1.1.1
 	github.com/pkg/errors v0.8.1
-	github.com/qlik-oss/k-apis v0.0.39
+	github.com/qlik-oss/k-apis v0.1.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
