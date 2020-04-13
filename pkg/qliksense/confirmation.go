@@ -15,9 +15,9 @@ func AskForConfirmation(s string) bool {
 			log.Fatal(err)
 		}
 
-		if strings.EqualFold(strings.ToLower(response), "y") || strings.EqualFold(strings.ToLower(response), "yes") {
+		if strings.EqualFold(response, "y") || strings.EqualFold(response, "yes") {
 			return true
-		} else if strings.EqualFold(strings.ToLower(response), "n") || strings.EqualFold(strings.ToLower(response), "n") {
+		} else if strings.EqualFold(response, "n") || strings.EqualFold(response, "no") {
 			return false
 		}
 	}
