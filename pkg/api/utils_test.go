@@ -16,7 +16,7 @@ func TestProcessConfigArgs(t *testing.T) {
 	expectedKeys := []string{"mongodb", "test", "dash-key", "dot-key", "key123", "keyequal"}
 	expectedValue := []string{"mongouri://something?ffall", "value_under", "value-dash", "127.0.0.1", "value123", "newvalue=@hj"}
 	exppectedSvc := []string{"qliksense", "test_under", "test-dash", "test-dot", "test123", "test-equal"}
-	sv, err := ProcessConfigArgs(args)
+	sv, err := ProcessConfigArgs(args, false)
 	if err != nil {
 		t.Log(err)
 		t.FailNow()

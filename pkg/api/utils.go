@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	b64 "encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -61,7 +62,7 @@ func ReadKeys(keyFile string) ([]byte, error) {
 }
 
 // ProcessConfigArgs processes args and returns an service, key, value slice
-func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
+func ProcessConfigArgs(args []string, base64Encoded bool) ([]*ServiceKeyValue, error) {
 	// prepare received args
 	// split args[0] into key and value
 	if len(args) == 0 {
@@ -81,10 +82,18 @@ func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
 		if len(second) != 2 {
 			return nil, notValidErr
 		}
+		resultValue := strings.Trim(first[1], "\"")
+		if base64Encoded {
+			if decodeByte, err := b64.StdEncoding.DecodeString(resultValue); err != nil {
+				return nil, err
+			} else {
+				resultValue = strings.Trim(string(decodeByte), "\n ")
+			}
+		}
 		resultSvcKV[i] = &ServiceKeyValue{
 			SvcName: second[0],
 			Key:     second[1],
-			Value:   strings.ReplaceAll(first[1], `"`, ""),
+			Value:   resultValue,
 		}
 	}
 	return resultSvcKV, nil

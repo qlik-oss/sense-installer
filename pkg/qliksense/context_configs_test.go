@@ -305,7 +305,7 @@ func TestSetConfigs(t *testing.T) {
 	defer tearDown()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.args.q.SetConfigs(tt.args.args); (err != nil) != tt.wantErr {
+			if err := tt.args.q.SetConfigs(tt.args.args, false); (err != nil) != tt.wantErr {
 				t.Errorf("SetConfigs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -558,6 +558,7 @@ func Test_SetSecrets(t *testing.T) {
 	type args struct {
 		args        []string
 		isSecretSet bool
+		base64      bool
 	}
 	tests := []struct {
 		name    string
@@ -573,6 +574,18 @@ func Test_SetSecrets(t *testing.T) {
 			args: args{
 				args:        []string{"qliksense.mongoDbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
 				isSecretSet: false,
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid secret secrets=false base64 encoded",
+			fields: fields{
+				QliksenseHome: testDir,
+			},
+			args: args{
+				args:        []string{"qliksense.mongoDbUri=bW9uZ29kYjovL3FsaWstZGVmYXVsdC1tb25nb2RiOjI3MDE3L3FsaWtzZW5zZT9zc2w9ZmFsc2U="},
+				isSecretSet: false,
+				base64:      true,
 			},
 			wantErr: false,
 		},
@@ -621,7 +634,7 @@ func Test_SetSecrets(t *testing.T) {
 			q := &Qliksense{
 				QliksenseHome: tt.fields.QliksenseHome,
 			}
-			if err := q.SetSecrets(tt.args.args, tt.args.isSecretSet); (err != nil) != tt.wantErr {
+			if err := q.SetSecrets(tt.args.args, tt.args.isSecretSet, tt.args.base64); (err != nil) != tt.wantErr {
 				t.Errorf("SetSecrets() error = %v, wantErr %v", err, tt.wantErr)
 				t.FailNow()
 			}
@@ -632,7 +645,10 @@ func Test_SetSecrets(t *testing.T) {
 			// extract the value for testing
 			testValueArr := strings.SplitN(tt.args.args[0], "=", 2)
 			testValue := strings.ReplaceAll(testValueArr[1], "\"", "")
-
+			if tt.args.base64 {
+				d, _ := b64.StdEncoding.DecodeString(testValue)
+				testValue = strings.Trim(string(d), "\n ")
+			}
 			qliksenseCR, err := readCRFile()
 			if err != nil {
 				err = fmt.Errorf("Not able to read from context file: %v", err)
