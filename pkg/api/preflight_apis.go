@@ -2,7 +2,9 @@ package api
 
 import (
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -42,7 +44,9 @@ func NewPreflightConfig(qHome string) *PreflightConfig {
 	if _, err := os.Lstat(conFile); err != nil {
 		return p
 	}
-	p = &PreflightConfig{}
+	p = &PreflightConfig{
+		QliksenseHomePath: qHome,
+	}
 	if err := ReadFromFile(p, conFile); err != nil {
 		return nil
 	}
@@ -77,11 +81,22 @@ func (p *PreflightConfig) AddImage(imageFor, imageName string) {
 	p.Spec.Images[imageFor] = imageName
 }
 
-func (p *PreflightConfig) GetImageName(imageFor string) string {
+func (p *PreflightConfig) GetImageName(imageFor string, accountForImageRegistry bool) (string, error) {
 	if p.Spec.Images == nil {
-		return ""
+		return "", nil
 	}
-	return p.Spec.Images[imageFor]
+	image := p.Spec.Images[imageFor]
+	if accountForImageRegistry {
+		qConfig := NewQConfig(p.QliksenseHomePath)
+		if currentCR, err := qConfig.GetCurrentCR(); err != nil {
+			return "", err
+		} else if imageRegistry := currentCR.Spec.GetImageRegistry(); imageRegistry != "" {
+			imageSegments := strings.Split(image, "/")
+			imageNameAndTag := imageSegments[len(imageSegments)-1]
+			return path.Join(imageRegistry, imageNameAndTag), nil
+		}
+	}
+	return image, nil
 }
 func (p *PreflightConfig) GetMinK8sVersion() string {
 	return p.Spec.MinK8sVersion

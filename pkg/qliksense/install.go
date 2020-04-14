@@ -3,6 +3,7 @@ package qliksense
 import (
 	"errors"
 	"fmt"
+	"path"
 	"path/filepath"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -116,10 +117,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 
 func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) (string, error) {
 	operatorControllerString := q.GetOperatorControllerString()
-	if imageRegistry := qcr.GetImageRegistry(); imageRegistry != "" {
+	if imageRegistry := qcr.Spec.GetImageRegistry(); imageRegistry != "" {
 		return kustomizeForImageRegistry(operatorControllerString, pullSecretName,
-			fmt.Sprintf("%v/%v", qliksenseOperatorImageRepo, qliksenseOperatorImageName),
-			fmt.Sprintf("%v/%v", imageRegistry, qliksenseOperatorImageName))
+			path.Join(qliksenseOperatorImageRepo, qliksenseOperatorImageName),
+			path.Join(imageRegistry, qliksenseOperatorImageName))
 	}
 	return operatorControllerString, nil
 }
