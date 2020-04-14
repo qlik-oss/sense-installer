@@ -121,9 +121,12 @@ func deleteContextConfigCmd(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "deletes a specific context locally (not in-cluster)",
 		Example: `qliksense config delete-contexts <context_name>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.DeleteContextConfig(args)
+			return q.DeleteContextConfig(args, cmd.Flag("yes").Value.String())
 		},
 	}
+	f := cmd.Flags()
+
+	f.BoolP("yes", "y", false, "skips confirmation")
 	return cmd
 }
 
