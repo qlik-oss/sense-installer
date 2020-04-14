@@ -8,34 +8,19 @@ The suite consists of a set of `collectors` which run the specifications of ever
 We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
-```shell
-$ qliksense preflight
-perform preflight checks on the cluster
-
-Usage:
-  qliksense preflight [command]
-
-Examples:
-qliksense preflight <preflight_check_to_run>
-
-Available Commands:
-  all         perform all checks
-  dns         perform preflight dns check
-  k8s-version check k8s version
-
-Flags:
-  -h, --help   help for preflight
+```
+qliksense preflight
 ```
 
 #### Running all checks
-Run the command shown below to execute all preflight checks.
-```shell
+Run the following command to execute all preflight checks
+```
 qliksense preflight all
 ```
 
 #### Running specific check
-Run the command shown below to execute all preflight checks.
-```shell
+Run the following command to execute a specific check
+```
 qliksense preflight dns
 ```
 
