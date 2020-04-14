@@ -1,10 +1,12 @@
-##Preflight checks
+# Preflight checks
+
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
+
 The suite consists of a set of `collectors` which run the specifications of every test and `analyzers` which analyze the results of every test run by the collector.
 We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
-```console
+```shell
 $ qliksense preflight
 perform preflight checks on the cluster
 
@@ -26,7 +28,7 @@ Flags:
 ### DNS check
 Run the following command to perform preflight DNS check. We setup a kubernetes deployment and try to reach it as part of establishing DNS connectivity in this check. 
 The expected output should be similar to the one shown below.
-```console
+```shell
 $ qliksense preflight dns
 
 Preflight DNS check
@@ -49,7 +51,7 @@ Deleted deployment: dep-dns-preflight-check
 ### Kubernetes version check
 We check the version of the target kubernetes cluster and ensure that it falls in the valid range of kubernetes versions that are supported by qliksense. 
 The command to run this check and the expected similar output are as shown below:
-```console
+```shell
 $ qliksense preflight k8s-version
 
 Preflight kubernetes minimum version check
@@ -64,7 +66,7 @@ Completed Preflight kubernetes minimum version check
 
 ### Service check
 We use the commmand below to test if we are able to create a service in the cluster.
-```console
+```shell
 $ qliksense preflight service
 
 Preflight service check
@@ -80,7 +82,7 @@ Completed preflight service check
 
 ### Deployment check
 We use the commmand below to test if we are able to create a deployment in the cluster. After the test exexutes, we wait until the created deployment terminates before we exit the command. 
-```console
+```shell
 $ qliksense preflight deployment
 
 Preflight deployment check
@@ -95,7 +97,7 @@ Completed preflight deployment check
 
 ### Pod check
 We use the commmand below to test if we are able to create a pod in the cluster.
-```console
+```shell
 $ qliksense preflight pod
 
 Preflight pod check
@@ -217,7 +219,7 @@ Completed preflight mongodb check
 
 ### Running all checks
 Run the command shown below to execute all preflight checks.
-```console
+```shell
 $ qliksense preflight all --mongodb-url=<url> OR
 $ qliksense preflight all
 
