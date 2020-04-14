@@ -6,8 +6,15 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) UninstallQK8s(contextName string) error {
-	if ans := AskForConfirmation("Are You Sure? "); ans == true {
+func (q *Qliksense) UninstallQK8s(contextName string, flag string) error {
+	ans := flag
+
+	if ans == "false" {
+		if i := AskForConfirmation("Are You Sure? "); i == true {
+			ans = "true"
+		}
+	}
+	if ans == "true" {
 		qConfig := qapi.NewQConfig(q.QliksenseHome)
 		if contextName == "" {
 			contextName = qConfig.Spec.CurrentContext
