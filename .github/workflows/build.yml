@@ -4,9 +4,47 @@ on: [pull_request]
 
 jobs:
 
+  test:
+    env:
+      CGO_ENABLED: 0
+      BUILD_TAGS: "netgo containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp"
+    strategy:
+      matrix:
+        go: [1.13.x]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    name: Test
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Set up Go ${{ matrix.go }}
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ matrix.go }}
+    - uses: actions/checkout@v2
+    - name: Set GOPATH
+        # temporary fix
+        # see https://github.com/actions/setup-go/issues/14
+      run: |
+        echo "##[set-env name=GOPATH;]$(dirname $GITHUB_WORKSPACE)"
+        echo "##[add-path]$(dirname $GITHUB_WORKSPACE)/bin"
+      shell: bash
+    - name: go test
+      run: |
+        go get -u github.com/gobuffalo/packr/v2/packr2@v2.7.1
+        git clone https://github.com/qlik-oss/qliksense-operator.git -b master tmp/operator
+        mkdir -p pkg/qliksense/crds/cr
+        mkdir -p pkg/qliksense/crds/crd
+        mkdir -p pkg/qliksense/crds/crd-deploy
+        cp tmp/operator/deploy/*.yaml pkg/qliksense/crds/crd-deploy
+        cp tmp/operator/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
+        cp tmp/operator/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
+        go generate ./...
+        go test -tags "$BUILD_TAGS" -v ./...
+
   build:
     name: Build
     runs-on: ubuntu-latest
+    needs: test
     steps:
     - name: Set up Go 1.13
       uses: actions/setup-go@v1
@@ -23,5 +61,4 @@ jobs:
         echo "##[add-path]$(dirname $GITHUB_WORKSPACE)/bin"
       shell: bash
 
-    - run: make test
     - run: make xbuild-all
