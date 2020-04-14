@@ -24,6 +24,17 @@ Run the following command to execute a specific check
 qliksense preflight dns
 ```
 
+### qliksense load
+
+`qliksense load` command takes input from a file or from pipe
+
+- `qliksense load -f cr-file.yaml`
+- `cat cr-file.yaml | qliksense load -f -`
+
+This will load the Custom Resource (CR) into `${QLIKSENSE_HOME}` folder, create context structure and set the current context to that CR.
+
+This will also encrypt the secrets from CR while writing the CR into the disk.
+
 ### qliksense apply
 
 `qliksense apply` command takes input from a file or from pipe
@@ -55,28 +66,20 @@ spec:
 
 `qliksense apply` does everything `qliksense load` does but will install Qlik Sense into the cluster as well
 
-### qliksense load
-
-`qliksense load` command takes input from a file or from pipe
-
-- `qliksense load -f cr-file.yaml`
-- `cat cr-file.yaml | qliksense load -f -`
-
-This will load the Custom Resource (CR) into `${QLIKSENSE_HOME}` folder, create context structure and set the current context to that CR.
-
-This will also encrypt the secrets from CR while writing the CR into the disk.
-
 ### qliksense about
 
 `qliksense about` command will display information about [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) release.
 
-It supports the following flags:
+For example, running the following command will show information about default profile for `1.0.0` tag
 
-- `qliksense about 1.0.0` display default profile for tag `1.0.0`.
-- `qliksense about 1.0.0 --profile=docker-desktop`
-- If `qliksense about` is ran without flags, then it displays
-    - Information of the release defined in `manifests/docker-desktop` (if it exist), otherwise
-    - Get version information from `master` branch in `qliksense-k8s` repository
+```
+qliksense about 1.0.0
+```
+
+Run the following command to view options for `about` command:
+```
+qliksense about --help
+```
 
 Using other supported commands user might have built the CR into the location `~/.qliksense/myqliksense.yaml`
 
