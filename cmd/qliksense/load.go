@@ -30,7 +30,7 @@ func loadCrFile(q *qliksense.Qliksense) *cobra.Command {
 	c.MarkFlagRequired("file")
 	f.BoolVarP(&overwriteExistingContext, "overwrite", "o", overwriteExistingContext, "Overwrite any existing contexts with the same name")
 
-	eulaPreRunHooks.addValidator(c.Name(), loadOrApplyCommandEulaPreRunHook)
+	eulaPreRunHooks.addValidator(c.CommandPath(), loadOrApplyCommandEulaPreRunHook)
 	return c
 }
 

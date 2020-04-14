@@ -31,7 +31,7 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
 	f.BoolVar(&keepPatchFiles, keepPatchFilesFlagName, keepPatchFiles, keepPatchFilesFlagUsage)
 
-	eulaPreRunHooks.addValidator(c.Name(), loadOrApplyCommandEulaPreRunHook)
+	eulaPreRunHooks.addValidator(c.CommandPath(), loadOrApplyCommandEulaPreRunHook)
 
 	return c
 }
