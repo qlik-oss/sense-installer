@@ -2,7 +2,6 @@
 
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
 
-The suite consists of a set of `collectors` which run the specifications of every test and `analyzers` which analyze the results of every test run by the collector.
 We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
@@ -199,6 +198,8 @@ We can check if we are able to connect to an instance of mongodb on the cluster 
 ```shell
 qliksense preflight mongo --url=<url> OR
 qliksense preflight mongo
+qliksense preflight mongo --url=<mongo-server url> --ca-cert=<path to ca-cert file>
+
 
 Preflight mongo check
 ---------------------
@@ -206,7 +207,7 @@ Preflight mongodb check:
 Created pod: pf-mongo-pod
 stdout: MongoDB shell version v4.2.5
 connecting to: <url>/?compressors=disabled&gssapiServiceName=mongodb
-Implicit session: session { "id" : UUID("64f639d3-2c93-4894-80f6-ee14acaf56a5") }
+Implicit session: session { "id" : UUID("...") }
 MongoDB server version: 4.2.5
 bye
 stderr: 
@@ -221,7 +222,7 @@ Completed preflight mongodb check
 Run the command shown below to execute all preflight checks.
 ```shell
 $ qliksense preflight all --mongodb-url=<url> OR
-$ qliksense preflight all
+$ qliksense preflight all --mongodb-url=<mongo-server url> --mongodb-ca-cert=<path to ca-cert file> 
 
 Running all preflight checks
 
