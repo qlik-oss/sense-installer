@@ -86,6 +86,7 @@ endif
 
 generate: get-crds packr2
 	go generate ./...
+	go run .makefile_support/remove_all/main.go pkg/qliksense/crds
 
 packr2:
 ifeq ($(shell ${WHICH} packr2 2>${DEVNUL}),)
