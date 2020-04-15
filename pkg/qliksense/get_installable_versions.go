@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/qlik-oss/k-apis/pkg/git"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
@@ -135,5 +136,20 @@ func getLatestTag(repoUrl, accessToken string) (string, error) {
 	if len(tags) == 0 {
 		return "", errors.New(("no tags exists in the repo: " + repoPath))
 	}
-	return tags[0], nil
+	maxSem, _ := semver.NewVersion(tags[0])
+	for _, sv := range tags[1:] {
+		if sv == "" {
+			continue
+		}
+		v, err := semver.NewVersion(sv)
+		if err != nil {
+			// it may happen, in the repo some tags may not conform to semver
+			fmt.Print("Unconform tags: " + sv)
+			continue
+		}
+		if maxSem == nil || maxSem.LessThan(v) {
+			maxSem = v
+		}
+	}
+	return maxSem.String(), nil
 }
