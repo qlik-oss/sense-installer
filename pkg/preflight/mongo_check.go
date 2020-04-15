@@ -104,6 +104,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		mongoCommand.WriteString(fmt.Sprintf(" --tlsCertificateKeyFile=/etc/ssl/%s/%[1]s", clientCertSecretName))
 		api.LogDebugMessage("Adding clientCertFile:  Mongo command: %s\n", mongoCommand.String())
 	}
+	mongoCommand.WriteString(` --eval "print(\"connected to mongo\")"`)
 
 	commandToRun := []string{"sh", "-c", mongoCommand.String()}
 	api.LogDebugMessage("Mongo commandToRun: %s\n", strings.Join(commandToRun, " "))
