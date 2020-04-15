@@ -100,7 +100,7 @@ clean-packr: packr2
 
 get-crds:
 ifeq ($(QLIKSENSE_OPERATOR_DIR),)
-	$(eval TMP-operator := $(shell mktemp -d))
+	$(eval TMP-operator := $(shell go run .makefile_support/get_tmp_dir/main.go))
 	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP-operator)/operator
 	$(MAKE) QLIKSENSE_OPERATOR_DIR=$(TMP-operator)/operator get-crds
 	-rm -rf $(TMP-operator)
