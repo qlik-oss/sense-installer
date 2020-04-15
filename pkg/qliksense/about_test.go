@@ -2,13 +2,13 @@ package qliksense
 
 import (
 	"fmt"
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
-
-	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 func Test_About_getImageList(t *testing.T) {
@@ -230,15 +230,24 @@ spec:
 	}
 }
 
+func Test_foo(t *testing.T) {
+	configDir := "C:\\Users\\abulynko\\AppData\\Local\\Temp\\03994898/repo"
+	fmt.Printf("--AB: 1: %v\n", path.Dir(configDir))
+
+	sub := path.Dir(configDir)
+	fmt.Printf("--AB: 2: %v\n", path.Dir(sub))
+}
+
 func Test_About_getConfigDirectory(t *testing.T) {
 	verifyAsdBranch := func(configDir string) (ok bool, reason string) {
 		tmpDir := os.TempDir()
 
-		if (path.Clean(path.Dir(path.Dir(configDir))) != path.Clean(tmpDir)) || (path.Base(configDir) != "repo") {
+		configParentDir := filepath.Dir(configDir)
+		if (filepath.Clean(filepath.Dir(configParentDir)) != filepath.Clean(tmpDir)) || (filepath.Base(configDir) != "repo") {
 			return false, fmt.Sprintf("expected config directory path: %v to be under: %v and terminate with repo", configDir, tmpDir)
 		}
 
-		if info, err := os.Stat(path.Join(configDir, "asdczxc")); err != nil || !info.Mode().IsRegular() {
+		if info, err := os.Stat(filepath.Join(configDir, "asdczxc")); err != nil || !info.Mode().IsRegular() {
 			return false, fmt.Sprintf(`expected to find file: "asdczxc" under directory: %v`, configDir)
 		}
 		return true, ""
@@ -247,15 +256,16 @@ func Test_About_getConfigDirectory(t *testing.T) {
 	verifyMasterBranch := func(configDir string) (ok bool, reason string) {
 		tmpDir := os.TempDir()
 
-		if (path.Clean(path.Dir(path.Dir(configDir))) != path.Clean(tmpDir)) || (path.Base(configDir) != "repo") {
+		configParentDir := filepath.Dir(configDir)
+		if (filepath.Clean(filepath.Dir(configParentDir)) != filepath.Clean(tmpDir)) || (filepath.Base(configDir) != "repo") {
 			return false, fmt.Sprintf("expected config directory path: %v to be under: %v and terminate with repo", configDir, tmpDir)
 		}
 
-		if _, err := os.Stat(path.Join(configDir, "asdczxc")); err == nil || !os.IsNotExist(err) {
+		if _, err := os.Stat(filepath.Join(configDir, "asdczxc")); err == nil || !os.IsNotExist(err) {
 			return false, fmt.Sprintf(`expected to NOT find file: "asdczxc"" under directory: %v`, configDir)
 		}
 
-		if info, err := os.Stat(path.Join(configDir, "sad")); err != nil || !info.Mode().IsRegular() {
+		if info, err := os.Stat(filepath.Join(configDir, "sad")); err != nil || !info.Mode().IsRegular() {
 			return false, fmt.Sprintf(`expected to find file: "sad"" under directory: %v`, configDir)
 		}
 		return true, ""
@@ -305,7 +315,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 			cleanup: func(_ *Qliksense, configDir string) error {
 				if currentDirectory, err := os.Getwd(); err != nil {
 					return err
-				} else if err := os.RemoveAll(path.Join(currentDirectory, "manifests")); err != nil {
+				} else if err := os.RemoveAll(filepath.Join(currentDirectory, "manifests")); err != nil {
 					return err
 				}
 				return nil
@@ -320,7 +330,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 				}
 
 				profileEntered = "foo"
-				defaultProfilePath := path.Join(currentDirectory, "manifests", profileEntered)
+				defaultProfilePath := filepath.Join(currentDirectory, "manifests", profileEntered)
 				err = os.MkdirAll(defaultProfilePath, os.ModePerm)
 				if err != nil {
 					t.Fatalf("error making path: %v, err: %v\n", defaultProfilePath, err)
@@ -350,7 +360,7 @@ func Test_About_getConfigDirectory(t *testing.T) {
 			cleanup: func(_ *Qliksense, configDir string) error {
 				if currentDirectory, err := os.Getwd(); err != nil {
 					return err
-				} else if err := os.RemoveAll(path.Join(currentDirectory, "manifests")); err != nil {
+				} else if err := os.RemoveAll(filepath.Join(currentDirectory, "manifests")); err != nil {
 					return err
 				}
 				return nil
@@ -380,8 +390,8 @@ func Test_About_getConfigDirectory(t *testing.T) {
 			cleanup: func(_ *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
 
-				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
-					tmpTmpDir := path.Dir(configDir)
+				tmpTmpDir := filepath.Dir(configDir)
+				if filepath.Clean(filepath.Dir(tmpTmpDir)) == filepath.Clean(tmpDir) && filepath.Base(configDir) == "repo" {
 					if err := os.RemoveAll(tmpTmpDir); err != nil {
 						return err
 					}
@@ -413,8 +423,8 @@ func Test_About_getConfigDirectory(t *testing.T) {
 			cleanup: func(_ *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
 
-				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
-					tmpTmpDir := path.Dir(configDir)
+				tmpTmpDir := filepath.Dir(configDir)
+				if filepath.Clean(filepath.Dir(tmpTmpDir)) == filepath.Clean(tmpDir) && filepath.Base(configDir) == "repo" {
 					if err := os.RemoveAll(tmpTmpDir); err != nil {
 						return err
 					}
@@ -456,8 +466,9 @@ func Test_About_getConfigDirectory(t *testing.T) {
 			},
 			cleanup: func(q *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
-				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
-					tmpTmpDir := path.Dir(configDir)
+
+				tmpTmpDir := filepath.Dir(configDir)
+				if filepath.Clean(filepath.Dir(tmpTmpDir)) == filepath.Clean(tmpDir) && filepath.Base(configDir) == "repo" {
 					if err := os.RemoveAll(tmpTmpDir); err != nil {
 						return err
 					}
@@ -502,8 +513,9 @@ func Test_About_getConfigDirectory(t *testing.T) {
 			},
 			cleanup: func(q *Qliksense, configDir string) error {
 				tmpDir := os.TempDir()
-				if path.Clean(path.Dir(path.Dir(configDir))) == path.Clean(tmpDir) && path.Base(configDir) == "repo" {
-					tmpTmpDir := path.Dir(configDir)
+
+				tmpTmpDir := filepath.Dir(configDir)
+				if filepath.Clean(filepath.Dir(tmpTmpDir)) == filepath.Clean(tmpDir) && filepath.Base(configDir) == "repo" {
 					if err := os.RemoveAll(tmpTmpDir); err != nil {
 						return err
 					}
