@@ -80,9 +80,14 @@ func fetchAndUpdateCR(qConfig *qapi.QliksenseConfig, version string) error {
 	}
 	if version == "" {
 		if qcr.GetLabelFromCr("version") == "" {
-			return errors.New("Cannot find gitref/tag/branch/version to fetch")
+			if encKey, err := qConfig.GetEncryptionKeyFor(qcr.GetName()); err != nil {
+				return err
+			} else if version, err = getLatestTag(qcr.GetFetchUrl(), qcr.GetFetchAccessToken(encKey)); err != nil {
+				return err
+			}
+		} else {
+			version = qcr.GetLabelFromCr("version")
 		}
-		version = qcr.GetLabelFromCr("version")
 	}
 	encKey, err := qConfig.GetEncryptionKeyFor(qcr.GetName())
 	if err != nil {

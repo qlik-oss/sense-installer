@@ -86,3 +86,54 @@ func (q *Qliksense) GetInstallableVersions(opts *LsRemoteCmdOptions) error {
 
 	return nil
 }
+
+func getLatestTag(repoUrl, accessToken string) (string, error) {
+	if repoUrl == "" {
+		return "", errors.New("repo url is empty")
+	}
+	repoPath, err := fetchToTempDir(repoUrl, "master", accessToken)
+	if err != nil {
+		return "", err
+	}
+
+	r, err := git.OpenRepository(repoPath)
+	if err != nil {
+		return "", err
+	}
+
+	remoteRefsList, err := git.GetRemoteRefs(r, nil,
+		&git.RemoteRefConstraints{
+			Include:   true,
+			Sort:      true,
+			SortOrder: git.RefSortOrderDescending,
+		},
+		&git.RemoteRefConstraints{
+			Include:   false,
+			Sort:      true,
+			SortOrder: git.RefSortOrderAscending,
+		})
+	if err != nil {
+		return "", err
+	}
+
+	if len(remoteRefsList) < 1 {
+		return "", errors.New("cannot find git remote information in the config repository")
+	}
+
+	var originRemoteRefs *git.RemoteRefs
+	for _, remoteRefs := range remoteRefsList {
+		if remoteRefs.Name == "origin" {
+			originRemoteRefs = remoteRefs
+			break
+		}
+	}
+	if originRemoteRefs == nil {
+		return "", errors.New(`cannot find git remote called "origin" in the config repository`)
+	}
+
+	tags := originRemoteRefs.Tags
+	if len(tags) == 0 {
+		return "", errors.New(("no tags exists in the repo: " + repoPath))
+	}
+	return tags[0], nil
+}
