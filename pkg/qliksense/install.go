@@ -107,11 +107,16 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 
 	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
 		return err
-	} else if err := q.applyConfigToK8s(dcr); err != nil {
-		fmt.Println("cannot do kubectl apply on manifests")
-		return err
 	} else {
-		return q.applyCR(dcr)
+		if IsQliksenseInstalled(dcr.GetName()) {
+			return q.UpgradeQK8s(keepPatchFiles)
+		}
+		if err := q.applyConfigToK8s(dcr); err != nil {
+			fmt.Println("cannot do kubectl apply on manifests")
+			return err
+		} else {
+			return q.applyCR(dcr)
+		}
 	}
 }
 
