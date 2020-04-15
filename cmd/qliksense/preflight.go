@@ -80,8 +80,9 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
-	var mongodbUrl, username, password, caCertFile, clientCertFile string
-	var tls bool
+
+	preflightOpts := &preflight.PreflightMongoOptions{}
+
 	var preflightAllChecksCmd = &cobra.Command{
 		Use:     "all",
 		Short:   "perform all checks",
@@ -101,18 +102,19 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			qp.RunAllPreflightChecks(namespace, kubeConfigContents, tls, mongodbUrl, username, password, caCertFile, clientCertFile)
+			qp.RunAllPreflightChecks(kubeConfigContents, namespace, preflightOpts)
 			return nil
 
 		},
 	}
 	f := preflightAllChecksCmd.Flags()
-	f.StringVarP(&mongodbUrl, "mongodb-url", "", "", "mongodbUrl to try connecting to")
-	f.StringVarP(&username, "mongodb-username", "u", "", "username to connect to mongodb")
-	f.StringVarP(&password, "mongodb-password", "p", "", "password to connect to mongodb")
-	f.StringVarP(&caCertFile, "mongodb-ca-cert", "", "", "certificate to use for mongodb check")
-	f.StringVarP(&clientCertFile, "mongodb-client-cert", "", "", "client-certificate to use for mongodb check")
-	f.BoolVar(&tls, "mongodb-tls", false, "enable tls?")
+	f.StringVarP(&preflightOpts.MongodbUrl, "mongodb-url", "", "", "mongodbUrl to try connecting to")
+	f.StringVarP(&preflightOpts.Username, "mongodb-username", "", "", "username to connect to mongodb")
+	f.StringVarP(&preflightOpts.Password, "mongodb-password", "", "", "password to connect to mongodb")
+	f.StringVarP(&preflightOpts.CaCertFile, "mongodb-ca-cert", "", "", "certificate to use for mongodb check")
+	f.StringVarP(&preflightOpts.ClientCertFile, "mongodb-client-cert", "", "", "client-certificate to use for mongodb check")
+	f.BoolVar(&preflightOpts.Tls, "mongodb-tls", false, "enable tls?")
+
 	return preflightAllChecksCmd
 }
 
@@ -322,8 +324,8 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
-	var mongodbUrl, username, password, caCertFile, clientCertFile string
-	var tls bool
+
+	preflightOpts := &preflight.PreflightMongoOptions{}
 	var preflightMongoCmd = &cobra.Command{
 		Use:     "mongo",
 		Short:   "preflight mongo OR preflight mongo --url=<url>",
@@ -343,7 +345,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl, tls, username, password, caCertFile, clientCertFile); err != nil {
+			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight mongo check FAILED\n")
 				log.Fatal()
@@ -352,11 +354,11 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 		},
 	}
 	f := preflightMongoCmd.Flags()
-	f.StringVarP(&mongodbUrl, "url", "", "", "mongodbUrl to try connecting to")
-	f.StringVarP(&username, "username", "u", "", "username to connect to mongodb")
-	f.StringVarP(&password, "password", "p", "", "password to connect to mongodb")
-	f.StringVarP(&caCertFile, "ca-cert", "", "", "ca certificate to use for mongodb check")
-	f.StringVarP(&clientCertFile, "client-cert", "", "", "client-certificate to use for mongodb check")
-	f.BoolVar(&tls, "tls", false, "enable tls?")
+	f.StringVarP(&preflightOpts.MongodbUrl, "url", "", "", "mongodbUrl to try connecting to")
+	f.StringVarP(&preflightOpts.Username, "username", "", "", "username to connect to mongodb")
+	f.StringVarP(&preflightOpts.Password, "password", "", "", "password to connect to mongodb")
+	f.StringVarP(&preflightOpts.CaCertFile, "ca-cert", "", "", "ca certificate to use for mongodb check")
+	f.StringVarP(&preflightOpts.ClientCertFile, "client-cert", "", "", "client-certificate to use for mongodb check")
+	f.BoolVar(&preflightOpts.Tls, "tls", false, "enable tls?")
 	return preflightMongoCmd
 }

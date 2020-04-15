@@ -26,6 +26,15 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+type PreflightMongoOptions struct {
+	MongodbUrl     string
+	Username       string
+	Password       string
+	CaCertFile     string
+	ClientCertFile string
+	Tls            bool
+}
+
 var gracePeriod int64 = 0
 
 type QliksensePreflight struct {
