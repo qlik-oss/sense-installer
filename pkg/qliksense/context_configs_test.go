@@ -928,7 +928,7 @@ func TestDeleteContexts(t *testing.T) {
 			q := New(tt.args.qlikSenseHome)
 			var arg []string
 			arg = append(arg, tt.args.contextName)
-			if err := q.DeleteContextConfig(arg, "true"); (err != nil) != tt.wantErr {
+			if err := q.DeleteContextConfig(arg, true); (err != nil) != tt.wantErr {
 				t.Errorf("DeleteContext() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

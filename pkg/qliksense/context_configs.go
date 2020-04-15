@@ -312,7 +312,7 @@ func (q *Qliksense) ListContextConfigs() error {
 	return nil
 }
 
-func (q *Qliksense) DeleteContextConfig(args []string, flag string) error {
+func (q *Qliksense) DeleteContextConfig(args []string, flag bool) error {
 	if len(args) == 1 {
 		qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
 		var qliksenseConfig api.QliksenseConfig
@@ -355,12 +355,10 @@ func (q *Qliksense) DeleteContextConfig(args []string, flag string) error {
 					newLength := len(qliksenseConfig.Spec.Contexts)
 					if currentLength != newLength {
 						ans := flag
-						if ans == "false" {
-							if i := AskForConfirmation("Are You Sure? "); i == true {
-								ans = "true"
-							}
+						if ans == false {
+							ans = AskForConfirmation("Are You Sure? ")
 						}
-						if ans == "true" {
+						if ans == true {
 							api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 							fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
 							fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
