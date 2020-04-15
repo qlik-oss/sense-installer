@@ -47,9 +47,9 @@ build: clean generate
 test-setup: clean generate
 ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	$(eval TMP-docker-distribution := $(shell go run .makefile_support/tmp_dir/main.go))
-	git clone https://github.com/docker/distribution.git $(TMP-docker-distribution)/docker-distribution
-	cd $(TMP-docker-distribution)/docker-distribution && git checkout -b v2.7.1 && $(MAKE)
-	go run .makefile_support/copy/main.go --src $(TMP-docker-distribution)/docker-distribution/bin/registry --dst pkg/qliksense/docker-registry$(FILE_EXT)
+	git clone https://github.com/docker/distribution.git "$(TMP-docker-distribution)/docker-distribution"
+	cd "$(TMP-docker-distribution)/docker-distribution" && git checkout -b v2.7.1 && $(MAKE)
+	go run .makefile_support/copy/main.go --src "$(TMP-docker-distribution)/docker-distribution/bin/registry" --dst pkg/qliksense/docker-registry$(FILE_EXT)
 	go run .makefile_support/remove_all/main.go "$(TMP-docker-distribution)"
 endif
 
@@ -102,13 +102,13 @@ get-crds:
 ifeq ($(QLIKSENSE_OPERATOR_DIR),)
 	$(eval TMP-operator := $(shell go run .makefile_support/tmp_dir/main.go))
 	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP-operator)/operator
-	$(MAKE) QLIKSENSE_OPERATOR_DIR=$(TMP-operator)/operator get-crds
+	$(MAKE) QLIKSENSE_OPERATOR_DIR="$(TMP-operator)/operator" get-crds
 	go run .makefile_support/remove_all/main.go "$(TMP-operator)"
 else
 	go run .makefile_support/mkdir_all/main.go pkg/qliksense/crds/cr
 	go run .makefile_support/mkdir_all/main.go pkg/qliksense/crds/crd
 	go run .makefile_support/mkdir_all/main.go pkg/qliksense/crds/crd-deploy
-	go run .makefile_support/copy/main.go --src-pattern $(QLIKSENSE_OPERATOR_DIR)/deploy/*.yaml --dst pkg/qliksense/crds/crd-deploy
-	go run .makefile_support/copy/main.go --src-pattern $(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_crd.yaml --dst pkg/qliksense/crds/crd
-	go run .makefile_support/copy/main.go --src-pattern $(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_cr.yaml --dst pkg/qliksense/crds/cr
+	go run .makefile_support/copy/main.go --src-pattern "$(QLIKSENSE_OPERATOR_DIR)/deploy/*.yaml" --dst pkg/qliksense/crds/crd-deploy
+	go run .makefile_support/copy/main.go --src-pattern "$(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_crd.yaml" --dst pkg/qliksense/crds/crd
+	go run .makefile_support/copy/main.go --src-pattern "$(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_cr.yaml" --dst pkg/qliksense/crds/cr
 endif
