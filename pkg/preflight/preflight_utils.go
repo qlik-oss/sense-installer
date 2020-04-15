@@ -301,7 +301,7 @@ func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
 	return nil
 }
 
-func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, podName string, imageName string, commandToRun []string) (*apiv1.Pod, error) {
+func createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames []string, commandToRun []string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
@@ -322,6 +322,31 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace string, p
 				},
 			},
 		},
+	}
+	if len(secretNames) > 0 {
+		for _, secretName := range secretNames {
+			pod.Spec.Volumes = append(pod.Spec.Volumes, apiv1.Volume{
+				Name: secretName,
+				VolumeSource: apiv1.VolumeSource{
+					Secret: &apiv1.SecretVolumeSource{
+						SecretName: secretName,
+						Items: []apiv1.KeyToPath{
+							{
+								Key:  secretName,
+								Path: secretName,
+							},
+						},
+					},
+				},
+			})
+			if len(pod.Spec.Containers) > 0 {
+				pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, apiv1.VolumeMount{
+					Name:      secretName,
+					MountPath: "/etc/ssl/" + secretName,
+					ReadOnly:  true,
+				})
+			}
+		}
 	}
 
 	// now create the pod in kubernetes cluster using the clientset
@@ -642,4 +667,47 @@ func deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, ser
 		log.Fatal(err)
 	}
 	fmt.Printf("Deleted ServiceAccount: %s\n\n", serviceAccount.Name)
+}
+
+func createPreflightTestSecret(clientset *kubernetes.Clientset, namespace, secretName string, secretData []byte) (*apiv1.Secret, error) {
+	var secret *apiv1.Secret
+	var err error
+	// build the secret defination we want to create
+	secretSpec := &apiv1.Secret{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      secretName,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"app": "demo",
+			},
+		},
+		Data: map[string][]byte{
+			secretName: secretData,
+		},
+	}
+
+	// now create the secret in kubernetes cluster using the clientset
+	if err = retryOnError(func() (err error) {
+		secret, err = clientset.CoreV1().Secrets(namespace).Create(secretSpec)
+		return err
+	}); err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	fmt.Printf("Created Secret: %s\n", secret.Name)
+	return secret, nil
+}
+
+func deleteK8sSecret(clientset *kubernetes.Clientset, namespace string, k8sSecret *apiv1.Secret) {
+	secretClient := clientset.CoreV1().Secrets(namespace)
+
+	deletePolicy := v1.DeletePropagationForeground
+	deleteOptions := v1.DeleteOptions{
+		PropagationPolicy: &deletePolicy,
+	}
+	err := secretClient.Delete(k8sSecret.GetName(), &deleteOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Deleted Secret: %s\n\n", k8sSecret.Name)
 }

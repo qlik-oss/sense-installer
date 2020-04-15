@@ -80,7 +80,8 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
-	var mongodbUrl string
+	var mongodbUrl, username, password, caCertFile, clientCertFile string
+	var tls bool
 	var preflightAllChecksCmd = &cobra.Command{
 		Use:     "all",
 		Short:   "perform all checks",
@@ -100,13 +101,18 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			qp.RunAllPreflightChecks(namespace, kubeConfigContents, mongodbUrl)
+			qp.RunAllPreflightChecks(namespace, kubeConfigContents, tls, mongodbUrl, username, password, caCertFile, clientCertFile)
 			return nil
 
 		},
 	}
 	f := preflightAllChecksCmd.Flags()
 	f.StringVarP(&mongodbUrl, "mongodb-url", "", "", "mongodbUrl to try connecting to")
+	f.StringVarP(&username, "username", "u", "", "username to connect to mongodb")
+	f.StringVarP(&password, "password", "p", "", "password to connect to mongodb")
+	f.StringVarP(&caCertFile, "ca-cert", "", "", "cert to use for this check")
+	f.StringVarP(&clientCertFile, "client-cert", "", "", "client-cert to use for this check")
+	f.BoolVar(&tls, "tls", false, "enable tls?")
 	return preflightAllChecksCmd
 }
 
@@ -316,7 +322,8 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
-	var mongodbUrl string
+	var mongodbUrl, username, password, caCertFile, clientCertFile string
+	var tls bool
 	var preflightMongoCmd = &cobra.Command{
 		Use:     "mongo",
 		Short:   "preflight mongo OR preflight mongo --url=<url>",
@@ -336,7 +343,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {
+			if err = qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl, tls, username, password, caCertFile, clientCertFile); err != nil {
 				fmt.Println(err)
 				fmt.Print("Preflight mongo check FAILED\n")
 				log.Fatal()
@@ -346,5 +353,10 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	f := preflightMongoCmd.Flags()
 	f.StringVarP(&mongodbUrl, "url", "", "", "mongodbUrl to try connecting to")
+	f.StringVarP(&username, "username", "u", "", "username to connect to mongodb")
+	f.StringVarP(&password, "password", "p", "", "password to connect to mongodb")
+	f.StringVarP(&caCertFile, "ca-cert", "", "", "cert to use for this connection")
+	f.StringVarP(&clientCertFile, "client-cert", "", "", "client-cert to use for this connection")
+	f.BoolVar(&tls, "tls", false, "enable tls?")
 	return preflightMongoCmd
 }
