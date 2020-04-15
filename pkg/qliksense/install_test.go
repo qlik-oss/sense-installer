@@ -130,6 +130,7 @@ spec:
 	}
 
 	originalOperatorString := q.GetOperatorControllerString()
+	fmt.Printf("originalOperatorString:\n%v\n", originalOperatorString)
 
 	processedOperatorString, err := q.getProcessedOperatorControllerString(qcr)
 	if err != nil {
