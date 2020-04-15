@@ -1,4 +1,4 @@
-# How qliksense cli works
+# How CLI works
 
 At the initialization, `qliksense` cli creates few files in the director `~/.qliksene` and it contains following files:
 
@@ -48,14 +48,14 @@ qliksense config -h
 
 In this mode `qliksense` CLI downloads the specified version from [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) and places it in `~/.qliksense/contexts/<context-name>/qlik-k8s` folder.
 
-The qliksense cli creates a CR for the QlikSense operator and all config operations are peformed to edit the CR.
+The qliksense cli creates a CR for the QlikSense operator and all config operations are performed to edit the CR.
 
 `qliksense install` or `qliksense config apply` will generate patches in local file system (i.e `~/.qliksense/contexts/<context-name>/qlik-k8s`) and
 
 - Install those manifests into the cluster 
-- Create a custom resoruce (CR) for the `qliksene operator`.
+- Create a custom resource (CR) for the `qliksene operator`.
 
-The operator makes the association to the installed resoruces so that when `qliksense uninstall` is performed the operator can delete all kubernetes resources related to QSEoK for the current context.
+The operator makes the association to the installed resources so that when `qliksense uninstall` is performed the operator can delete all kubernetes resources related to QSEoK for the current context.
 
 ## With a git repo
 
@@ -94,4 +94,3 @@ spec:
     image: qlik-docker-oss.bintray.io/qliksense-repo-watcher
 ....
 ```
-

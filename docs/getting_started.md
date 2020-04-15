@@ -5,7 +5,7 @@
 - Kubernetes cluster (Docker Desktop with enabled Kubernetes)
 - `kubectl` installed, configured and able to communicate with kubernetes cluster. _`qliksense` CLI uses `kubectl` under the hood to perform operations on cluster_
 
-## Installing Sense installer
+## Installing `qliksense` CLI
 
 Download the executable for your platform from [releases page](https://github.com/qlik-oss/sense-installer/releases) and rename it to `qliksense`
 
