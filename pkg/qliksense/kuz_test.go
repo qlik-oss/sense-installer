@@ -68,7 +68,7 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 	configPath := path.Join(tmpDir, "config")
 	if repo, err := kapis_git.CloneRepository(configPath, defaultConfigRepoGitUrl, nil); err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
-	} else if err := kapis_git.Checkout(repo, "v1.21.23-edge", "", nil); err != nil {
+	} else if err := kapis_git.Checkout(repo, "e38df644e759abf0b5941c1511d1a2cd5e3c42fa", "", nil); err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
 	}
 
