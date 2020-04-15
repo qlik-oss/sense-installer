@@ -6,6 +6,7 @@ import (
 )
 
 func uninstallCmd(q *qliksense.Qliksense) *cobra.Command {
+	skipConfirmation := false
 	c := &cobra.Command{
 		Use:     "uninstall",
 		Short:   "Uninstall the deployed qliksense.",
@@ -13,15 +14,15 @@ func uninstallCmd(q *qliksense.Qliksense) *cobra.Command {
 		Example: `qliksense uninstall <context-name>`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) > 0 {
-				return q.UninstallQK8s(args[0], cmd.Flag("yes").Value.String())
+				return q.UninstallQK8s(args[0], skipConfirmation)
 			}
-			return q.UninstallQK8s("", cmd.Flag("yes").Value.String())
+			return q.UninstallQK8s("", skipConfirmation)
 		},
 	}
 
 	f := c.Flags()
 
-	f.BoolP("yes", "y", false, "skips confirmation")
+	f.BoolVar(&skipConfirmation, "yes", skipConfirmation, "skips confirmation")
 
 	return c
 }
