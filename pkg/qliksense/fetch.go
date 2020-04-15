@@ -9,10 +9,10 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
-	"github.com/src-d/go-git/plumbing/transport"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
 type FetchCommandOptions struct {

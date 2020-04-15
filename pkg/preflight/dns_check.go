@@ -20,7 +20,11 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// creating deployment
 	depName := "dep-dns-preflight-check"
-	dnsDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, qp.GetPreflightConfigObj().GetImageName(nginx))
+	nginxImageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
+	if err != nil {
+		return err
+	}
+	dnsDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
 		fmt.Println(err)
@@ -44,7 +48,11 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	// create a pod
 	podName := "pf-pod-1"
 	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
-	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, qp.GetPreflightConfigObj().GetImageName(netcat), nil, commandToRun)
+	netcatImageName, err := qp.GetPreflightConfigObj().GetImageName(netcat, true)
+	if err != nil {
+		return err
+	}
+	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
 		return err
