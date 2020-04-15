@@ -108,11 +108,11 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	f := preflightAllChecksCmd.Flags()
 	f.StringVarP(&mongodbUrl, "mongodb-url", "", "", "mongodbUrl to try connecting to")
-	f.StringVarP(&username, "username", "u", "", "username to connect to mongodb")
-	f.StringVarP(&password, "password", "p", "", "password to connect to mongodb")
-	f.StringVarP(&caCertFile, "ca-cert", "", "", "cert to use for this check")
-	f.StringVarP(&clientCertFile, "client-cert", "", "", "client-cert to use for this check")
-	f.BoolVar(&tls, "tls", false, "enable tls?")
+	f.StringVarP(&username, "mongodb-username", "u", "", "username to connect to mongodb")
+	f.StringVarP(&password, "mongodb-password", "p", "", "password to connect to mongodb")
+	f.StringVarP(&caCertFile, "mongodb-ca-cert", "", "", "certificate to use for mongodb check")
+	f.StringVarP(&clientCertFile, "mongodb-client-cert", "", "", "client-certificate to use for mongodb check")
+	f.BoolVar(&tls, "mongodb-tls", false, "enable tls?")
 	return preflightAllChecksCmd
 }
 
@@ -355,8 +355,8 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&mongodbUrl, "url", "", "", "mongodbUrl to try connecting to")
 	f.StringVarP(&username, "username", "u", "", "username to connect to mongodb")
 	f.StringVarP(&password, "password", "p", "", "password to connect to mongodb")
-	f.StringVarP(&caCertFile, "ca-cert", "", "", "cert to use for this connection")
-	f.StringVarP(&clientCertFile, "client-cert", "", "", "client-cert to use for this connection")
+	f.StringVarP(&caCertFile, "ca-cert", "", "", "ca certificate to use for mongodb check")
+	f.StringVarP(&clientCertFile, "client-cert", "", "", "client-certificate to use for mongodb check")
 	f.BoolVar(&tls, "tls", false, "enable tls?")
 	return preflightMongoCmd
 }

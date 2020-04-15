@@ -8,6 +8,7 @@ import (
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -31,6 +32,10 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 			return err
 		}
 		decryptedCR, err := qConfig.GetDecryptedCr(currentCR)
+		if err != nil {
+			fmt.Printf("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
+			return err
+		}
 		mongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	}
 
@@ -43,7 +48,6 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace, m
 }
 
 func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace, mongodbUrl string, tls bool, username, password, caCertFile, clientCertFile string) error {
-	var caCertSecret, clientSecret *apiv1.Secret
 	var caCertSecretName, clientCertSecretName string
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
@@ -53,31 +57,28 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	}
 	var secrets []string
 	if caCertFile != "" {
-		caCertBytes, err := ioutil.ReadFile(caCertFile)
-		if err != nil {
-			return err
-		}
 		caCertSecretName = "preflight-mongo-test-cacert"
-		caCertSecret, err = createPreflightTestSecret(clientset, namespace, caCertSecretName, caCertBytes)
+		caCertSecret, err := createSecret(clientset, namespace, caCertFile, caCertSecretName)
+
 		if err != nil {
-			err = fmt.Errorf("error: unable to create secret with ca cert : %v\n", err)
+			err = fmt.Errorf("error: unable to create a create ca cert kubernetes secret: %v\n", err)
+			fmt.Println(err)
 			return err
 		}
+
 		defer deleteK8sSecret(clientset, namespace, caCertSecret)
 		secrets = append(secrets, caCertSecretName)
 	}
 	if clientCertFile != "" {
-		clientCertBytes, err := ioutil.ReadFile(clientCertFile)
-		if err != nil {
-			return err
-		}
 		clientCertSecretName = "preflight-mongo-test-clientcert"
-		clientSecret, err = createPreflightTestSecret(clientset, namespace, clientCertSecretName, clientCertBytes)
+		clientCertSecret, err := createSecret(clientset, namespace, clientCertFile, clientCertSecretName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to create secret with client cert : %v\n", err)
+			err = fmt.Errorf("error: unable to create a create client cert kubernetes secret: %v\n", err)
+			fmt.Println(err)
 			return err
 		}
-		defer deleteK8sSecret(clientset, namespace, clientSecret)
+
+		defer deleteK8sSecret(clientset, namespace, clientCertSecret)
 		secrets = append(secrets, clientCertSecretName)
 	}
 
@@ -144,4 +145,18 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		return err
 	}
 	return nil
+}
+
+func createSecret(clientset *kubernetes.Clientset, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
+	certBytes, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return nil, err
+	}
+
+	certSecret, err := createPreflightTestSecret(clientset, namespace, certSecretName, certBytes)
+	if err != nil {
+		err = fmt.Errorf("error: unable to create secret with ca cert : %v\n", err)
+		return nil, err
+	}
+	return certSecret, nil
 }
