@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfigContents []byte, mongodbUrl string) {
+func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, namespace string, preflightOpts *PreflightMongoOptions) {
 
 	checkCount := 0
 	totalCount := 0
@@ -81,7 +81,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(namespace string, kubeConfig
 	// Preflight mongo check
 	fmt.Printf("\nPreflight mongo check\n")
 	fmt.Println("---------------------")
-	if err := qp.CheckMongo(kubeConfigContents, namespace, mongodbUrl); err != nil {
+	if err := qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
 		fmt.Printf("Preflight mongo check: FAILED\n")
 	} else {
 		checkCount++

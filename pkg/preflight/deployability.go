@@ -72,7 +72,7 @@ func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namesp
 	if err != nil {
 		return err
 	}
-	pod, err := createPreflightTestPod(clientset, namespace, podName, imageName, commandToRun)
+	pod, err := createPreflightTestPod(clientset, namespace, podName, imageName, nil, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod %s - %v\n", podName, err)
 		return err
