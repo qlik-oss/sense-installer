@@ -586,7 +586,7 @@ func createPfRoleBinding(clientset *kubernetes.Clientset, namespace, roleBinding
 			Name:      roleBindingName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app": "demo",
+				"app": "preflight",
 			},
 		},
 		Subjects: []v1beta1.Subject{
@@ -678,7 +678,7 @@ func createPreflightTestSecret(clientset *kubernetes.Clientset, namespace, secre
 			Name:      secretName,
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app": "demo",
+				"app": "preflight",
 			},
 		},
 		Data: map[string][]byte{
