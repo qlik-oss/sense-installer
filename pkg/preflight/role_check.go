@@ -72,7 +72,8 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	if len(resultYamlBytes) == 0 {
 		resultYamlBytes, err = qliksense.ExecuteKustomizeBuild(kusDir)
 		if err != nil {
-			fmt.Printf("Unable to retrieve manifests from executing kustomize: %v\n", err)
+			err := fmt.Errorf("Unable to retrieve manifests from executing kustomize from dir: %s", kusDir)
+			fmt.Println(err)
 			return err
 		}
 	}
@@ -80,7 +81,7 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	if sa != "" {
 		sa = strings.Replace(sa, "name: qliksense", "name: preflight", -1)
 	} else {
-		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster")
+		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster from dir: %s", kusDir)
 		fmt.Println(err)
 		return err
 	}

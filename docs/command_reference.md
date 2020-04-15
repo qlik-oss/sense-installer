@@ -4,7 +4,6 @@
 
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
 
-The suite consists of a set of `collectors` which run the specifications of every test and `analyzers` which analyze the results of every test run by the collector.
 We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
@@ -15,7 +14,7 @@ qliksense preflight
 #### Running all checks
 Run the following command to execute all preflight checks
 ```
-qliksense preflight all
+qliksense preflight all --mongodb-url=<mongo-server url> --mongodb-ca-cert=<path to ca-cert file>
 ```
 
 #### Running specific check
