@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
+
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
@@ -30,29 +32,42 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 						return q.ApplyCRFromReader(bytes.NewReader(crBytesWithEula), opts, keepPatchFiles, true, pull, push)
 					}
 				})
-			}
-			version := ""
-			if len(args) != 0 {
-				version = args[0]
-			}
-			if err := validatePullPushFlagsOnInstall(q, pull, push); err != nil {
-				return err
-			}
-			if pull {
-				fmt.Println("Pulling images...")
-				if err := q.PullImages(version, ""); err != nil {
+			} else {
+				version := ""
+				if len(args) != 0 {
+					version = args[0]
+				}
+				if err := validatePullPushFlagsOnInstall(q, pull, push); err != nil {
 					return err
 				}
-			}
-			if push {
-				fmt.Println("Pushing images...")
-				if err := q.PushImagesForCurrentCR(); err != nil {
-					return err
+				if pull {
+					fmt.Println("Pulling images...")
+					if err := q.PullImages(version, ""); err != nil {
+						return err
+					}
 				}
+				if push {
+					fmt.Println("Pushing images...")
+					if err := q.PushImagesForCurrentCR(); err != nil {
+						return err
+					}
+				}
+				return q.InstallQK8s(version, opts, keepPatchFiles)
 			}
-			return q.InstallQK8s(version, opts, keepPatchFiles)
 		},
 	}
+
+	eulaPreRunHooks.addValidator(fmt.Sprintf("%v %v", rootCommandName, c.Name()), func(cmd *cobra.Command, q *qliksense.Qliksense) (b bool, err error) {
+		if filePath != "" {
+			return loadOrApplyCommandEulaPreRunHook(cmd, q)
+		} else if qConfig, err := qapi.NewQConfigE(q.QliksenseHome); err != nil {
+			return false, err
+		} else if qcr, err := qConfig.GetCurrentCR(); err != nil {
+			return false, err
+		} else {
+			return qcr.IsEULA(), nil
+		}
+	})
 
 	f := c.Flags()
 	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
@@ -63,6 +78,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	f.BoolVarP(&pull, pullFlagName, pullFlagShorthand, pull, pullFlagUsage)
 	f.BoolVarP(&push, pushFlagName, pushFlagShorthand, push, pushFlagUsage)
+
 	return c
 }
 
