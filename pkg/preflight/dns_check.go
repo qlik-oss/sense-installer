@@ -12,6 +12,7 @@ const (
 
 func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
 	qp.P.LogVerboseMessage("Preflight DNS check: \n")
+	qp.P.LogVerboseMessage("------------------- \n")
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)

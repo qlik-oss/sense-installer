@@ -10,6 +10,7 @@ import (
 
 func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigContents []byte) error {
 	qp.P.LogVerboseMessage("Preflight kubernetes version check: \n")
+	qp.P.LogVerboseMessage("----------------------------------- \n")
 	var currentVersion *semver.Version
 
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")

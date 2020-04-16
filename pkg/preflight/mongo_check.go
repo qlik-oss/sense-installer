@@ -17,6 +17,7 @@ const (
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) error {
 	qp.P.LogVerboseMessage("Preflight mongodb check: \n")
+	qp.P.LogVerboseMessage("------------------------ \n")
 
 	if preflightOpts.MongoOptions.MongodbUrl == "" {
 		// infer mongoDbUrl from currentCR

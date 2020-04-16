@@ -15,6 +15,7 @@ var resultYamlBytes = []byte("")
 func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
 	// create a Role
 	qp.P.LogVerboseMessage("Preflight role check: \n")
+	qp.P.LogVerboseMessage("--------------------- \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
 		return err
@@ -26,6 +27,7 @@ func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
 func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string) error {
 	// create a RoleBinding
 	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
+	qp.P.LogVerboseMessage("---------------------------- \n")
 	err := qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
 		return err
@@ -37,6 +39,7 @@ func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string) error {
 func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string) error {
 	// create a service account
 	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
+	qp.P.LogVerboseMessage("------------------------------- \n")
 	err := qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
 		return err
@@ -110,6 +113,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 
 	// create a role
 	qp.P.LogVerboseMessage("Preflight createRole check: \n")
+	qp.P.LogVerboseMessage("--------------------------- \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight role check: FAILED\n")
@@ -118,6 +122,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 
 	// create a roleBinding
 	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
+	qp.P.LogVerboseMessage("---------------------------- \n")
 	err = qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight rolebinding check: FAILED\n")
@@ -126,6 +131,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 
 	// create a service account
 	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
+	qp.P.LogVerboseMessage("------------------------------- \n")
 	err = qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight serviceaccount check: FAILED\n")

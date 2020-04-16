@@ -15,6 +15,7 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 
 	// Deployment check
 	qp.P.LogVerboseMessage("Preflight deployment check: \n")
+	qp.P.LogVerboseMessage("--------------------------- \n")
 	err = qp.checkPfDeployment(clientset, namespace, "deployment-preflight-check")
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Deployment check: FAILED\n")
@@ -33,6 +34,7 @@ func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents 
 	}
 	// Service check
 	qp.P.LogVerboseMessage("Preflight service check: \n")
+	qp.P.LogVerboseMessage("------------------------ \n")
 	err = qp.checkPfService(clientset, namespace)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Service check: FAILED\n")
@@ -50,7 +52,7 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 	}
 	// Pod check
 	qp.P.LogVerboseMessage("Preflight pod check: \n")
-
+	qp.P.LogVerboseMessage("-------------------- \n")
 	err = qp.checkPfPod(clientset, namespace)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Pod check: FAILED\n")
