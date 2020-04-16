@@ -109,6 +109,7 @@ func ReadFromFile(content interface{}, sourceFile string) error {
 	if e != nil {
 		return e
 	}
+	defer file.Close()
 	return ReadFromStream(content, file)
 }
 

@@ -3,6 +3,8 @@ package qliksense
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 
@@ -151,10 +153,15 @@ func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
 }
 
 func kustomizeForImageRegistry(resources, dockerConfigJsonSecretName, name, newName string) (string, error) {
-	fSys := filesys.MakeFsInMemory()
-	if err := fSys.WriteFile("/resources.yaml", []byte(resources)); err != nil {
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
 		return "", err
-	} else if err := fSys.WriteFile("/addImagePullSecrets.yaml", []byte(fmt.Sprintf(`
+	}
+	defer os.RemoveAll(dir)
+
+	if err := ioutil.WriteFile(filepath.Join(dir, "resources.yaml"), []byte(resources), os.ModePerm); err != nil {
+		return "", err
+	} else if err := ioutil.WriteFile(filepath.Join(dir, "addImagePullSecrets.yaml"), []byte(fmt.Sprintf(`
 apiVersion: builtin
 kind: PatchTransformer
 metadata:
@@ -163,9 +170,9 @@ patch: '[{"op": "add", "path": "/spec/template/spec/imagePullSecrets", "value": 
 target:
   name: .*-operator
   kind: Deployment
-`, dockerConfigJsonSecretName))); err != nil {
+`, dockerConfigJsonSecretName)), os.ModePerm); err != nil {
 		return "", err
-	} else if err := fSys.WriteFile("/kustomization.yaml", []byte(fmt.Sprintf(`
+	} else if err := ioutil.WriteFile(filepath.Join(dir, "kustomization.yaml"), []byte(fmt.Sprintf(`
 resources:
 - resources.yaml
 transformers:
@@ -173,9 +180,9 @@ transformers:
 images:
 - name: %s
   newName: %s
-`, name, newName))); err != nil {
+`, name, newName)), os.ModePerm); err != nil {
 		return "", err
-	} else if out, err := executeKustomizeBuildForFileSystem("/", fSys); err != nil {
+	} else if out, err := executeKustomizeBuildForFileSystem(dir, filesys.MakeFsOnDisk()); err != nil {
 		return "", err
 	} else {
 		return string(out), nil

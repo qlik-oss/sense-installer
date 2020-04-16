@@ -27,6 +27,13 @@ const (
 	qlikSenseDirVar         = ".qliksense"
 	keepPatchFilesFlagName  = "keep-config-repo-patches"
 	keepPatchFilesFlagUsage = "Keep config repo patch files (for debugging)"
+	pullFlagName            = "pull"
+	pullFlagShorthand       = "d"
+	pullFlagUsage           = "If using private docker registry, pull (download) all required Qliksense images before install"
+	pushFlagName            = "push"
+	pushFlagShorthand       = "u"
+	pushFlagUsage           = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
+	rootCommandName         = "qliksense"
 )
 
 func initAndExecute() error {
@@ -85,17 +92,20 @@ var versionCmd = &cobra.Command{
 }
 
 func commandUsesContext(commandName string) bool {
-	return commandName != "" && commandName != "qliksense" && commandName != "help" && commandName != "version"
+	return commandName != "" &&
+		commandName != rootCommandName &&
+		commandName != fmt.Sprintf("%v help", rootCommandName) &&
+		commandName != fmt.Sprintf("%v version", rootCommandName)
 }
 
 func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "qliksense",
+		Use:   rootCommandName,
 		Short: "Qliksense cli tool",
 		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if commandUsesContext(cmd.Name()) {
+			if commandUsesContext(cmd.CommandPath()) {
 				globalEulaPreRun(cmd, p)
 				if err := p.SetUpQliksenseDefaultContext(); err != nil {
 					panic(err)
@@ -108,14 +118,14 @@ func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 			}
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			if commandUsesContext(cmd.Name()) {
+			if commandUsesContext(cmd.CommandPath()) {
 				globalEulaPostRun(cmd, p)
 			}
 		},
 	}
 	origHelpFunc := cmd.HelpFunc()
 	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		if !commandUsesContext(cmd.Name()) {
+		if !commandUsesContext(cmd.CommandPath()) {
 			cmd.Flags().MarkHidden("acceptEULA")
 		}
 		origHelpFunc(cmd, args)
