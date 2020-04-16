@@ -92,13 +92,13 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 
 	defer func() {
 		qp.P.LogVerboseMessage("Cleaning up resources...\n")
-		api.KubectlDelete(sa, namespace)
+		api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
 		if err != nil {
 			qp.P.LogVerboseMessage("Preflight cleanup failed!\n")
 		}
 	}()
 
-	err = api.KubectlApply(sa, namespace)
+	err = api.KubectlApplyVerbose(sa, namespace, qp.P.Verbose)
 	if err != nil {
 		err := fmt.Errorf("Failed to create entity on the cluster: %v", err)
 		// fmt.Println(err)
@@ -138,7 +138,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	}
 	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n\n")
 
-	qp.P.LogVerboseMessage("Preflight RB check: PASSED\n")
-	qp.P.LogVerboseMessage("Completed preflight CreateRB check\n")
+	qp.P.LogVerboseMessage("Preflight authcheck: PASSED\n")
+	qp.P.LogVerboseMessage("Completed preflight authcheck\n")
 	return nil
 }
