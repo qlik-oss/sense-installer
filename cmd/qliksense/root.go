@@ -172,9 +172,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	//add upgrade command
-	cmd.AddCommand(upgradeCmd(p))
-
 	// add the set-context config command as a sub-command to the app config command
 	configCmd.AddCommand(setContextConfigCmd(p))
 
