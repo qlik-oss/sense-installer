@@ -32,4 +32,19 @@ func TestFetchAndUpdateCR(t *testing.T) {
 		t.Log("actual path: " + cr.Spec.ManifestsRoot + ", expected path: contexts/test1/qlik-k8s/v0.0.2")
 		t.FailNow()
 	}
+	//testing latest tag is fetched
+	cr.AddLabelToCr("version", "")
+	qConfig.WriteCR(cr)
+	err := fetchAndUpdateCR(qConfig, "")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	cr = &qapi.QliksenseCR{}
+	qapi.ReadFromFile(cr, actualCrFile)
+	v := cr.GetLabelFromCr("version")
+	if v == "" || v == "v0.0.2" {
+		t.Log("should get latest but got version: " + v)
+		t.Fail()
+	}
 }
