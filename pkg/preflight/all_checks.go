@@ -10,17 +10,13 @@ import (
 
 func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) {
 	out := ansi.NewColorableStdout()
-
 	checkCount := 0
 	totalCount := 0
-	// Preflight minimum kuberenetes version check
-	// fmt.Printf("\nPreflight kubernetes minimum version check\n")
-	// fmt.Println("------------------------------------------")
-	if err := qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
 
+	// Preflight minimum kuberenetes version check
+	if err := qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
 		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight kubernetes minimum version check"))
 		fmt.Printf("Error: %v\n\n", err)
-		// fmt.Printf("Preflight kubernetes minimum version check: FAILED\n")
 	} else {
 		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight kubernetes minimum version check"))
 		checkCount++

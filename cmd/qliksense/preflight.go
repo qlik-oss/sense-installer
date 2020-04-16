@@ -71,24 +71,18 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
 
 			// Preflight Kubernetes minimum version check
-			// qp.P.LogVerboseMessage("Preflight kubernetes minimum version check\n")
-			// qp.P.LogVerboseMessage("------------------------------------------\n")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				// fmt.Printf("Preflight kubernetes minimum version check FAILED\n")
-				fmt.Printf("Error: %v\n", err)
 				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight kubernetes minimum version check"))
+				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
-				// fmt.Printf("Preflight kubernetes minimum version check FAILED\n")
-				fmt.Printf("Error: %v\n", err)
 				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight kubernetes minimum version check"))
+				fmt.Printf("Error: %v\n", err)
 				return nil
-				// log.Fatal()
 			}
 			emoji.Fprintf(out, "%s\n", chalk.Green.Color(":heavy_check_mark: Preflight kubernetes minimum version check"))
-			// qp.P.LogVerboseMessage("Completed Preflight kubernetes minimum version check\n")
 			return nil
 		},
 	}
@@ -113,7 +107,7 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
 
 			// Preflight run all checks
-			fmt.Printf("Running all preflight checks\n\n")
+			fmt.Printf("Running all preflight checks...\n\n")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
 				fmt.Println(err)
