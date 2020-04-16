@@ -14,34 +14,34 @@ var resultYamlBytes = []byte("")
 
 func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
 	// create a Role
-	fmt.Printf("Preflight role check: \n")
+	qp.P.LogVerboseMessage("Preflight role check: \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight role check")
+	qp.P.LogVerboseMessage("Completed preflight role check\n")
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string) error {
 	// create a RoleBinding
-	fmt.Printf("Preflight rolebinding check: \n")
+	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
 	err := qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight rolebinding check")
+	qp.P.LogVerboseMessage("Completed preflight rolebinding check\n")
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string) error {
 	// create a service account
-	fmt.Printf("Preflight serviceaccount check: \n")
+	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
 	err := qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight serviceaccount check")
+	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n")
 	return nil
 }
 func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) error {
@@ -52,13 +52,13 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	var err error
 	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
-		fmt.Printf("Unable to retrieve current CR: %v\n", err)
+		qp.P.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
 		return err
 	}
 	if currentCR.IsRepoExist() {
 		mfroot = currentCR.Spec.GetManifestsRoot()
 	} else if tempDownloadedDir, err := qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
-		fmt.Printf("Unable to Download from git repo to tmp dir: %v\n", err)
+		qp.P.LogVerboseMessage("Unable to Download from git repo to tmp dir: %v\n", err)
 		return err
 	} else {
 		mfroot = tempDownloadedDir
@@ -73,7 +73,7 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 		resultYamlBytes, err = qliksense.ExecuteKustomizeBuild(kusDir)
 		if err != nil {
 			err := fmt.Errorf("Unable to retrieve manifests from executing kustomize from dir: %s", kusDir)
-			fmt.Println(err)
+			// fmt.Println(err)
 			return err
 		}
 	}
@@ -82,57 +82,57 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 		sa = strings.Replace(sa, "name: qliksense", "name: preflight", -1)
 	} else {
 		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster from dir: %s", kusDir)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 	namespace = "" // namespace is handled when generating the manifests
 
 	defer func() {
-		fmt.Println("Cleaning up resources")
+		qp.P.LogVerboseMessage("Cleaning up resources...\n")
 		api.KubectlDelete(sa, namespace)
 		if err != nil {
-			fmt.Println("Preflight cleanup failed!")
+			qp.P.LogVerboseMessage("Preflight cleanup failed!\n")
 		}
 	}()
 
 	err = api.KubectlApply(sa, namespace)
 	if err != nil {
 		err := fmt.Errorf("Failed to create entity on the cluster: %v", err)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 
-	fmt.Printf("Preflight %s check: PASSED\n", entityToTest)
+	qp.P.LogVerboseMessage("Preflight %s check: PASSED\n", entityToTest)
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents []byte) error {
 
 	// create a role
-	fmt.Printf("Preflight createRole check: \n")
+	qp.P.LogVerboseMessage("Preflight createRole check: \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
-		fmt.Println("Preflight role check: FAILED")
+		qp.P.LogVerboseMessage("Preflight role check: FAILED\n")
 	}
-	fmt.Printf("Completed preflight role check\n\n")
+	qp.P.LogVerboseMessage("Completed preflight role check\n\n")
 
 	// create a roleBinding
-	fmt.Printf("Preflight rolebinding check: \n")
+	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
 	err = qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
-		fmt.Println("Preflight rolebinding check: FAILED")
+		qp.P.LogVerboseMessage("Preflight rolebinding check: FAILED\n")
 	}
-	fmt.Printf("Completed preflight rolebinding check\n\n")
+	qp.P.LogVerboseMessage("Completed preflight rolebinding check\n\n")
 
 	// create a service account
-	fmt.Printf("Preflight serviceaccount check: \n")
+	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
 	err = qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
-		fmt.Println("Preflight serviceaccount check: FAILED")
+		qp.P.LogVerboseMessage("Preflight serviceaccount check: FAILED\n")
 	}
-	fmt.Printf("Completed preflight serviceaccount check\n\n")
+	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n\n")
 
-	fmt.Println("Preflight RB check: PASSED")
-	fmt.Println("Completed preflight CreateRB check")
+	qp.P.LogVerboseMessage("Preflight RB check: PASSED\n")
+	qp.P.LogVerboseMessage("Completed preflight CreateRB check\n")
 	return nil
 }

@@ -46,7 +46,7 @@ func DirExists(dirname string) bool {
 // LogDebugMessage logs a debug message
 func LogDebugMessage(strMessage string, args ...interface{}) {
 	if os.Getenv("QLIKSENSE_DEBUG") == "true" {
-		log.Printf(strMessage, args...)
+		fmt.Printf(strMessage, args...)
 	}
 }
 

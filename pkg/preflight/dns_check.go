@@ -11,6 +11,7 @@ const (
 )
 
 func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
+	qp.P.LogVerboseMessage("Preflight DNS check: \n")
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
@@ -38,12 +39,12 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// creating service
 	serviceName := "svc-dns-pf-check"
-	dnsService, err := createPreflightTestService(clientset, namespace, serviceName)
+	dnsService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create service : %s\n", serviceName)
 		return err
 	}
-	defer deleteService(clientset, namespace, serviceName)
+	defer qp.deleteService(clientset, namespace, serviceName)
 
 	// create a pod
 	podName := "pf-pod-1"
@@ -52,13 +53,13 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	if err != nil {
 		return err
 	}
-	dnsPod, err := createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
+	dnsPod, err := qp.createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
 		return err
 	}
 
-	defer deletePod(clientset, namespace, podName)
+	defer qp.deletePod(clientset, namespace, podName)
 
 	if err := waitForPod(clientset, namespace, dnsPod); err != nil {
 		return err
@@ -79,14 +80,14 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	}
 
 	if strings.HasSuffix(strings.TrimSpace(logStr), "succeeded!") {
-		qp.P.LogVerboseMessage("Preflight DNS check: PASSED")
+		qp.P.LogVerboseMessage("Preflight DNS check: PASSED\n")
 	} else {
 		err = fmt.Errorf("Expected response not found\n")
 		return err
 	}
 
-	qp.P.LogVerboseMessage("Completed preflight DNS check")
-	qp.P.LogVerboseMessage("Cleaning up resources...")
+	qp.P.LogVerboseMessage("Completed preflight DNS check\n")
+	qp.P.LogVerboseMessage("Cleaning up resources...\n")
 
 	return nil
 }

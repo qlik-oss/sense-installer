@@ -16,11 +16,11 @@ const (
 )
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) error {
-	fmt.Printf("Preflight mongodb check: \n")
+	qp.P.LogVerboseMessage("Preflight mongodb check: \n")
 
 	if preflightOpts.MongoOptions.MongodbUrl == "" {
 		// infer mongoDbUrl from currentCR
-		fmt.Println("MongoDbUri is empty, infer from CR")
+		qp.P.LogVerboseMessage("MongoDbUri is empty, infer from CR\n")
 		qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
 		var currentCR *qapi.QliksenseCR
 
@@ -28,22 +28,22 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 		qConfig.SetNamespace(namespace)
 		currentCR, err = qConfig.GetCurrentCR()
 		if err != nil {
-			fmt.Printf("Unable to retrieve current CR: %v\n", err)
+			qp.P.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
 			return err
 		}
 		decryptedCR, err := qConfig.GetDecryptedCr(currentCR)
 		if err != nil {
-			fmt.Printf("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
+			qp.P.LogVerboseMessage("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
 			return err
 		}
 		preflightOpts.MongoOptions.MongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	}
 
-	fmt.Printf("mongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
+	qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
 	if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts); err != nil {
 		return err
 	}
-	fmt.Println("Completed preflight mongodb check")
+	qp.P.LogVerboseMessage("Completed preflight mongodb check\n")
 	return nil
 }
 
@@ -52,33 +52,30 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
-		fmt.Println(err)
 		return err
 	}
 	var secrets []string
 	if preflightOpts.MongoOptions.CaCertFile != "" {
 		caCertSecretName = "preflight-mongo-test-cacert"
-		caCertSecret, err := createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
+		caCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
 
 		if err != nil {
 			err = fmt.Errorf("error: unable to create a create ca cert kubernetes secret: %v\n", err)
-			fmt.Println(err)
 			return err
 		}
 
-		defer deleteK8sSecret(clientset, namespace, caCertSecret)
+		defer qp.deleteK8sSecret(clientset, namespace, caCertSecret)
 		secrets = append(secrets, caCertSecretName)
 	}
 	if preflightOpts.MongoOptions.ClientCertFile != "" {
 		clientCertSecretName = "preflight-mongo-test-clientcert"
-		clientCertSecret, err := createSecret(clientset, namespace, preflightOpts.MongoOptions.ClientCertFile, clientCertSecretName)
+		clientCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.ClientCertFile, clientCertSecretName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to create a create client cert kubernetes secret: %v\n", err)
-			fmt.Println(err)
 			return err
 		}
 
-		defer deleteK8sSecret(clientset, namespace, clientCertSecret)
+		defer qp.deleteK8sSecret(clientset, namespace, clientCertSecret)
 		secrets = append(secrets, clientCertSecretName)
 	}
 
@@ -96,8 +93,8 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		mongoCommand.WriteString(" --tls")
 		api.LogDebugMessage("Adding --tls: Mongo command: %s\n", mongoCommand.String())
 	}
-	mongoCommand.WriteString(fmt.Sprintf(" --tlsCAFile=/etc/ssl/%s/%[1]s", caCertSecretName))
 	if preflightOpts.MongoOptions.CaCertFile != "" {
+		mongoCommand.WriteString(fmt.Sprintf(" --tlsCAFile=/etc/ssl/%s/%[1]s", caCertSecretName))
 		api.LogDebugMessage("Adding caCertFile:  Mongo command: %s\n", mongoCommand.String())
 	}
 	if preflightOpts.MongoOptions.ClientCertFile != "" {
@@ -115,32 +112,32 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	if err != nil {
 		return err
 	}
-	mongoPod, err := createPreflightTestPod(clientset, namespace, podName, imageName, secrets, commandToRun)
+	mongoPod, err := qp.createPreflightTestPod(clientset, namespace, podName, imageName, secrets, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create pod : %v\n", err)
 		return err
 	}
-	defer deletePod(clientset, namespace, podName)
+	defer qp.deletePod(clientset, namespace, podName)
 
 	if err := waitForPod(clientset, namespace, mongoPod); err != nil {
 		return err
 	}
 	if len(mongoPod.Spec.Containers) == 0 {
 		err := fmt.Errorf("error: there are no containers in the pod- %v\n", err)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 	waitForPodToDie(clientset, namespace, mongoPod)
 	logStr, err := getPodLogs(clientset, mongoPod)
 	if err != nil {
 		err = fmt.Errorf("error: unable to execute mongo check in the cluster: %v\n", err)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 
 	stringToCheck := "Implicit session:"
 	if strings.Contains(logStr, stringToCheck) {
-		fmt.Println("Preflight mongo check: PASSED")
+		qp.P.LogVerboseMessage("Preflight mongo check: PASSED\n")
 	} else {
 		err = fmt.Errorf("Expected response not found\n")
 		return err
@@ -148,13 +145,13 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	return nil
 }
 
-func createSecret(clientset *kubernetes.Clientset, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
+func (qp *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
 	certBytes, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
 
-	certSecret, err := createPreflightTestSecret(clientset, namespace, certSecretName, certBytes)
+	certSecret, err := qp.createPreflightTestSecret(clientset, namespace, certSecretName, certBytes)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create secret with ca cert : %v\n", err)
 		return nil, err
