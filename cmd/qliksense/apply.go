@@ -1,10 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 
@@ -22,11 +21,14 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 		Long:    `install qliksense based on provided cr file`,
 		Example: `qliksense apply -f file_name or cat cr_file | qliksense apply -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runLoadOrApplyCommandE(cmd, func(reader io.Reader) error {
-				if err := validatePullPushFlagsOnApply(reader, pull, push); err != nil {
+			return runLoadOrApplyCommandE(cmd, func(crBytes []byte) error {
+				if cr, crBytesWithEula, err := getCrWithEulaInserted(crBytes); err != nil {
 					return err
+				} else if err := validatePullPushFlagsOnApply(cr, pull, push); err != nil {
+					return err
+				} else {
+					return q.ApplyCRFromReader(bytes.NewReader(crBytesWithEula), opts, keepPatchFiles, true, pull, push)
 				}
-				return q.ApplyCRFromReader(reader, opts, keepPatchFiles, true, pull, push)
 			})
 		},
 	}
@@ -41,23 +43,32 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.BoolVarP(&pull, pullFlagName, pullFlagShorthand, pull, pullFlagUsage)
 	f.BoolVarP(&push, pushFlagName, pushFlagShorthand, push, pushFlagUsage)
 
-	eulaPreRunHooks.addValidator(c.CommandPath(), loadOrApplyCommandEulaPreRunHook)
+	eulaPreRunHooks.addValidator(fmt.Sprintf("%v %v", rootCommandName, c.Name()), loadOrApplyCommandEulaPreRunHook)
 
 	return c
 }
 
-func validatePullPushFlagsOnApply(reader io.Reader, pull, push bool) error {
+func validatePullPushFlagsOnApply(cr *qapi.QliksenseCR, pull, push bool) error {
 	if pull && !push {
 		fmt.Printf("WARNING: pulling images without pushing them")
 	}
 	if push {
-		if crBytes, err := ioutil.ReadAll(reader); err != nil {
-			return err
-		} else if cr, err := qapi.CreateCRObjectFromString(string(crBytes)); err != nil {
-			return err
-		} else if registry := cr.Spec.GetImageRegistry(); registry == "" {
+		if registry := cr.Spec.GetImageRegistry(); registry == "" {
 			return errors.New("no image registry set in the CR; to set it use: qliksense config set-image-registry")
 		}
 	}
 	return nil
+}
+
+func getCrWithEulaInserted(crBytes []byte) (*qapi.QliksenseCR, []byte, error) {
+	if cr, err := qapi.CreateCRObjectFromString(string(crBytes)); err != nil {
+		return nil, nil, err
+	} else {
+		cr.SetEULA("yes")
+		if crBytesWithEula, err := qapi.K8sToYaml(cr); err != nil {
+			return nil, nil, err
+		} else {
+			return cr, crBytesWithEula, nil
+		}
+	}
 }

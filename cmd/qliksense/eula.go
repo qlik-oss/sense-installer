@@ -48,7 +48,8 @@ var eulaPreRunHooks = eulaPreRunHooksT{
 }
 
 func commandAlwaysRequiresEulaAcceptance(commandName string) bool {
-	return commandName == "install" || commandName == "upgrade" || commandName == "apply"
+	return commandName == fmt.Sprintf("%v install", rootCommandName) ||
+		commandName == fmt.Sprintf("%v apply", rootCommandName)
 }
 
 func globalEulaPreRun(cmd *cobra.Command, q *qliksense.Qliksense) {
