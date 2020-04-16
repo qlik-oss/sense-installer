@@ -46,8 +46,8 @@ func (q *Qliksense) PullImages(version, profile string) error {
 	}
 	if profile != "" {
 		qcr.Spec.Profile = profile
-		if e := qConfig.WriteCR(qcr); e != nil {
-			return e
+		if err := qConfig.WriteCR(qcr); err != nil {
+			return err
 		}
 	}
 	return q.PullImagesForCurrentCR()
@@ -155,7 +155,6 @@ func pullImage(image, imagesDir string) error {
 	return nil
 }
 
-// TagAndPushImages ...
 func (q *Qliksense) PushImagesForCurrentCR() error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()

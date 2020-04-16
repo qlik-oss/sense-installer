@@ -39,7 +39,7 @@ qliksense about --profile=test
     then get version information based on the default profile in the qliksense-k8s repo master
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if gitRef, err := getAboutCommandGitRef(args); err != nil {
+			if gitRef, err := getSingleArg(args); err != nil {
 				return err
 			} else if vout, err := q.About(gitRef, opts.Profile); err != nil {
 				return err
@@ -56,7 +56,7 @@ qliksense about --profile=test
 	return c
 }
 
-func getAboutCommandGitRef(args []string) (string, error) {
+func getSingleArg(args []string) (string, error) {
 	if len(args) > 1 {
 		return "", errors.New("too many arguments, only 1 expected")
 	} else if len(args) == 1 {

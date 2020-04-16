@@ -16,7 +16,7 @@ func pullQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Pull docker images for offline install",
 		Example: `qliksense pull`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			version, err := getAboutCommandGitRef(args)
+			version, err := getSingleArg(args)
 			if err != nil {
 				return err
 			}
@@ -34,15 +34,22 @@ func pushQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Push docker images for offline install",
 		Example: `qliksense push`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			qConfig := qapi.NewQConfig(q.QliksenseHome)
-			if qcr, err := qConfig.GetCurrentCR(); err != nil {
+			if err := ensureImageRegistrySetInCR(q); err != nil {
 				return err
-			} else if registry := qcr.Spec.GetImageRegistry(); registry == "" {
-				return errors.New("no image registry in config")
 			} else {
 				return q.PushImagesForCurrentCR()
 			}
 		},
 	}
 	return cmd
+}
+
+func ensureImageRegistrySetInCR(q *qliksense.Qliksense) error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if qcr, err := qConfig.GetCurrentCR(); err != nil {
+		return err
+	} else if registry := qcr.Spec.GetImageRegistry(); registry == "" {
+		return errors.New("no image registry set in the CR; to set it use: qliksense config set-image-registry")
+	}
+	return nil
 }
