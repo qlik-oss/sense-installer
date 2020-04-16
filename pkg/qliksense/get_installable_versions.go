@@ -151,5 +151,5 @@ func getLatestTag(repoUrl, accessToken string) (string, error) {
 			maxSem = v
 		}
 	}
-	return maxSem.String(), nil
+	return maxSem.Original(), nil
 }
