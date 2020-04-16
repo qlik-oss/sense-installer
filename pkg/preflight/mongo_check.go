@@ -15,10 +15,10 @@ const (
 	mongo = "mongo"
 )
 
-func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightMongoOptions) error {
+func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) error {
 	fmt.Printf("Preflight mongodb check: \n")
 
-	if preflightOpts.MongodbUrl == "" {
+	if preflightOpts.MongoOptions.MongodbUrl == "" {
 		// infer mongoDbUrl from currentCR
 		fmt.Println("MongoDbUri is empty, infer from CR")
 		qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
@@ -36,10 +36,10 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 			fmt.Printf("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
 			return err
 		}
-		preflightOpts.MongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
+		preflightOpts.MongoOptions.MongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	}
 
-	fmt.Printf("mongodbUrl: %s\n", preflightOpts.MongodbUrl)
+	fmt.Printf("mongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
 	if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts); err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	return nil
 }
 
-func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace string, preflightOpts *PreflightMongoOptions) error {
+func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) error {
 	var caCertSecretName, clientCertSecretName string
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
@@ -56,9 +56,9 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		return err
 	}
 	var secrets []string
-	if preflightOpts.CaCertFile != "" {
+	if preflightOpts.MongoOptions.CaCertFile != "" {
 		caCertSecretName = "preflight-mongo-test-cacert"
-		caCertSecret, err := createSecret(clientset, namespace, preflightOpts.CaCertFile, caCertSecretName)
+		caCertSecret, err := createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
 
 		if err != nil {
 			err = fmt.Errorf("error: unable to create a create ca cert kubernetes secret: %v\n", err)
@@ -69,9 +69,9 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		defer deleteK8sSecret(clientset, namespace, caCertSecret)
 		secrets = append(secrets, caCertSecretName)
 	}
-	if preflightOpts.ClientCertFile != "" {
+	if preflightOpts.MongoOptions.ClientCertFile != "" {
 		clientCertSecretName = "preflight-mongo-test-clientcert"
-		clientCertSecret, err := createSecret(clientset, namespace, preflightOpts.ClientCertFile, clientCertSecretName)
+		clientCertSecret, err := createSecret(clientset, namespace, preflightOpts.MongoOptions.ClientCertFile, clientCertSecretName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to create a create client cert kubernetes secret: %v\n", err)
 			fmt.Println(err)
@@ -83,24 +83,24 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	}
 
 	mongoCommand := strings.Builder{}
-	mongoCommand.WriteString(fmt.Sprintf("sleep 10;mongo %s", preflightOpts.MongodbUrl))
-	if preflightOpts.Username != "" {
-		mongoCommand.WriteString(fmt.Sprintf(" --username %s", preflightOpts.Username))
+	mongoCommand.WriteString(fmt.Sprintf("sleep 10;mongo %s", preflightOpts.MongoOptions.MongodbUrl))
+	if preflightOpts.MongoOptions.Username != "" {
+		mongoCommand.WriteString(fmt.Sprintf(" --username %s", preflightOpts.MongoOptions.Username))
 		api.LogDebugMessage("Adding username: Mongo command: %s\n", mongoCommand.String())
 	}
-	if preflightOpts.Password != "" {
-		mongoCommand.WriteString(fmt.Sprintf(" --password %s", preflightOpts.Password))
+	if preflightOpts.MongoOptions.Password != "" {
+		mongoCommand.WriteString(fmt.Sprintf(" --password %s", preflightOpts.MongoOptions.Password))
 		api.LogDebugMessage("Adding username and password\n")
 	}
-	if preflightOpts.Tls || preflightOpts.CaCertFile != "" || preflightOpts.ClientCertFile != "" {
+	if preflightOpts.MongoOptions.Tls || preflightOpts.MongoOptions.CaCertFile != "" || preflightOpts.MongoOptions.ClientCertFile != "" {
 		mongoCommand.WriteString(" --tls")
 		api.LogDebugMessage("Adding --tls: Mongo command: %s\n", mongoCommand.String())
 	}
-		mongoCommand.WriteString(fmt.Sprintf(" --tlsCAFile=/etc/ssl/%s/%[1]s", caCertSecretName))
-	if preflightOpts.CaCertFile != "" {
+	mongoCommand.WriteString(fmt.Sprintf(" --tlsCAFile=/etc/ssl/%s/%[1]s", caCertSecretName))
+	if preflightOpts.MongoOptions.CaCertFile != "" {
 		api.LogDebugMessage("Adding caCertFile:  Mongo command: %s\n", mongoCommand.String())
 	}
-	if preflightOpts.ClientCertFile != "" {
+	if preflightOpts.MongoOptions.ClientCertFile != "" {
 		mongoCommand.WriteString(fmt.Sprintf(" --tlsCertificateKeyFile=/etc/ssl/%s/%[1]s", clientCertSecretName))
 		api.LogDebugMessage("Adding clientCertFile:  Mongo command: %s\n", mongoCommand.String())
 	}

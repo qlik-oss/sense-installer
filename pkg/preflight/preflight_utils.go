@@ -26,7 +26,19 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-type PreflightMongoOptions struct {
+type PreflightOptions struct {
+	Verbose      bool
+	MongoOptions *MongoOptions
+}
+
+// LogVerboseMessage logs a verbose message
+func (p *PreflightOptions) LogVerboseMessage(strMessage string, args ...interface{}) {
+	if p.Verbose {
+		fmt.Printf(strMessage, args...)
+	}
+}
+
+type MongoOptions struct {
 	MongodbUrl     string
 	Username       string
 	Password       string
@@ -39,6 +51,7 @@ var gracePeriod int64 = 0
 
 type QliksensePreflight struct {
 	Q *qliksense.Qliksense
+	P *PreflightOptions
 }
 
 func (qp *QliksensePreflight) GetPreflightConfigObj() *api.PreflightConfig {
