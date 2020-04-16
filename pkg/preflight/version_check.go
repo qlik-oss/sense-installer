@@ -36,6 +36,7 @@ func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigConten
 	api.LogDebugMessage("Current Kubernetes Version: %v\n", currentVersion)
 
 	minK8sVersionSemver, err := semver.NewVersion(qp.GetPreflightConfigObj().GetMinK8sVersion())
+	// minK8sVersionSemver, err := semver.NewVersion("v1.17.7")
 	if err != nil {
 		err = fmt.Errorf("Unable to convert minimum Kubernetes version into semver version:%v\n", err)
 		return err

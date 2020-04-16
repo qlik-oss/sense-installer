@@ -14,7 +14,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 
@@ -24,13 +24,13 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	if err != nil {
 		return err
 	}
-	dnsDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
+	dnsDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
-	defer deleteDeployment(clientset, namespace, depName)
+	defer qp.deleteDeployment(clientset, namespace, depName)
 
 	if err := waitForDeployment(clientset, namespace, dnsDeployment); err != nil {
 		return err
@@ -65,7 +65,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	}
 	if len(dnsPod.Spec.Containers) == 0 {
 		err := fmt.Errorf("error: there are no containers in the pod")
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 
@@ -74,19 +74,19 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	logStr, err := getPodLogs(clientset, dnsPod)
 	if err != nil {
 		err = fmt.Errorf("error: unable to execute dns check in the cluster: %v", err)
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 
 	if strings.HasSuffix(strings.TrimSpace(logStr), "succeeded!") {
-		fmt.Println("Preflight DNS check: PASSED")
+		qp.P.LogVerboseMessage("Preflight DNS check: PASSED")
 	} else {
 		err = fmt.Errorf("Expected response not found\n")
 		return err
 	}
 
-	fmt.Println("Completed preflight DNS check")
-	fmt.Println("Cleaning up resources...")
+	qp.P.LogVerboseMessage("Completed preflight DNS check")
+	qp.P.LogVerboseMessage("Cleaning up resources...")
 
 	return nil
 }

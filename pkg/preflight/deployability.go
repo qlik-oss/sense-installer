@@ -10,18 +10,18 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("Kube config error: %v\n", err)
-		fmt.Print(err)
+		// fmt.Print(err)
 		return err
 	}
 
 	// Deployment check
-	fmt.Printf("Preflight deployment check: \n")
+	qp.P.LogVerboseMessage("Preflight deployment check: \n")
 	err = qp.checkPfDeployment(clientset, namespace, "deployment-preflight-check")
 	if err != nil {
-		fmt.Println("Preflight Deployment check: FAILED")
+		qp.P.LogVerboseMessage("Preflight Deployment check: FAILED")
 		return err
 	}
-	fmt.Println("Completed preflight deployment check")
+	qp.P.LogVerboseMessage("Completed preflight deployment check")
 
 	return nil
 }
@@ -113,16 +113,16 @@ func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset,
 	if err != nil {
 		return err
 	}
-	pfDeployment, err := createPreflightTestDeployment(clientset, namespace, depName, imageName)
+	pfDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, imageName)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
 		return err
 	}
-	defer deleteDeployment(clientset, namespace, depName)
+	defer qp.deleteDeployment(clientset, namespace, depName)
 	if err := waitForDeployment(clientset, namespace, pfDeployment); err != nil {
 		return err
 	}
-	fmt.Println("Preflight Deployment check: PASSED")
-	fmt.Println("Cleaning up resources...")
+	qp.P.LogVerboseMessage("Preflight Deployment check: PASSED")
+	qp.P.LogVerboseMessage("Cleaning up resources...")
 	return nil
 }

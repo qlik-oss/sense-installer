@@ -24,31 +24,34 @@ func preflightCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
-
+	out := ansi.NewColorableStdout()
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
 	var preflightDnsCmd = &cobra.Command{
 		Use:     "dns",
 		Short:   "perform preflight dns check",
 		Long:    `perform preflight dns check to check DNS connectivity status in the cluster`,
 		Example: `qliksense preflight dns`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			qp := &preflight.QliksensePreflight{Q: q}
+			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
 
 			// Preflight DNS check
-			fmt.Printf("Preflight DNS check\n")
-			fmt.Println("---------------------")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("Preflight DNS check FAILED\n")
-				log.Fatal(err)
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight DNS check"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
 			}
 			if namespace == "" {
 				namespace = "default"
 			}
 			if err = qp.CheckDns(namespace, kubeConfigContents); err != nil {
-				fmt.Println(err)
-				fmt.Print("Preflight DNS check FAILED\n")
-				log.Fatal()
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight DNS check"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
 			}
+			emoji.Fprintf(out, "%s\n", chalk.Green.Color(":heavy_check_mark: Preflight DNS check"))
 			return nil
 		},
 	}
@@ -57,7 +60,6 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 
 func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	out := ansi.NewColorableStdout()
-
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -93,7 +95,7 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
-
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -110,9 +112,9 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 			fmt.Printf("Running all preflight checks...\n\n")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Println(err)
-				fmt.Printf("Running preflight check suite has FAILED...\n")
-				log.Fatal()
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Running preflight check suite has FAILED..."))
+				fmt.Printf("Error: %v\n", err)
+				return nil
 			}
 			if namespace == "" {
 				namespace = "default"
@@ -135,30 +137,34 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
 	var pfDeploymentCheckCmd = &cobra.Command{
 		Use:     "deployment",
 		Short:   "perform preflight deploymwnt check",
 		Long:    `perform preflight deployment check to ensure that we can create deployments in the cluster`,
 		Example: `qliksense preflight deployment`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			qp := &preflight.QliksensePreflight{Q: q}
+			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
 
 			// Preflight deployments check
-			fmt.Printf("Preflight deployment check\n")
-			fmt.Println("--------------------------")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("Preflight deployment check FAILED\n")
-				log.Fatal(err)
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight deployment check"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
 			}
 			if namespace == "" {
 				namespace = "default"
 			}
 			if err = qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
-				fmt.Println(err)
-				fmt.Print("Preflight deploy check FAILED\n")
-				log.Fatal()
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight deployment check"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
 			}
+			emoji.Fprintf(out, "%s\n", chalk.Green.Color(":heavy_check_mark: Preflight deployment check"))
 			return nil
 		},
 	}

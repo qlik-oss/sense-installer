@@ -144,7 +144,7 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 	return clientset, clientConfig, nil
 }
 
-func createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace string, depName string, imageName string) (*appsv1.Deployment, error) {
+func (qp *QliksensePreflight) createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace string, depName string, imageName string) (*appsv1.Deployment, error) {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -190,10 +190,9 @@ func createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace st
 		return err
 	}); err != nil {
 		err = errors.Wrapf(err, "error: unable to create deployments in the %s namespace", namespace)
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Created deployment %q\n", result.GetObjectMeta().GetName())
+	qp.P.LogVerboseMessage("Created deployment %q\n", result.GetObjectMeta().GetName())
 
 	return deployment, nil
 }
@@ -212,7 +211,7 @@ func getDeployment(clientset *kubernetes.Clientset, namespace, depName string) (
 	return deployment, nil
 }
 
-func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) error {
+func (qp *QliksensePreflight) deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) error {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	// Create Deployment
 	deletePolicy := v1.DeletePropagationForeground
@@ -230,7 +229,7 @@ func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) e
 	if err := waitForDeploymentToDelete(clientset, namespace, name); err != nil {
 		return err
 	}
-	fmt.Printf("Deleted deployment: %s\n", name)
+	qp.P.LogVerboseMessage("Deleted deployment: %s\n", name)
 	return nil
 }
 
@@ -445,7 +444,7 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 		pfDeployment, err = getDeployment(clientset, namespace, depName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", depName)
-			fmt.Println(err)
+			// fmt.Println(err)
 			return nil, err
 		}
 		return pfDeployment, nil
@@ -459,7 +458,7 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 	}
 	if int(pfDeployment.Status.ReadyReplicas) == 0 {
 		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 	return nil
@@ -469,7 +468,7 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	var err error
 	if len(pod.Spec.Containers) == 0 {
 		err = fmt.Errorf("error: there are no containers in the pod")
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 	podName := pod.Name
@@ -477,7 +476,7 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 		pod, err = getPod(clientset, namespace, podName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-			fmt.Println(err)
+			// fmt.Println(err)
 			return nil, err
 		}
 		return pod, nil
@@ -492,7 +491,7 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	}
 	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
 		err = fmt.Errorf("error: container is taking much longer than expected")
-		fmt.Println(err)
+		// fmt.Println(err)
 		return err
 	}
 	return nil

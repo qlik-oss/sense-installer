@@ -24,11 +24,11 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight deployment check
-	fmt.Printf("\nPreflight deployment check\n")
-	fmt.Println("--------------------------")
 	if err := qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight deployment check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight deployment check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight deployment check"))
 		checkCount++
 	}
 	totalCount++
