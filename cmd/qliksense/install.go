@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
@@ -19,6 +20,17 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 		# qliksense install -f file_name or cat cr_file | qliksense install -f -
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if filePath != "" {
+				return runLoadOrApplyCommandE(cmd, func(crBytes []byte) error {
+					if cr, crBytesWithEula, err := getCrWithEulaInserted(crBytes); err != nil {
+						return err
+					} else if err := validatePullPushFlagsOnApply(cr, pull, push); err != nil {
+						return err
+					} else {
+						return q.ApplyCRFromReader(bytes.NewReader(crBytesWithEula), opts, keepPatchFiles, true, pull, push)
+					}
+				})
+			}
 			version := ""
 			if len(args) != 0 {
 				version = args[0]
