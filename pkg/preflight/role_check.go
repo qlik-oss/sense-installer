@@ -75,8 +75,7 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	if len(resultYamlBytes) == 0 {
 		resultYamlBytes, err = qliksense.ExecuteKustomizeBuild(kusDir)
 		if err != nil {
-			err := fmt.Errorf("Unable to retrieve manifests from executing kustomize from dir: %s", kusDir)
-			// fmt.Println(err)
+			err := fmt.Errorf("Unable to retrieve manifests from executing kustomize: %s", kusDir)
 			return err
 		}
 	}
@@ -85,14 +84,13 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 		sa = strings.Replace(sa, "name: qliksense", "name: preflight", -1)
 	} else {
 		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster from dir: %s", kusDir)
-		// fmt.Println(err)
 		return err
 	}
 	namespace = "" // namespace is handled when generating the manifests
 
 	defer func() {
 		qp.P.LogVerboseMessage("Cleaning up resources...\n")
-		api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
+		err := api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
 		if err != nil {
 			qp.P.LogVerboseMessage("Preflight cleanup failed!\n")
 		}
@@ -101,7 +99,6 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	err = api.KubectlApplyVerbose(sa, namespace, qp.P.Verbose)
 	if err != nil {
 		err := fmt.Errorf("Failed to create entity on the cluster: %v", err)
-		// fmt.Println(err)
 		return err
 	}
 
@@ -116,6 +113,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	qp.P.LogVerboseMessage("--------------------------- \n")
 	err := qp.checkCreateEntity(namespace, "Role")
 	if err != nil {
+		qp.P.LogVerboseMessage("%v\n", err)
 		qp.P.LogVerboseMessage("Preflight role check: FAILED\n")
 	}
 	qp.P.LogVerboseMessage("Completed preflight role check\n\n")
@@ -125,6 +123,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	qp.P.LogVerboseMessage("---------------------------- \n")
 	err = qp.checkCreateEntity(namespace, "RoleBinding")
 	if err != nil {
+		qp.P.LogVerboseMessage("%v\n", err)
 		qp.P.LogVerboseMessage("Preflight rolebinding check: FAILED\n")
 	}
 	qp.P.LogVerboseMessage("Completed preflight rolebinding check\n\n")
@@ -134,6 +133,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	qp.P.LogVerboseMessage("------------------------------- \n")
 	err = qp.checkCreateEntity(namespace, "ServiceAccount")
 	if err != nil {
+		qp.P.LogVerboseMessage("%v\n", err)
 		qp.P.LogVerboseMessage("Preflight serviceaccount check: FAILED\n")
 	}
 	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n\n")

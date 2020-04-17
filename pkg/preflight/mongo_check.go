@@ -140,7 +140,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	if strings.Contains(logStr, stringToCheck) {
 		qp.P.LogVerboseMessage("Preflight mongo check: PASSED\n")
 	} else {
-		err = fmt.Errorf("Expected response not found\n")
+		err = fmt.Errorf("Connection failed: %s\n", logStr)
 		return err
 	}
 	return nil
