@@ -16,7 +16,6 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
-		// fmt.Println(err)
 		return err
 	}
 
@@ -29,7 +28,6 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	dnsDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
 	if err != nil {
 		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
-		// fmt.Println(err)
 		return err
 	}
 	defer qp.deleteDeployment(clientset, namespace, depName)
@@ -42,7 +40,7 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	serviceName := "svc-dns-pf-check"
 	dnsService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create service : %s\n", serviceName)
+		err = fmt.Errorf("error: unable to create service : %s, error: %s\n", serviceName, err)
 		return err
 	}
 	defer qp.deleteService(clientset, namespace, serviceName)
@@ -52,11 +50,12 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
 	netcatImageName, err := qp.GetPreflightConfigObj().GetImageName(netcat, true)
 	if err != nil {
+		err = fmt.Errorf("error: unable to retrieve image : %v\n", err)
 		return err
 	}
 	dnsPod, err := qp.createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create pod : %s\n", podName)
+		err = fmt.Errorf("error: unable to create pod : %s, error: %s\n", podName, err)
 		return err
 	}
 
@@ -67,7 +66,6 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	}
 	if len(dnsPod.Spec.Containers) == 0 {
 		err := fmt.Errorf("error: there are no containers in the pod")
-		// fmt.Println(err)
 		return err
 	}
 
@@ -76,7 +74,6 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	logStr, err := getPodLogs(clientset, dnsPod)
 	if err != nil {
 		err = fmt.Errorf("error: unable to execute dns check in the cluster: %v", err)
-		// fmt.Println(err)
 		return err
 	}
 

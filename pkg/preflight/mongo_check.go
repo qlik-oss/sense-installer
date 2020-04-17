@@ -59,7 +59,6 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	if preflightOpts.MongoOptions.CaCertFile != "" {
 		caCertSecretName = "preflight-mongo-test-cacert"
 		caCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
-
 		if err != nil {
 			err = fmt.Errorf("error: unable to create a create ca cert kubernetes secret: %v\n", err)
 			return err
@@ -111,6 +110,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	podName := "pf-mongo-pod"
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(mongo, true)
 	if err != nil {
+		err = fmt.Errorf("error: unable to retrieve image : %v\n", err)
 		return err
 	}
 	mongoPod, err := qp.createPreflightTestPod(clientset, namespace, podName, imageName, secrets, commandToRun)
@@ -125,14 +125,12 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	}
 	if len(mongoPod.Spec.Containers) == 0 {
 		err := fmt.Errorf("error: there are no containers in the pod- %v\n", err)
-		// fmt.Println(err)
 		return err
 	}
 	waitForPodToDie(clientset, namespace, mongoPod)
 	logStr, err := getPodLogs(clientset, mongoPod)
 	if err != nil {
 		err = fmt.Errorf("error: unable to execute mongo check in the cluster: %v\n", err)
-		// fmt.Println(err)
 		return err
 	}
 

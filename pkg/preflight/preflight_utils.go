@@ -116,14 +116,12 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 		clientConfig, err = rest.InClusterConfig()
 		if err != nil {
 			err = errors.Wrap(err, "Unable to load in-cluster kubeconfig")
-			// fmt.Println(err)
 			return nil, nil, err
 		}
 	} else {
 		config, err := clientcmd.Load(kubeconfig)
 		if err != nil {
 			err = errors.Wrap(err, "Unable to load kubeconfig")
-			// fmt.Println(err)
 			return nil, nil, err
 		}
 		if contextName != "" {
@@ -132,14 +130,12 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 		clientConfig, err = clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 		if err != nil {
 			err = errors.Wrap(err, "Unable to create client config from config")
-			// fmt.Println(err)
 			return nil, nil, err
 		}
 	}
 	clientset, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
 		err = errors.Wrap(err, "Unable to create clientset")
-		// fmt.Println(err)
 		return nil, nil, err
 	}
 	return clientset, clientConfig, nil
@@ -224,7 +220,6 @@ func (qp *QliksensePreflight) deleteDeployment(clientset *kubernetes.Clientset, 
 	if err := retryOnError(func() (err error) {
 		return deploymentsClient.Delete(name, &deleteOptions)
 	}); err != nil {
-		// fmt.Println(err)
 		return err
 	}
 	if err := waitForDeploymentToDelete(clientset, namespace, name); err != nil {
@@ -262,7 +257,6 @@ func (qp *QliksensePreflight) createPreflightTestService(clientset *kubernetes.C
 		result, err = servicesClient.Create(service)
 		return err
 	}); err != nil {
-		// fmt.Println(err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created service %q\n", result.GetObjectMeta().GetName())
@@ -278,7 +272,6 @@ func getService(clientset *kubernetes.Clientset, namespace, svcName string) (*ap
 		return err
 	}); err != nil {
 		err = errors.Wrapf(err, "unable to get services in the %s namespace", namespace)
-		// fmt.Println(err)
 		return nil, err
 	}
 
@@ -313,7 +306,6 @@ func (qp *QliksensePreflight) deletePod(clientset *kubernetes.Clientset, namespa
 	if err := retryOnError(func() (err error) {
 		return podsClient.Delete(name, &deleteOptions)
 	}); err != nil {
-		// fmt.Println(err)
 		return err
 	}
 	if err := waitForPodToDelete(clientset, namespace, name); err != nil {
@@ -376,7 +368,6 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 		pod, err = clientset.CoreV1().Pods(namespace).Create(pod)
 		return err
 	}); err != nil {
-		// fmt.Println(err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created pod: %s\n", pod.Name)
@@ -445,7 +436,6 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 		pfDeployment, err = getDeployment(clientset, namespace, depName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", depName)
-			// fmt.Println(err)
 			return nil, err
 		}
 		return pfDeployment, nil
@@ -459,7 +449,6 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 	}
 	if int(pfDeployment.Status.ReadyReplicas) == 0 {
 		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
-		// fmt.Println(err)
 		return err
 	}
 	return nil
@@ -469,7 +458,6 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	var err error
 	if len(pod.Spec.Containers) == 0 {
 		err = fmt.Errorf("error: there are no containers in the pod")
-		// fmt.Println(err)
 		return err
 	}
 	podName := pod.Name
@@ -477,7 +465,6 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 		pod, err = getPod(clientset, namespace, podName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-			// fmt.Println(err)
 			return nil, err
 		}
 		return pod, nil
@@ -492,7 +479,6 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	}
 	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
 		err = fmt.Errorf("error: container is taking much longer than expected")
-		// fmt.Println(err)
 		return err
 	}
 	return nil
@@ -504,7 +490,6 @@ func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *api
 		po, err := getPod(clientset, namespace, podName)
 		if err != nil {
 			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-			// fmt.Println(err)
 			return nil, err
 		}
 		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
@@ -553,7 +538,6 @@ func waitForDeploymentToDelete(clientset *kubernetes.Clientset, namespace, deplo
 		return nil
 	}
 	err := fmt.Errorf("error: delete deployment is taking unusually long")
-	// fmt.Println(err)
 	return err
 }
 
@@ -576,7 +560,6 @@ func (qp *QliksensePreflight) createPfRole(clientset *kubernetes.Clientset, name
 		role, err = clientset.RbacV1beta1().Roles(namespace).Create(roleSpec)
 		return err
 	}); err != nil {
-		// fmt.Println(err)
 		return nil, err
 	}
 
@@ -630,7 +613,6 @@ func (qp *QliksensePreflight) createPfRoleBinding(clientset *kubernetes.Clientse
 		roleBinding, err = clientset.RbacV1beta1().RoleBindings(namespace).Create(roleBindingSpec)
 		return err
 	}); err != nil {
-		// fmt.Println(err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created RoleBinding: %s\n", roleBindingSpec.Name)
@@ -669,7 +651,6 @@ func (qp *QliksensePreflight) createPfServiceAccount(clientset *kubernetes.Clien
 		serviceAccount, err = clientset.CoreV1().ServiceAccounts(namespace).Create(serviceAccountSpec)
 		return err
 	}); err != nil {
-		// fmt.Println(err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created Service Account: %s\n", serviceAccountSpec.Name)
@@ -712,7 +693,6 @@ func (qp *QliksensePreflight) createPreflightTestSecret(clientset *kubernetes.Cl
 		secret, err = clientset.CoreV1().Secrets(namespace).Create(secretSpec)
 		return err
 	}); err != nil {
-		// fmt.Println(err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created Secret: %s\n", secret.Name)
