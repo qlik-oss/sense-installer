@@ -376,16 +376,16 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight authcheck
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight authcheck check"))
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight authcheck"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRB(namespace, kubeConfigContents); err != nil {
-				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight authcheck check"))
+				emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight authcheck"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			emoji.Fprintf(out, "%s\n", chalk.Green.Color(":heavy_check_mark: Preflight authcheck check"))
+			emoji.Fprintf(out, "%s\n", chalk.Green.Color(":heavy_check_mark: Preflight authcheck"))
 			return nil
 		},
 	}

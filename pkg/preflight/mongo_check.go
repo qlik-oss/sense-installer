@@ -52,7 +52,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	var caCertSecretName, clientCertSecretName string
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
-		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
+		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
 		return err
 	}
 	var secrets []string
@@ -60,7 +60,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		caCertSecretName = "preflight-mongo-test-cacert"
 		caCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to create a create ca cert kubernetes secret: %v\n", err)
+			err = fmt.Errorf("unable to create a create ca cert kubernetes secret: %v\n", err)
 			return err
 		}
 
@@ -71,7 +71,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		clientCertSecretName = "preflight-mongo-test-clientcert"
 		clientCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.ClientCertFile, clientCertSecretName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to create a create client cert kubernetes secret: %v\n", err)
+			err = fmt.Errorf("unable to create a create client cert kubernetes secret: %v\n", err)
 			return err
 		}
 
@@ -110,12 +110,12 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	podName := "pf-mongo-pod"
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(mongo, true)
 	if err != nil {
-		err = fmt.Errorf("error: unable to retrieve image : %v\n", err)
+		err = fmt.Errorf("unable to retrieve image : %v\n", err)
 		return err
 	}
 	mongoPod, err := qp.createPreflightTestPod(clientset, namespace, podName, imageName, secrets, commandToRun)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create pod : %v\n", err)
+		err = fmt.Errorf("unable to create pod : %v\n", err)
 		return err
 	}
 	defer qp.deletePod(clientset, namespace, podName)
@@ -124,13 +124,13 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		return err
 	}
 	if len(mongoPod.Spec.Containers) == 0 {
-		err := fmt.Errorf("error: there are no containers in the pod- %v\n", err)
+		err := fmt.Errorf("there are no containers in the pod- %v\n", err)
 		return err
 	}
 	waitForPodToDie(clientset, namespace, mongoPod)
 	logStr, err := getPodLogs(clientset, mongoPod)
 	if err != nil {
-		err = fmt.Errorf("error: unable to execute mongo check in the cluster: %v\n", err)
+		err = fmt.Errorf("unable to execute mongo check in the cluster: %v\n", err)
 		return err
 	}
 
@@ -152,7 +152,7 @@ func (qp *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, name
 
 	certSecret, err := qp.createPreflightTestSecret(clientset, namespace, certSecretName, certBytes)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create secret with ca cert : %v\n", err)
+		err = fmt.Errorf("unable to create secret with ca cert : %v\n", err)
 		return nil, err
 	}
 	return certSecret, nil

@@ -29,7 +29,7 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents []byte) error {
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
-		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
+		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
 		return err
 	}
 	// Service check
@@ -73,7 +73,7 @@ func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namesp
 	}
 	pod, err := qp.createPreflightTestPod(clientset, namespace, podName, imageName, nil, commandToRun)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create pod %s - %v\n", podName, err)
+		err = fmt.Errorf("unable to create pod - %v\n", err)
 		return err
 	}
 	defer qp.deletePod(clientset, namespace, podName)
@@ -92,13 +92,13 @@ func (qp *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, na
 	serviceName := "svc-pf-check"
 	pfService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create service : %s\n", serviceName)
+		err = fmt.Errorf("unable to create service - %v\n", err)
 		return err
 	}
 	defer qp.deleteService(clientset, namespace, serviceName)
 	_, err = getService(clientset, namespace, pfService.GetName())
 	if err != nil {
-		err = fmt.Errorf("error: unable to retrieve service: %s\n", serviceName)
+		err = fmt.Errorf("unable to retrieve service - %v\n", err)
 		return err
 	}
 	qp.P.LogVerboseMessage("Preflight service creation check: PASSED\n")
@@ -114,7 +114,7 @@ func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset,
 	}
 	pfDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, imageName)
 	if err != nil {
-		err = fmt.Errorf("error: unable to create deployment: %v\n", err)
+		err = fmt.Errorf("unable to create deployment - %v\n", err)
 		return err
 	}
 	defer qp.deleteDeployment(clientset, namespace, depName)

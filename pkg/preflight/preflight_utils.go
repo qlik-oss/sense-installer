@@ -186,7 +186,7 @@ func (qp *QliksensePreflight) createPreflightTestDeployment(clientset *kubernete
 		result, err = deploymentsClient.Create(deployment)
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "error: unable to create deployments in the %s namespace", namespace)
+		err = errors.Wrapf(err, "unable to create deployments in the %s namespace", namespace)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created deployment %q\n", result.GetObjectMeta().GetName())
@@ -201,7 +201,7 @@ func getDeployment(clientset *kubernetes.Clientset, namespace, depName string) (
 		deployment, err = deploymentsClient.Get(depName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "error: unable to get deployments in the %s namespace", namespace)
+		err = errors.Wrapf(err, "unable to get deployments in the %s namespace", namespace)
 		api.LogDebugMessage("%v\n", err)
 		return nil, err
 	}
@@ -435,7 +435,7 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 	checkFunc := func() (interface{}, error) {
 		pfDeployment, err = getDeployment(clientset, namespace, depName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", depName)
+			err = fmt.Errorf("unable to retrieve deployment: %s\n", depName)
 			return nil, err
 		}
 		return pfDeployment, nil
@@ -448,7 +448,7 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 		return err
 	}
 	if int(pfDeployment.Status.ReadyReplicas) == 0 {
-		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
+		err = fmt.Errorf("deployment took longer than expected to spin up pods")
 		return err
 	}
 	return nil
@@ -457,14 +457,14 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
 	var err error
 	if len(pod.Spec.Containers) == 0 {
-		err = fmt.Errorf("error: there are no containers in the pod")
+		err = fmt.Errorf("there are no containers in the pod")
 		return err
 	}
 	podName := pod.Name
 	checkFunc := func() (interface{}, error) {
 		pod, err = getPod(clientset, namespace, podName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+			err = fmt.Errorf("unable to retrieve %s pod by name", podName)
 			return nil, err
 		}
 		return pod, nil
@@ -478,7 +478,7 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 		return err
 	}
 	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
-		err = fmt.Errorf("error: container is taking much longer than expected")
+		err = fmt.Errorf("container is taking much longer than expected")
 		return err
 	}
 	return nil
@@ -489,7 +489,7 @@ func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *api
 	checkFunc := func() (interface{}, error) {
 		po, err := getPod(clientset, namespace, podName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
+			err = fmt.Errorf("unable to retrieve %s pod by name", podName)
 			return nil, err
 		}
 		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
@@ -519,7 +519,7 @@ func waitForPodToDelete(clientset *kubernetes.Clientset, namespace, podName stri
 	if err := waitForResource(checkFunc, validateFunc); err != nil {
 		return nil
 	}
-	err := fmt.Errorf("error: delete pod is taking unusually long")
+	err := fmt.Errorf("delete pod is taking unusually long")
 	return err
 }
 
@@ -537,7 +537,7 @@ func waitForDeploymentToDelete(clientset *kubernetes.Clientset, namespace, deplo
 	if err := waitForResource(checkFunc, validateFunc); err != nil {
 		return nil
 	}
-	err := fmt.Errorf("error: delete deployment is taking unusually long")
+	err := fmt.Errorf("delete deployment is taking unusually long")
 	return err
 }
 
