@@ -104,7 +104,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	mongoCommand.WriteString(` --eval "print(\"connected to mongo\")"`)
 
 	commandToRun := []string{"sh", "-c", mongoCommand.String()}
-	qp.P.LogVerboseMessage("Mongo command: %s\n", strings.Join(commandToRun, " "))
+	api.LogDebugMessage("Mongo command: %s\n", strings.Join(commandToRun, " "))
 
 	// create a pod
 	podName := "pf-mongo-pod"
