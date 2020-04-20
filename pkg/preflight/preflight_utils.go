@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,7 +27,19 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-type PreflightMongoOptions struct {
+type PreflightOptions struct {
+	Verbose      bool
+	MongoOptions *MongoOptions
+}
+
+// LogVerboseMessage logs a verbose message
+func (p *PreflightOptions) LogVerboseMessage(strMessage string, args ...interface{}) {
+	if p.Verbose || os.Getenv("QLIKSENSE_DEBUG") == "true" {
+		fmt.Printf(strMessage, args...)
+	}
+}
+
+type MongoOptions struct {
 	MongodbUrl     string
 	Username       string
 	Password       string
@@ -39,6 +52,7 @@ var gracePeriod int64 = 0
 
 type QliksensePreflight struct {
 	Q *qliksense.Qliksense
+	P *PreflightOptions
 }
 
 func (qp *QliksensePreflight) GetPreflightConfigObj() *api.PreflightConfig {
@@ -102,14 +116,12 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 		clientConfig, err = rest.InClusterConfig()
 		if err != nil {
 			err = errors.Wrap(err, "Unable to load in-cluster kubeconfig")
-			fmt.Println(err)
 			return nil, nil, err
 		}
 	} else {
 		config, err := clientcmd.Load(kubeconfig)
 		if err != nil {
 			err = errors.Wrap(err, "Unable to load kubeconfig")
-			fmt.Println(err)
 			return nil, nil, err
 		}
 		if contextName != "" {
@@ -118,20 +130,18 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 		clientConfig, err = clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 		if err != nil {
 			err = errors.Wrap(err, "Unable to create client config from config")
-			fmt.Println(err)
 			return nil, nil, err
 		}
 	}
 	clientset, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
 		err = errors.Wrap(err, "Unable to create clientset")
-		fmt.Println(err)
 		return nil, nil, err
 	}
 	return clientset, clientConfig, nil
 }
 
-func createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace string, depName string, imageName string) (*appsv1.Deployment, error) {
+func (qp *QliksensePreflight) createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace string, depName string, imageName string) (*appsv1.Deployment, error) {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	deployment := &appsv1.Deployment{
 		ObjectMeta: v1.ObjectMeta{
@@ -176,11 +186,10 @@ func createPreflightTestDeployment(clientset *kubernetes.Clientset, namespace st
 		result, err = deploymentsClient.Create(deployment)
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "error: unable to create deployments in the %s namespace", namespace)
-		fmt.Println(err)
+		err = errors.Wrapf(err, "unable to create deployments in the %s namespace", namespace)
 		return nil, err
 	}
-	fmt.Printf("Created deployment %q\n", result.GetObjectMeta().GetName())
+	qp.P.LogVerboseMessage("Created deployment %q\n", result.GetObjectMeta().GetName())
 
 	return deployment, nil
 }
@@ -192,14 +201,14 @@ func getDeployment(clientset *kubernetes.Clientset, namespace, depName string) (
 		deployment, err = deploymentsClient.Get(depName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "error: unable to get deployments in the %s namespace", namespace)
+		err = errors.Wrapf(err, "unable to get deployments in the %s namespace", namespace)
 		api.LogDebugMessage("%v\n", err)
 		return nil, err
 	}
 	return deployment, nil
 }
 
-func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) error {
+func (qp *QliksensePreflight) deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) error {
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	// Create Deployment
 	deletePolicy := v1.DeletePropagationForeground
@@ -211,17 +220,16 @@ func deleteDeployment(clientset *kubernetes.Clientset, namespace, name string) e
 	if err := retryOnError(func() (err error) {
 		return deploymentsClient.Delete(name, &deleteOptions)
 	}); err != nil {
-		fmt.Println(err)
 		return err
 	}
 	if err := waitForDeploymentToDelete(clientset, namespace, name); err != nil {
 		return err
 	}
-	fmt.Printf("Deleted deployment: %s\n", name)
+	qp.P.LogVerboseMessage("Deleted deployment: %s\n", name)
 	return nil
 }
 
-func createPreflightTestService(clientset *kubernetes.Clientset, namespace string, svcName string) (*apiv1.Service, error) {
+func (qp *QliksensePreflight) createPreflightTestService(clientset *kubernetes.Clientset, namespace string, svcName string) (*apiv1.Service, error) {
 	iptr := int32Ptr(80)
 	servicesClient := clientset.CoreV1().Services(namespace)
 	service := &apiv1.Service{
@@ -249,10 +257,9 @@ func createPreflightTestService(clientset *kubernetes.Clientset, namespace strin
 		result, err = servicesClient.Create(service)
 		return err
 	}); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Created service %q\n", result.GetObjectMeta().GetName())
+	qp.P.LogVerboseMessage("Created service %q\n", result.GetObjectMeta().GetName())
 
 	return service, nil
 }
@@ -265,14 +272,13 @@ func getService(clientset *kubernetes.Clientset, namespace, svcName string) (*ap
 		return err
 	}); err != nil {
 		err = errors.Wrapf(err, "unable to get services in the %s namespace", namespace)
-		fmt.Println(err)
 		return nil, err
 	}
 
 	return svc, nil
 }
 
-func deleteService(clientset *kubernetes.Clientset, namespace, name string) error {
+func (qp *QliksensePreflight) deleteService(clientset *kubernetes.Clientset, namespace, name string) error {
 	servicesClient := clientset.CoreV1().Services(namespace)
 	// Create Deployment
 	deletePolicy := v1.DeletePropagationForeground
@@ -285,11 +291,11 @@ func deleteService(clientset *kubernetes.Clientset, namespace, name string) erro
 		fmt.Println(err)
 		return err
 	}
-	fmt.Printf("Deleted service: %s\n", name)
+	qp.P.LogVerboseMessage("Deleted service: %s\n", name)
 	return nil
 }
 
-func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
+func (qp *QliksensePreflight) deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
 
 	podsClient := clientset.CoreV1().Pods(namespace)
 	deletePolicy := v1.DeletePropagationForeground
@@ -300,17 +306,16 @@ func deletePod(clientset *kubernetes.Clientset, namespace, name string) error {
 	if err := retryOnError(func() (err error) {
 		return podsClient.Delete(name, &deleteOptions)
 	}); err != nil {
-		fmt.Println(err)
 		return err
 	}
 	if err := waitForPodToDelete(clientset, namespace, name); err != nil {
 		return err
 	}
-	fmt.Printf("Deleted pod: %s\n", name)
+	qp.P.LogVerboseMessage("Deleted pod: %s\n", name)
 	return nil
 }
 
-func createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames []string, commandToRun []string) (*apiv1.Pod, error) {
+func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames []string, commandToRun []string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
@@ -363,10 +368,9 @@ func createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName,
 		pod, err = clientset.CoreV1().Pods(namespace).Create(pod)
 		return err
 	}); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Created pod: %s\n", pod.Name)
+	qp.P.LogVerboseMessage("Created pod: %s\n", pod.Name)
 	return pod, nil
 }
 
@@ -431,8 +435,7 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 	checkFunc := func() (interface{}, error) {
 		pfDeployment, err = getDeployment(clientset, namespace, depName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve deployment: %s\n", depName)
-			fmt.Println(err)
+			err = fmt.Errorf("unable to retrieve deployment: %s\n", depName)
 			return nil, err
 		}
 		return pfDeployment, nil
@@ -445,8 +448,7 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 		return err
 	}
 	if int(pfDeployment.Status.ReadyReplicas) == 0 {
-		err = fmt.Errorf("error: deployment took longer than expected to spin up pods")
-		fmt.Println(err)
+		err = fmt.Errorf("deployment took longer than expected to spin up pods")
 		return err
 	}
 	return nil
@@ -455,16 +457,14 @@ func waitForDeployment(clientset *kubernetes.Clientset, namespace string, pfDepl
 func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Pod) error {
 	var err error
 	if len(pod.Spec.Containers) == 0 {
-		err = fmt.Errorf("error: there are no containers in the pod")
-		fmt.Println(err)
+		err = fmt.Errorf("there are no containers in the pod")
 		return err
 	}
 	podName := pod.Name
 	checkFunc := func() (interface{}, error) {
 		pod, err = getPod(clientset, namespace, podName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-			fmt.Println(err)
+			err = fmt.Errorf("unable to retrieve %s pod by name", podName)
 			return nil, err
 		}
 		return pod, nil
@@ -478,8 +478,7 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 		return err
 	}
 	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
-		err = fmt.Errorf("error: container is taking much longer than expected")
-		fmt.Println(err)
+		err = fmt.Errorf("container is taking much longer than expected")
 		return err
 	}
 	return nil
@@ -490,8 +489,7 @@ func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *api
 	checkFunc := func() (interface{}, error) {
 		po, err := getPod(clientset, namespace, podName)
 		if err != nil {
-			err = fmt.Errorf("error: unable to retrieve %s pod by name", podName)
-			fmt.Println(err)
+			err = fmt.Errorf("unable to retrieve %s pod by name", podName)
 			return nil, err
 		}
 		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
@@ -521,8 +519,7 @@ func waitForPodToDelete(clientset *kubernetes.Clientset, namespace, podName stri
 	if err := waitForResource(checkFunc, validateFunc); err != nil {
 		return nil
 	}
-	err := fmt.Errorf("error: delete pod is taking unusually long")
-	fmt.Println(err)
+	err := fmt.Errorf("delete pod is taking unusually long")
 	return err
 }
 
@@ -540,12 +537,11 @@ func waitForDeploymentToDelete(clientset *kubernetes.Clientset, namespace, deplo
 	if err := waitForResource(checkFunc, validateFunc); err != nil {
 		return nil
 	}
-	err := fmt.Errorf("error: delete deployment is taking unusually long")
-	fmt.Println(err)
+	err := fmt.Errorf("delete deployment is taking unusually long")
 	return err
 }
 
-func createPfRole(clientset *kubernetes.Clientset, namespace, roleName string) (*v1beta1.Role, error) {
+func (qp *QliksensePreflight) createPfRole(clientset *kubernetes.Clientset, namespace, roleName string) (*v1beta1.Role, error) {
 	// build the role defination we want to create
 	var role *v1beta1.Role
 	roleSpec := &v1beta1.Role{
@@ -564,16 +560,15 @@ func createPfRole(clientset *kubernetes.Clientset, namespace, roleName string) (
 		role, err = clientset.RbacV1beta1().Roles(namespace).Create(roleSpec)
 		return err
 	}); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 
-	fmt.Printf("Created role: %s\n", role.Name)
+	qp.P.LogVerboseMessage("Created role: %s\n", role.Name)
 
 	return role, nil
 }
 
-func deleteRole(clientset *kubernetes.Clientset, namespace string, role *v1beta1.Role) {
+func (qp *QliksensePreflight) deleteRole(clientset *kubernetes.Clientset, namespace string, role *v1beta1.Role) {
 	rolesClient := clientset.RbacV1beta1().Roles(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
@@ -584,10 +579,10 @@ func deleteRole(clientset *kubernetes.Clientset, namespace string, role *v1beta1
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Deleted role: %s\n\n", role.Name)
+	qp.P.LogVerboseMessage("Deleted role: %s\n\n", role.Name)
 }
 
-func createPfRoleBinding(clientset *kubernetes.Clientset, namespace, roleBindingName string) (*v1beta1.RoleBinding, error) {
+func (qp *QliksensePreflight) createPfRoleBinding(clientset *kubernetes.Clientset, namespace, roleBindingName string) (*v1beta1.RoleBinding, error) {
 	var roleBinding *v1beta1.RoleBinding
 	// build the rolebinding defination we want to create
 	roleBindingSpec := &v1beta1.RoleBinding{
@@ -618,14 +613,13 @@ func createPfRoleBinding(clientset *kubernetes.Clientset, namespace, roleBinding
 		roleBinding, err = clientset.RbacV1beta1().RoleBindings(namespace).Create(roleBindingSpec)
 		return err
 	}); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Created RoleBinding: %s\n", roleBindingSpec.Name)
+	qp.P.LogVerboseMessage("Created RoleBinding: %s\n", roleBindingSpec.Name)
 	return roleBinding, nil
 }
 
-func deleteRoleBinding(clientset *kubernetes.Clientset, namespace string, roleBinding *v1beta1.RoleBinding) {
+func (qp *QliksensePreflight) deleteRoleBinding(clientset *kubernetes.Clientset, namespace string, roleBinding *v1beta1.RoleBinding) {
 	roleBindingClient := clientset.RbacV1beta1().RoleBindings(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
@@ -636,10 +630,10 @@ func deleteRoleBinding(clientset *kubernetes.Clientset, namespace string, roleBi
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Deleted RoleBinding: %s\n\n", roleBinding.Name)
+	qp.P.LogVerboseMessage("Deleted RoleBinding: %s\n\n", roleBinding.Name)
 }
 
-func createPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceAccountName string) (*apiv1.ServiceAccount, error) {
+func (qp *QliksensePreflight) createPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceAccountName string) (*apiv1.ServiceAccount, error) {
 	var serviceAccount *apiv1.ServiceAccount
 	// build the serviceAccount defination we want to create
 	serviceAccountSpec := &apiv1.ServiceAccount{
@@ -647,7 +641,7 @@ func createPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceA
 			Name:      "preflight-check-test-serviceaccount",
 			Namespace: namespace,
 			Labels: map[string]string{
-				"app": "demo",
+				"app": "preflight",
 			},
 		},
 	}
@@ -657,14 +651,13 @@ func createPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceA
 		serviceAccount, err = clientset.CoreV1().ServiceAccounts(namespace).Create(serviceAccountSpec)
 		return err
 	}); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Created Service Account: %s\n", serviceAccountSpec.Name)
+	qp.P.LogVerboseMessage("Created Service Account: %s\n", serviceAccountSpec.Name)
 	return serviceAccount, nil
 }
 
-func deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, serviceAccount *apiv1.ServiceAccount) {
+func (qp *QliksensePreflight) deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, serviceAccount *apiv1.ServiceAccount) {
 	serviceAccountClient := clientset.CoreV1().ServiceAccounts(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
@@ -675,10 +668,10 @@ func deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, ser
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Deleted ServiceAccount: %s\n\n", serviceAccount.Name)
+	qp.P.LogVerboseMessage("Deleted ServiceAccount: %s\n\n", serviceAccount.Name)
 }
 
-func createPreflightTestSecret(clientset *kubernetes.Clientset, namespace, secretName string, secretData []byte) (*apiv1.Secret, error) {
+func (qp *QliksensePreflight) createPreflightTestSecret(clientset *kubernetes.Clientset, namespace, secretName string, secretData []byte) (*apiv1.Secret, error) {
 	var secret *apiv1.Secret
 	var err error
 	// build the secret defination we want to create
@@ -700,14 +693,13 @@ func createPreflightTestSecret(clientset *kubernetes.Clientset, namespace, secre
 		secret, err = clientset.CoreV1().Secrets(namespace).Create(secretSpec)
 		return err
 	}); err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf("Created Secret: %s\n", secret.Name)
+	qp.P.LogVerboseMessage("Created Secret: %s\n", secret.Name)
 	return secret, nil
 }
 
-func deleteK8sSecret(clientset *kubernetes.Clientset, namespace string, k8sSecret *apiv1.Secret) {
+func (qp *QliksensePreflight) deleteK8sSecret(clientset *kubernetes.Clientset, namespace string, k8sSecret *apiv1.Secret) {
 	secretClient := clientset.CoreV1().Secrets(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
@@ -718,5 +710,5 @@ func deleteK8sSecret(clientset *kubernetes.Clientset, namespace string, k8sSecre
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Deleted Secret: %s\n\n", k8sSecret.Name)
+	qp.P.LogVerboseMessage("Deleted Secret: %s\n", k8sSecret.Name)
 }

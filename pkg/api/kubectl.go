@@ -15,10 +15,18 @@ func KubectlApply(manifests, namespace string) error {
 	return kubectlOperation(manifests, "apply", namespace)
 }
 
+func KubectlApplyVerbose(manifests, namespace string, verbose bool) error {
+	return kubectlOperationVerbose(manifests, "apply", namespace, verbose)
+}
+
 // KubectlDelete delete resoruces in the provided namespace,
 // if namespace="" then use whatever the kubectl default is
 func KubectlDelete(manifests, namespace string) error {
 	return kubectlOperation(manifests, "delete", namespace)
+}
+
+func KubectlDeleteVerbose(manifests, namespace string, verbose bool) error {
+	return kubectlOperationVerbose(manifests, "delete", namespace, verbose)
 }
 
 func GetKubectlNamespace() string {
@@ -61,6 +69,10 @@ func SetKubectlNamespace(ns string) {
 }
 
 func kubectlOperation(manifests string, oprName string, namespace string) error {
+	return kubectlOperationVerbose(manifests, oprName, namespace, true)
+}
+
+func kubectlOperationVerbose(manifests string, oprName string, namespace string, verbose bool) error {
 	tempYaml, err := ioutil.TempFile("", "")
 	if err != nil {
 		fmt.Println("cannot create file ", err)
@@ -88,11 +100,15 @@ func kubectlOperation(manifests string, oprName string, namespace string) error 
 	}
 
 	sterrBuffer := &bytes.Buffer{}
-	cmd.Stdout = os.Stdout
+	stoutBuffer := &bytes.Buffer{}
+	cmd.Stdout = stoutBuffer
 	cmd.Stderr = sterrBuffer
 	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("kubectl %v failed with: %v, %v, temp k8s yaml file:%v\n", oprName, err, sterrBuffer.String(), tempYaml.Name())
+	}
+	if verbose {
+		fmt.Println(stoutBuffer.String())
 	}
 	os.Remove(tempYaml.Name())
 	return nil

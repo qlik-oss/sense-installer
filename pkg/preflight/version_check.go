@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	"k8s.io/apimachinery/pkg/version"
 )
 
 func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigContents []byte) error {
-
+	qp.P.LogVerboseMessage("Preflight kubernetes version check: \n")
+	qp.P.LogVerboseMessage("----------------------------------- \n")
 	var currentVersion *semver.Version
 
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
@@ -22,35 +24,29 @@ func (qp *QliksensePreflight) CheckK8sVersion(namespace string, kubeConfigConten
 		return err
 	}); err != nil {
 		err = fmt.Errorf("Unable to get server version: %v\n", err)
-		//fmt.Println(err)
 		return err
 	}
-	fmt.Printf("Kubernetes API Server version: %s\n", serverVersion.String())
+	qp.P.LogVerboseMessage("Kubernetes API Server version: %s\n", serverVersion.String())
 
 	// Compare K8s version on the cluster with minimum supported k8s version
 	currentVersion, err = semver.NewVersion(serverVersion.String())
 	if err != nil {
 		err = fmt.Errorf("Unable to convert server version into semver version: %v\n", err)
-		//fmt.Println(err)
 		return err
 	}
-	//fmt.Printf("Current K8s Version: %v\n", currentVersion)
+	api.LogDebugMessage("Current Kubernetes Version: %v\n", currentVersion)
 
 	minK8sVersionSemver, err := semver.NewVersion(qp.GetPreflightConfigObj().GetMinK8sVersion())
 	if err != nil {
 		err = fmt.Errorf("Unable to convert minimum Kubernetes version into semver version:%v\n", err)
-		fmt.Println(err)
 		return err
 	}
 
 	if currentVersion.GreaterThan(minK8sVersionSemver) {
-		//fmt.Printf("\n\nCurrent %s Component version: %s is less than minimum required version:%s\n", component, currentComponentVersion, componentVersionFromDependenciesYaml)
-		fmt.Printf("Current %s is greater than minimum required version:%s\n", currentVersion, minK8sVersionSemver)
-		fmt.Println("Preflight minimum kubernetes version check: PASSED")
+		qp.P.LogVerboseMessage("Current Kubernetes API Server version %s is greater than or equal to minimum required version: %s\n", currentVersion, minK8sVersionSemver)
 	} else {
-		fmt.Printf("Current %s is less than minimum required version:%s\n", currentVersion, minK8sVersionSemver)
-		fmt.Println("Preflight minimum kubernetes version check: FAILED")
+		err = fmt.Errorf("Current Kubernetes API Server version %s is less than minimum required version: %s", currentVersion, minK8sVersionSemver)
+		return err
 	}
-	fmt.Printf("Completed Preflight kubernetes minimum version check\n")
 	return nil
 }

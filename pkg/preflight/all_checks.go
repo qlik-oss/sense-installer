@@ -2,106 +2,111 @@ package preflight
 
 import (
 	"fmt"
+
+	"github.com/kyokomi/emoji"
+	ansi "github.com/mattn/go-colorable"
+	"github.com/pkg/errors"
+	"github.com/ttacon/chalk"
 )
 
-func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, namespace string, preflightOpts *PreflightMongoOptions) {
-
+func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) error {
+	out := ansi.NewColorableStdout()
 	checkCount := 0
 	totalCount := 0
+
 	// Preflight minimum kuberenetes version check
-	fmt.Printf("\nPreflight kubernetes minimum version check\n")
-	fmt.Println("------------------------------------------")
 	if err := qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight kubernetes minimum version check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight kubernetes minimum version check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight kubernetes minimum version check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight deployment check
-	fmt.Printf("\nPreflight deployment check\n")
-	fmt.Println("--------------------------")
 	if err := qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight deployment check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight deployment check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight deployment check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight service check
-	fmt.Printf("\nPreflight service check\n")
-	fmt.Println("-----------------------")
 	if err := qp.CheckService(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight service check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight service check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight service check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight pod check
-	fmt.Printf("\nPreflight pod check\n")
-	fmt.Println("-----------------------")
 	if err := qp.CheckPod(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight pod check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight pod check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight pod check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight role check
-	fmt.Printf("\nPreflight role check\n")
-	fmt.Println("--------------------------")
 	if err := qp.CheckCreateRole(namespace); err != nil {
-		fmt.Printf("Preflight role check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight role check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight role check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight rolebinding check
-	fmt.Printf("\nPreflight rolebinding check\n")
-	fmt.Println("---------------------------------")
 	if err := qp.CheckCreateRoleBinding(namespace); err != nil {
-		fmt.Printf("Preflight rolebinding check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight rolebinding check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight rolebinding check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight serviceaccount check
-	fmt.Printf("\nPreflight serviceaccount check\n")
-	fmt.Println("------------------------------------")
 	if err := qp.CheckCreateServiceAccount(namespace); err != nil {
-		fmt.Printf("Preflight serviceaccount check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight serviceaccount check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight serviceaccount check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight mongo check
-	fmt.Printf("\nPreflight mongo check\n")
-	fmt.Println("---------------------")
 	if err := qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
-		fmt.Printf("Preflight mongo check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight mongo check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight mongo check"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight DNS check
-	fmt.Printf("\nPreflight DNS check\n")
-	fmt.Println("-------------------")
 	if err := qp.CheckDns(namespace, kubeConfigContents); err != nil {
-		fmt.Printf("Preflight DNS check: FAILED\n")
+		emoji.Fprintf(out, "%s\n", chalk.Red.Color(":heavy_multiplication_x: Preflight DNS check"))
+		fmt.Printf("Error: %v\n\n", err)
 	} else {
+		emoji.Fprintf(out, "%s\n\n", chalk.Green.Color(":heavy_check_mark: Preflight DNS check"))
 		checkCount++
 	}
 	totalCount++
 
 	if checkCount == totalCount {
-		fmt.Printf("\nAll preflight checks have PASSED\n")
-	} else {
-		fmt.Printf("\n1 or more preflight checks have FAILED\n")
+		// All preflight checks were successful
+		return nil
 	}
-	fmt.Println("Completed running all preflight checks")
+	return errors.New("1 or more preflight checks have FAILED")
 }
