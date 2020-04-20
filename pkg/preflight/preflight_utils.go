@@ -710,5 +710,5 @@ func (qp *QliksensePreflight) deleteK8sSecret(clientset *kubernetes.Clientset, n
 	if err != nil {
 		log.Fatal(err)
 	}
-	qp.P.LogVerboseMessage("Deleted Secret: %s\n\n", k8sSecret.Name)
+	qp.P.LogVerboseMessage("Deleted Secret: %s\n", k8sSecret.Name)
 }
