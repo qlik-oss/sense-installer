@@ -11,7 +11,7 @@ import (
 
 func (q *Qliksense) ExportContext(context string) error {
 	qliksenseContextsDir := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
-	qliksenseContextFile := filepath.Join(qliksenseContextsDir, context, context+".yaml")
+	qliksenseContextFile := filepath.Join(qliksenseContextsDir, context)
 	qliksenseSecretsDir := filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir)
 	qliksenseSecretsFile := filepath.Join(qliksenseSecretsDir, context)
 	// files := []string{qliksenseContextFile, qliksenseSecretsFile}
@@ -20,47 +20,51 @@ func (q *Qliksense) ExportContext(context string) error {
 	fmt.Println(qliksenseSecretsFile)
 	fmt.Println(qliksenseContextFile)
 
-	if err := RecursiveZip("result.zip", qliksenseSecretsFile, q.QliksenseHome); err != nil {
+	filename := "result.zip"
+	destinationFile, err := os.Create(q.QliksenseHome + "/" + filename)
+	var folders []string
+	if err != nil {
 		return err
 	}
-	if err := RecursiveZip("result.zip", qliksenseContextFile, q.QliksenseHome); err != nil {
+	folders = append(folders, qliksenseContextFile, qliksenseSecretsFile)
+	if err := RecursiveZip(folders, destinationFile); err != nil {
 		return err
 	}
+
 	return nil
 }
 
-func RecursiveZip(filename, pathToZip, destinationPath string) error {
-	destinationFile, err := os.Create(destinationPath + "/" + filename)
-	if err != nil {
-		return err
-	}
+func RecursiveZip(pathToZip []string, destinationFile *os.File) error {
+
 	myZip := zip.NewWriter(destinationFile)
-	err = filepath.Walk(pathToZip, func(filePath string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+	for _, element := range pathToZip {
+		err := filepath.Walk(element, func(filePath string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			relPath := strings.TrimPrefix(filePath, element)
+			zipFile, err := myZip.Create(relPath)
+			if err != nil {
+				return err
+			}
+			fsFile, err := os.Open(filePath)
+			if err != nil {
+				return err
+			}
+			_, err = io.Copy(zipFile, fsFile)
+			if err != nil {
+				return err
+			}
 			return nil
-		}
+		})
 		if err != nil {
 			return err
 		}
-		relPath := strings.TrimPrefix(filePath, pathToZip)
-		zipFile, err := myZip.Create(relPath)
-		if err != nil {
-			return err
-		}
-		fsFile, err := os.Open(filePath)
-		if err != nil {
-			return err
-		}
-		_, err = io.Copy(zipFile, fsFile)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		return err
 	}
-	err = myZip.Close()
+	err := myZip.Close()
 	if err != nil {
 		return err
 	}
