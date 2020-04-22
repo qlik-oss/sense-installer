@@ -1,10 +1,11 @@
-##Preflight checks
+# Preflight checks
+
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
-The suite consists of a set of `collectors` which run the specifications of every test and `analyzers` which analyze the results of every test run by the collector.
+
 We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
-```console
+```shell
 $ qliksense preflight
 perform preflight checks on the cluster
 
@@ -26,75 +27,230 @@ Flags:
 ### DNS check
 Run the following command to perform preflight DNS check. We setup a kubernetes deployment and try to reach it as part of establishing DNS connectivity in this check. 
 The expected output should be similar to the one shown below.
-```console
+```shell
 $ qliksense preflight dns
 
-Creating resources to run preflight checks
-deployment.apps/qnginx001 created
-service/qnginx001 created
-pod/qnginx001-6db5fc95c5-s9sl2 condition met
-  Running Preflight checks ⠇
---- PASS DNS check
-      --- DNS check passed
---- PASS   cluster-preflight-checks
-PASS
-
-DNS check completed, cleaning up resources now
-service "qnginx001" deleted
-deployment.extensions "qnginx001" deleted
+Preflight DNS check
+---------------------
+Created deployment "dep-dns-preflight-check"
+Created service "svc-dns-pf-check"
+Created pod: pf-pod-1
+Fetching pod: pf-pod-1
+Fetching pod: pf-pod-1
+Exec-ing into the container...
+Preflight DNS check: PASSED
+Completed preflight DNS check
+Cleaning up resources...
+Deleted pod: pf-pod-1
+Deleted service: svc-dns-pf-check
+Deleted deployment: dep-dns-preflight-check
 
 ```
 
 ### Kubernetes version check
 We check the version of the target kubernetes cluster and ensure that it falls in the valid range of kubernetes versions that are supported by qliksense. 
 The command to run this check and the expected similar output are as shown below:
-```console
+```shell
 $ qliksense preflight k8s-version
 
-Minimum Kubernetes version supported: 1.11.0
-Client Version: version.Info{Major:"1", Minor:"17", GitVersion:"v1.17.3", GitCommit:"06ad960bfd03b39c8310aaf92d1e7c12ce618213", GitTreeState:"clean", BuildDate:"2020-02-13T18:08:14Z", GoVersion:"go1.13.8", Compiler:"gc", Platform:"darwin/amd64"}
-Server Version: version.Info{Major:"1", Minor:"15", GitVersion:"v1.15.5", GitCommit:"20c265fef0741dd71a66480e35bd69f18351daea", GitTreeState:"clean", BuildDate:"2019-10-15T19:07:57Z", GoVersion:"go1.12.10", Compiler:"gc", Platform:"linux/amd64"}
-  Running Preflight checks ⠇
---- PASS Required Kubernetes Version
-      --- Good to go.
---- PASS   cluster-preflight-checks
-PASS
+Preflight kubernetes minimum version check
+------------------------------------------
+Kubernetes API Server version: v1.15.5
+Current K8s Version: 1.15.5
+Current 1.15.5 is greater than minimum required version:1.11.0, hence good to go
+Preflight minimum kubernetes version check: PASSED
+Completed Preflight kubernetes minimum version check
 
-Minimum kubernetes version check completed
 ```
+
+### Service check
+We use the commmand below to test if we are able to create a service in the cluster.
+```shell
+$ qliksense preflight service
+
+Preflight service check
+-----------------------
+
+Preflight service check: 
+Created service "svc-pf-check"
+Preflight service creation check: PASSED
+Cleaning up resources...
+Deleted service: svc-pf-check
+Completed preflight service check
+```
+
+### Deployment check
+We use the commmand below to test if we are able to create a deployment in the cluster. After the test exexutes, we wait until the created deployment terminates before we exit the command. 
+```shell
+$ qliksense preflight deployment
+
+Preflight deployment check
+-----------------------
+Preflight deployment check: 
+Created deployment "deployment-preflight-check"
+Preflight Deployment check: PASSED
+Cleaning up resources...
+Deleted deployment: deployment-preflight-check
+Completed preflight deployment check
+```
+
+### Pod check
+We use the commmand below to test if we are able to create a pod in the cluster.
+```shell
+$ qliksense preflight pod
+
+Preflight pod check
+--------------------
+
+Preflight pod check: 
+Created pod: pod-pf-check
+Preflight pod creation check: PASSED
+Cleaning up resources...
+Deleted pod: pod-pf-check
+Completed preflight pod check
+```
+
+### Create-Role check
+We use the command below to test if we are able to create a role in the cluster
+```shell
+$ qliksense preflight create-role
+Preflight create-role check
+---------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+```
+
+### Create-RoleBinding check
+We use the command below to test if we are able to create a role binding in the cluster
+```shell
+$ qliksense preflight createRoleBinding
+
+Preflight create roleBinding check
+---------------------------
+Preflight createRoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight createRoleBinding check: PASSED
+Cleaning up resources...
+Deleting RoleBinding: role-binding-preflight-check
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight createRoleBinding check
+```
+
+### Create-ServiceAccount check
+We use the command below to test if we are able to create a service account in the cluster
+```shell
+$ qliksense preflight createServiceAccount
+
+Preflight create ServiceAccount check
+-------------------------------------
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleting ServiceAccount: preflight-check-test-serviceaccount
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+```
+
+### CreateRB check
+We use the command below to combine creation of role, role binding, and service account tests
+```shell
+$ qliksense preflight createRB
+
+Preflight createRB check
+-------------------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+
+Preflight create RoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight create RoleBinding check: PASSED
+Cleaning up resources...
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight create RoleBinding check
+
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+Completed preflight CreateRB check
+```
+
+### Mongodb check
+We can check if we are able to connect to an instance of mongodb on the cluster by either supplying the mongodbUri as part of the command or infer it from the current context.
+
+```shell
+qliksense preflight mongo --url=<url> OR
+qliksense preflight mongo
+qliksense preflight mongo --url=<mongo-server url> --ca-cert=<path to ca-cert file>
+
+
+Preflight mongo check
+---------------------
+Preflight mongodb check: 
+Created pod: pf-mongo-pod
+stdout: MongoDB shell version v4.2.5
+connecting to: <url>/?compressors=disabled&gssapiServiceName=mongodb
+Implicit session: session { "id" : UUID("...") }
+MongoDB server version: 4.2.5
+bye
+stderr: 
+Preflight mongo check: PASSED
+Deleted pod: pf-mongo-pod
+Completed preflight mongodb check
+```
+
+
 
 ### Running all checks
 Run the command shown below to execute all preflight checks.
-```console
-$ qliksense preflight all
+```shell
+$ qliksense preflight all --mongodb-url=<url> OR
+$ qliksense preflight all --mongodb-url=<mongo-server url> --mongodb-ca-cert=<path to ca-cert file> 
 
 Running all preflight checks
 
-Running DNS check...
-Creating resources to run preflight checks
-deployment.apps/qnginx001 created
-service/qnginx001 created
-pod/qnginx001-6db5fc95c5-grwv2 condition met
-  Running Preflight checks ⠇
---- PASS DNS check
-      --- DNS check passed
---- PASS   cluster-preflight-checks
-PASS
+Preflight DNS check
+-------------------
+Created deployment "dep-dns-preflight-check"
+Created service "svc-dns-pf-check"
+Created pod: pf-pod-1
+Fetching pod: pf-pod-1
+Fetching pod: pf-pod-1
+Exec-ing into the container...
+Preflight DNS check: PASSED
+Completed preflight DNS check
+Cleaning up resources...
+Deleted pod: pf-pod-1
+Deleted service: svc-dns-pf-check
+Deleted deployment: dep-dns-preflight-check
 
-DNS check completed, cleaning up resources now
-service "qnginx001" deleted
-deployment.extensions "qnginx001" deleted
-
-Running minimum kubernetes version check...
-Minimum Kubernetes version supported: 1.11.0
-Client Version: version.Info{Major:"1", Minor:"17", GitVersion:"v1.17.3", GitCommit:"06ad960bfd03b39c8310aaf92d1e7c12ce618213", GitTreeState:"clean", BuildDate:"2020-02-13T18:08:14Z", GoVersion:"go1.13.8", Compiler:"gc", Platform:"darwin/amd64"}
-Server Version: version.Info{Major:"1", Minor:"15", GitVersion:"v1.15.5", GitCommit:"20c265fef0741dd71a66480e35bd69f18351daea", GitTreeState:"clean", BuildDate:"2019-10-15T19:07:57Z", GoVersion:"go1.12.10", Compiler:"gc", Platform:"linux/amd64"}
-  Running Preflight checks ⠧
---- PASS Required Kubernetes Version
-      --- Good to go.
---- PASS   cluster-preflight-checks
-PASS
-
-Minimum kubernetes version check completed
+Preflight kubernetes minimum version check
+------------------------------------------
+Kubernetes API Server version: v1.15.5
+Current K8s Version: 1.15.5
+Current 1.15.5 is greater than minimum required version:1.11.0, hence good to go
+Preflight minimum kubernetes version check: PASSED
+Completed Preflight kubernetes minimum version check
+...
+...
+All preflight checks have PASSED
 Completed running all preflight checks
+
 ```

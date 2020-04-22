@@ -94,7 +94,7 @@ func (q *Qliksense) getConfigDirectory(gitUrl, gitRef, profileEntered string) (d
 	}
 
 	if gitRef != "" {
-		if dir, err = downloadFromGitRepoToTmpDir(gitUrl, gitRef); err != nil {
+		if dir, err = DownloadFromGitRepoToTmpDir(gitUrl, gitRef); err != nil {
 			return "", false, "", err
 		} else {
 			return dir, true, profile, nil
@@ -120,14 +120,15 @@ func (q *Qliksense) getConfigDirectory(gitUrl, gitRef, profileEntered string) (d
 		return dir, false, profile, nil
 	}
 
-	if dir, err = downloadFromGitRepoToTmpDir(gitUrl, "master"); err != nil {
+	if dir, err = DownloadFromGitRepoToTmpDir(gitUrl, "master"); err != nil {
 		return "", false, "", err
 	} else {
 		return dir, true, profile, nil
 	}
 }
 
-func downloadFromGitRepoToTmpDir(gitUrl, gitRef string) (string, error) {
+//DownloadFromGitRepoToTmpDir download git repo to a temporary directory
+func DownloadFromGitRepoToTmpDir(gitUrl, gitRef string) (string, error) {
 	if tmpDir, err := ioutil.TempDir("", ""); err != nil {
 		return "", err
 	} else {
@@ -193,8 +194,10 @@ func getImageList(yamlContent []byte) ([]string, error) {
 		})
 	}
 	var sortedImageList []string
-	for image, _ := range imageMap {
+	for image, v := range imageMap {
 		sortedImageList = append(sortedImageList, image)
+		// a warning "simplify range expression" if written like this 'for image _ :=range imageMap'
+		_ = v
 	}
 	sort.Strings(sortedImageList)
 	return sortedImageList, nil

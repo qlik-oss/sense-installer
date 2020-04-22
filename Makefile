@@ -39,20 +39,28 @@ endif
 
 .PHONY: build
 build: clean generate
-	mkdir -p $(BINDIR)
+	go run _make_support/mkdir_all/do.go $(BINDIR)
 	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 	$(MAKE) clean
 
-.PHONY: test
-test: clean generate
+.PHONY: test-setup
+test-setup: clean generate
 ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
-	$(eval TMP-docker-distribution := $(shell mktemp -d))
-	git clone https://github.com/docker/distribution.git $(TMP-docker-distribution)/docker-distribution
-	cd $(TMP-docker-distribution)/docker-distribution; git checkout -b v2.7.1; make
-	cp $(TMP-docker-distribution)/docker-distribution/bin/registry pkg/qliksense/docker-registry
-	-rm -rf $(TMP-docker-distribution)
+	$(eval TMP-docker-distribution := $(shell go run _make_support/get_tmp_dir/do.go))
+	git clone https://github.com/docker/distribution.git "$(TMP-docker-distribution)/docker-distribution"
+	cd "$(TMP-docker-distribution)/docker-distribution" && git checkout -b v2.7.1 && $(MAKE)
+	go run _make_support/copy/do.go --src "$(TMP-docker-distribution)/docker-distribution/bin/registry" --dst pkg/qliksense/docker-registry$(FILE_EXT)
+	go run _make_support/remove_all/do.go "$(TMP-docker-distribution)"
 endif
+
+.PHONY: test-short
+test-short: test-setup
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
+	$(MAKE) clean
+
+.PHONY: test
+test: test-setup
+	go test -count=1 -tags "$(BUILDTAGS)" -v ./...
 	$(MAKE) clean
 
 xbuild-all: clean generate
@@ -78,6 +86,7 @@ endif
 
 generate: get-crds packr2
 	go generate ./...
+	go run _make_support/remove_all/do.go pkg/qliksense/crds
 
 packr2:
 ifeq ($(shell ${WHICH} packr2 2>${DEVNUL}),)
@@ -85,22 +94,22 @@ ifeq ($(shell ${WHICH} packr2 2>${DEVNUL}),)
 endif
 
 clean: clean-packr
-	-rm -fr pkg/qliksense/crds
+	go run _make_support/remove_all/do.go pkg/qliksense/crds
 
 clean-packr: packr2
 	cd pkg/qliksense && packr2 clean
 
 get-crds:
 ifeq ($(QLIKSENSE_OPERATOR_DIR),)
-	$(eval TMP-operator := $(shell mktemp -d))
+	$(eval TMP-operator := $(shell go run _make_support/get_tmp_dir/do.go))
 	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP-operator)/operator
-	$(MAKE) QLIKSENSE_OPERATOR_DIR=$(TMP-operator)/operator get-crds
-	-rm -rf $(TMP-operator)
+	$(MAKE) QLIKSENSE_OPERATOR_DIR="$(TMP-operator)/operator" get-crds
+	go run _make_support/remove_all/do.go "$(TMP-operator)"
 else
-	mkdir -p pkg/qliksense/crds/cr
-	mkdir -p pkg/qliksense/crds/crd
-	mkdir -p pkg/qliksense/crds/crd-deploy
-	cp $(QLIKSENSE_OPERATOR_DIR)/deploy/*.yaml pkg/qliksense/crds/crd-deploy
-	cp $(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_crd.yaml pkg/qliksense/crds/crd
-	cp $(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_cr.yaml pkg/qliksense/crds/cr
+	go run _make_support/mkdir_all/do.go pkg/qliksense/crds/cr
+	go run _make_support/mkdir_all/do.go pkg/qliksense/crds/crd
+	go run _make_support/mkdir_all/do.go pkg/qliksense/crds/crd-deploy
+	go run _make_support/copy/do.go --src-pattern "$(QLIKSENSE_OPERATOR_DIR)/deploy/*.yaml" --dst pkg/qliksense/crds/crd-deploy
+	go run _make_support/copy/do.go --src-pattern "$(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_crd.yaml" --dst pkg/qliksense/crds/crd
+	go run _make_support/copy/do.go --src-pattern "$(QLIKSENSE_OPERATOR_DIR)/deploy/crds/*_cr.yaml" --dst pkg/qliksense/crds/cr
 endif

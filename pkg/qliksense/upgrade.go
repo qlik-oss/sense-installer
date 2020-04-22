@@ -28,21 +28,20 @@ func (q *Qliksense) UpgradeQK8s(keepPatchFiles bool) error {
 		return err
 	}
 	qcr.Spec.RotateKeys = "no"
-	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
-		return err
-	} else if err := q.applyConfigToK8s(dcr); err != nil {
-		fmt.Println("cannot do kubectl apply on manifests")
-		return err
-	}
 
-	fmt.Println("Install operator CR into cluster")
-	r, err := qcr.GetString()
+	dcr, err := qConfig.GetDecryptedCr(qcr)
 	if err != nil {
 		return err
 	}
-	if err := qapi.KubectlApply(r, ""); err != nil {
-		fmt.Println("cannot do kubectl apply on operator CR")
+	if dcr.Spec.Git != nil && dcr.Spec.Git.Repository != "" {
+		// fetching and applying manifest will be in the operator controller
+		// get decrypted cr
+		return q.applyCR(dcr)
 	}
-	return nil
-
+	err = q.applyConfigToK8s(dcr)
+	if err != nil {
+		fmt.Println("cannot do kubectl apply on manifests")
+		return err
+	}
+	return q.applyCR(dcr)
 }

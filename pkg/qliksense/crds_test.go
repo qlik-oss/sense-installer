@@ -8,7 +8,7 @@ import (
 )
 
 func TestGetQliksenseInitCrd(t *testing.T) {
-	someTmpRepoPath, err := downloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master")
+	someTmpRepoPath, err := DownloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

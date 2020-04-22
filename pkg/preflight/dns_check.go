@@ -1,128 +1,91 @@
 package preflight
 
 import (
-	"bytes"
 	"fmt"
-	"html/template"
-	"io/ioutil"
-	"path/filepath"
-
-	"github.com/qlik-oss/sense-installer/pkg/api"
+	"strings"
 )
 
-const dnsCheckYAML = `
-apiVersion: troubleshoot.replicated.com/v1beta1
-kind: Preflight
-metadata:
-  name: cluster-preflight-checks
-  namespace: {{ . }}
-spec:
-  collectors:
-    - run: 
-        collectorName: spin-up-pod
-        args: ["-z", "-v", "-w 1", "qnginx001", "80"]
-        command: ["nc"]
-        image: subfuzion/netcat:latest
-        imagePullPolicy: IfNotPresent
-        name: spin-up-pod-check-dns
-        namespace: {{ . }}
-        timeout: 30s
+const (
+	nginx  = "nginx"
+	netcat = "netcat"
+)
 
-  analyzers:
-    - textAnalyze:
-        checkName: DNS check
-        collectorName: spin-up-pod-check-dns
-        fileName: spin-up-pod.txt
-        regex: succeeded
-        outcomes:
-          - fail:
-              message: DNS check failed
-          - pass:
-              message: DNS check passed
-`
-
-func (qp *QliksensePreflight) CheckDns() error {
-	// retrieve namespace
-	namespace := api.GetKubectlNamespace()
-
-	api.LogDebugMessage("Namespace: %s\n", namespace)
-
-	tmpl, err := template.New("dnsCheckYAML").Parse(dnsCheckYAML)
+func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
+	qp.P.LogVerboseMessage("Preflight DNS check: \n")
+	qp.P.LogVerboseMessage("------------------- \n")
+	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
-		fmt.Printf("cannot parse template: %v", err)
-		return err
-	}
-	tempYaml, err := ioutil.TempFile("", "")
-	if err != nil {
-		fmt.Printf("cannot create file: %v", err)
-		return err
-	}
-	api.LogDebugMessage("Temp Yaml file: %s\n", tempYaml.Name())
-
-	b := bytes.Buffer{}
-	err = tmpl.Execute(&b, namespace)
-	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
 		return err
 	}
 
-	tempYaml.WriteString(b.String())
-
-	// creating Kubectl resources
-	appName := "qnginx001"
-	const PreflightChecksDirName = "preflight_checks"
-
-	fmt.Println("Creating resources to run preflight checks")
-
-	// kubectl create deployment
-	opr := fmt.Sprintf("create deployment %s --image=nginx", appName)
-	err = initiateK8sOps(opr, namespace)
+	// creating deployment
+	depName := "dep-dns-preflight-check"
+	nginxImageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
 	if err != nil {
-		fmt.Println(err)
+		return err
+	}
+	dnsDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
+	if err != nil {
+		err = fmt.Errorf("unable to create deployment: %v\n", err)
+		return err
+	}
+	defer qp.deleteDeployment(clientset, namespace, depName)
+
+	if err := waitForDeployment(clientset, namespace, dnsDeployment); err != nil {
 		return err
 	}
 
-	defer func() {
-		// Deleting deployment..
-		opr = fmt.Sprintf("delete deployment %s", appName)
-		// we want to delete the k8s resource here, we dont care a lot about an error here
-		_ = initiateK8sOps(opr, namespace)
-		api.LogDebugMessage("delete deployment executed")
-	}()
-
-	// create service
-	opr = fmt.Sprintf("create service clusterip %s --tcp=80:80", appName)
-	err = initiateK8sOps(opr, namespace)
+	// creating service
+	serviceName := "svc-dns-pf-check"
+	dnsService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
-		fmt.Println(err)
+		err = fmt.Errorf("unable to create service : %s, %s\n", serviceName, err)
+		return err
+	}
+	defer qp.deleteService(clientset, namespace, serviceName)
+
+	// create a pod
+	podName := "pf-pod-1"
+	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
+	netcatImageName, err := qp.GetPreflightConfigObj().GetImageName(netcat, true)
+	if err != nil {
+		err = fmt.Errorf("unable to retrieve image : %v\n", err)
+		return err
+	}
+	dnsPod, err := qp.createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
+	if err != nil {
+		err = fmt.Errorf("unable to create pod : %s, %s\n", podName, err)
 		return err
 	}
 
-	defer func() {
-		// delete service
-		opr = fmt.Sprintf("delete service %s", appName)
-		// we want to delete the k8s resource here, we dont care a lot about an error here
-		_ = initiateK8sOps(opr, namespace)
-		api.LogDebugMessage("delete service executed")
-	}()
+	defer qp.deletePod(clientset, namespace, podName)
 
-	//kubectl -n $namespace wait --for=condition=ready pod -l app=$appName --timeout=120s
-	opr = fmt.Sprintf("wait --for=condition=ready pod -l app=%s --timeout=120s", appName)
-	err = initiateK8sOps(opr, namespace)
-	if err != nil {
-		fmt.Println(err)
+	if err := waitForPod(clientset, namespace, dnsPod); err != nil {
 		return err
 	}
-	api.LogDebugMessage("kubectl wait executed")
-
-	// call preflight
-	preflightCommand := filepath.Join(qp.Q.QliksenseHome, PreflightChecksDirName, preflightFileName)
-
-	err = invokePreflight(preflightCommand, tempYaml)
-	if err != nil {
-		fmt.Println(err)
+	if len(dnsPod.Spec.Containers) == 0 {
+		err := fmt.Errorf("there are no containers in the pod")
 		return err
 	}
-	fmt.Println("DNS check completed, cleaning up resources now")
+
+	waitForPodToDie(clientset, namespace, dnsPod)
+
+	logStr, err := getPodLogs(clientset, dnsPod)
+	if err != nil {
+		err = fmt.Errorf("unable to execute dns check in the cluster: %v", err)
+		return err
+	}
+
+	if strings.HasSuffix(strings.TrimSpace(logStr), "succeeded!") {
+		qp.P.LogVerboseMessage("Preflight DNS check: PASSED\n")
+	} else {
+		err = fmt.Errorf("Expected response not found\n")
+		return err
+	}
+
+	qp.P.LogVerboseMessage("Completed preflight DNS check\n")
+	qp.P.LogVerboseMessage("Cleaning up resources...\n")
+
 	return nil
 }

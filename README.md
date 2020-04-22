@@ -1,16 +1,12 @@
-# (WIP) Qlik Sense installation and operations CLI
+# (WIP) Qlik Sense on Kubernetes installation and operations CLI
 
 ## Documentation
 
-To learn more about Qlik Sense installer go to https://qlik-oss.github.io/sense-installer/
+To learn more about Qlik Sense on Kubernetes CLI go to https://qlik-oss.github.io/sense-installer/
 
 ## About
 
-The Qlik Sense installer CLI (qliksense) provides an imperative interface to many of the configurations that need to be applied against the declarative structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s). This cli facilitates:
-
-- installation of QSEoK
-- installation of qliksense operator to manage QSEoK
-- air gapped installation of QSEoK
+The QSEoK CLI (qliksense) provides an imperative interface to many of the configurations that need to be applied against the declarative structure described in [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s).
 
 This is a technology preview that uses Qlik modified [kustomize](https://github.com/qlik-oss/kustomize) to kubernetes manifests of the versions of the [qliksense-k8s](https://github.com/qlik-oss/qliksense-k8s) repository.
 
