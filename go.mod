@@ -6,11 +6,11 @@ replace (
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 
-	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
-	k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
-	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
+	k8s.io/apimachinery => k8s.io/apimachinery v0.17.0
+	k8s.io/client-go => k8s.io/client-go v0.17.0
+	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191219154910-1528d4eea6dd
 
-	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200402170547-2e8140160c36
+	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200421163508-bc74267cca03
 )
 
 require (
@@ -20,11 +20,7 @@ require (
 	github.com/Shopify/ejson v1.2.1
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
-	github.com/containerd/containerd v1.3.2 // indirect
-	github.com/containerd/continuity v0.0.0-20191214063359-1097c8bae83b // indirect
 	github.com/containers/image/v5 v5.1.0
-	github.com/docker/cli v0.0.0-20191212191748-ebca1413117a // indirect
-	github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/go-git/go-git/v5 v5.0.0
 	github.com/gobuffalo/envy v1.9.0 // indirect
@@ -41,9 +37,8 @@ require (
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-tty v0.0.3
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/otiai10/copy v1.1.1
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/qlik-oss/k-apis v0.1.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
@@ -55,13 +50,11 @@ require (
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
 	golang.org/x/tools v0.0.0-20200312194400-c312e98713c2 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
-	google.golang.org/grpc v1.27.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555
-	k8s.io/api v0.17.0
-	k8s.io/apimachinery v0.17.0
+	k8s.io/api v0.17.2
+	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.0+incompatible
-	k8s.io/kubectl v0.0.0-20191016120415-2ed914427d51
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0
 )
