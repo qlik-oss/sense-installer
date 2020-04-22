@@ -60,7 +60,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		caCertSecretName = "preflight-mongo-test-cacert"
 		caCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
 		if err != nil {
-			err = fmt.Errorf("unable to create a create ca cert kubernetes secret: %v\n", err)
+			err = fmt.Errorf("unable to create a ca cert kubernetes secret: %v\n", err)
 			return err
 		}
 
@@ -71,7 +71,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		clientCertSecretName = "preflight-mongo-test-clientcert"
 		clientCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.ClientCertFile, clientCertSecretName)
 		if err != nil {
-			err = fmt.Errorf("unable to create a create client cert kubernetes secret: %v\n", err)
+			err = fmt.Errorf("unable to create a client cert kubernetes secret: %v\n", err)
 			return err
 		}
 
