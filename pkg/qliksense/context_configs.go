@@ -18,10 +18,10 @@ import (
 
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/api"
-	"github.com/ttacon/chalk"
 	_ "gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	. "github.com/logrusorgru/aurora"
 )
 
 const (
@@ -297,7 +297,7 @@ func (q *Qliksense) ListContextConfigs() error {
 	}
 	out := ansi.NewColorableStdout()
 	w := tabwriter.NewWriter(out, 5, 8, 0, '\t', 0)
-	fmt.Fprintln(w, chalk.Underline.TextStyle("Context Name"), "\t", chalk.Underline.TextStyle("CR File Location"))
+	fmt.Fprintln(w, Underline("Context Name"), "\t", Underline("CR File Location"))
 	w.Flush()
 	if len(qliksenseConfig.Spec.Contexts) > 0 {
 		for _, cont := range qliksenseConfig.Spec.Contexts {
@@ -305,7 +305,7 @@ func (q *Qliksense) ListContextConfigs() error {
 		}
 		w.Flush()
 		fmt.Fprintln(out, "")
-		fmt.Fprintln(out, chalk.Bold.TextStyle("Current Context : "), qliksenseConfig.Spec.CurrentContext)
+		fmt.Fprintln(out, Bold("Current Context : "), qliksenseConfig.Spec.CurrentContext)
 	} else {
 		fmt.Fprintln(out, "No Contexts Available")
 	}
@@ -320,11 +320,11 @@ func (q *Qliksense) DeleteContextConfig(args []string, flag bool) error {
 		out := ansi.NewColorableStdout()
 		switch args[0] {
 		case qliksenseConfig.Spec.CurrentContext:
-			fmt.Fprintln(out, chalk.Yellow.Color("Please switch contexts to be able to delete this context."))
-			err := fmt.Errorf(chalk.Red.Color("Cannot delete current context - %s"), chalk.White.Color(chalk.Bold.TextStyle(qliksenseConfig.Spec.CurrentContext)))
+			fmt.Fprintln(out,Yellow("Please switch contexts to be able to delete this context."))
+			err := fmt.Errorf(Red("Cannot delete current context - %s").String(), White(Bold(qliksenseConfig.Spec.CurrentContext)))
 			return err
 		case DefaultQliksenseContext:
-			err := fmt.Errorf(chalk.Red.Color("Cannot delete default qliksense context"))
+			err := fmt.Errorf(Red("Cannot delete default qliksense context").String())
 			return err
 		default:
 			qliksenseContextsDir1 := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
@@ -360,13 +360,13 @@ func (q *Qliksense) DeleteContextConfig(args []string, flag bool) error {
 						}
 						if ans == true {
 							api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
-							fmt.Fprintln(out, chalk.Yellow.Color(chalk.Underline.TextStyle("Warning: Active resources may still be running in-cluster")))
-							fmt.Fprintln(out, chalk.Green.Color("Successfully deleted context: "), chalk.Bold.TextStyle(args[0]))
+							fmt.Fprintln(out, Yellow(Underline("Warning: Active resources may still be running in-cluster")))
+							fmt.Fprintln(out, Green("Successfully deleted context: "),Bold(args[0]))
 						} else {
 							return nil
 						}
 					} else {
-						err := fmt.Errorf(chalk.Red.Color("Context not found"))
+						err := fmt.Errorf(Red("Context not found").String())
 						return err
 					}
 				}
