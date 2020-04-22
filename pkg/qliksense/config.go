@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	Q_INIT_CRD_PATH   = "manifests/base/manifests/qliksense-init"
+	Q_INIT_CRD_PATH   = "manifests/base/crds"
 	agreementTempalte = `
 	Please read the agreement at https://www.qlik.com/us/legal/license-terms
 	Accept the end user license agreement by providing acceptEULA=yes
@@ -88,7 +89,7 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
-	mByte, err := executeKustomizeBuild(profilePath)
+	mByte, err := ExecuteKustomizeBuild(profilePath)
 	if err != nil {
 		fmt.Println("cannot generate manifests for "+profilePath, err)
 		return err
@@ -145,21 +146,76 @@ func (q *Qliksense) getCurrentCrDependentResourceAsString() (string, error) {
 	var crString strings.Builder
 
 	for svcName, v := range qcr.Spec.Secrets {
+		hasFile := false
 		for _, item := range v {
 			if item.ValueFrom != nil && item.ValueFrom.SecretKeyRef != nil {
-				secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.GetName(), QliksenseSecretsDir, svcName+".yaml")
-
-				if api.FileExists(secretFilePath) {
-					secretFile, err := ioutil.ReadFile(secretFilePath)
-					if err != nil {
-						return "", err
-					}
-					crString.WriteString("\n---\n")
-					crString.Write(secretFile)
+				hasFile = true
+				break
+			}
+		}
+		if hasFile {
+			secretFilePath := filepath.Join(q.QliksenseHome, QliksenseContextsDir, qcr.GetName(), QliksenseSecretsDir, svcName+".yaml")
+			if api.FileExists(secretFilePath) {
+				secretFile, err := ioutil.ReadFile(secretFilePath)
+				if err != nil {
+					return "", err
 				}
+				crString.WriteString("\n---\n")
+				crString.Write(secretFile)
 			}
 		}
 	}
 	crString.WriteString("\n---\n")
 	return crString.String(), nil
+}
+
+func (q *Qliksense) EditCR(contextName string) error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if contextName == "" {
+		cr, err := qConfig.GetCurrentCR()
+		if err != nil {
+			return err
+		}
+		contextName = cr.GetName()
+	}
+	crFilePath := qConfig.GetCRFilePath(contextName)
+	tempFile, err := ioutil.TempFile("", "*.yaml")
+	if err != nil {
+		return err
+	}
+	crContent, err := ioutil.ReadFile(crFilePath)
+	if err != nil {
+		return err
+	}
+	if err := ioutil.WriteFile(tempFile.Name(), crContent, os.ModePerm); err != nil {
+		return nil
+	}
+	cmd := exec.Command(getKubeEditorTool(), tempFile.Name())
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	newCr, err := qapi.GetCRObject(tempFile.Name())
+	if err != nil {
+		return errors.New("cannot save the cr. Someting wrong in the file format. It is not saved\n" + err.Error())
+	}
+	oldCr, err := qapi.GetCRObject(crFilePath)
+
+	if oldCr.GetName() != newCr.GetName() {
+		return errors.New("cr name cannot be chagned")
+	}
+	if newCr.Validate() {
+		return qConfig.WriteCR(newCr)
+	}
+	return nil
+}
+
+func getKubeEditorTool() string {
+	editor := os.Getenv("KUBE_EDITOR")
+	if editor == "" {
+		editor = "vim"
+	}
+	return editor
 }

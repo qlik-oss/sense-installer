@@ -16,32 +16,11 @@ func pullQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Pull docker images for offline install",
 		Example: `qliksense pull`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			version, err := getAboutCommandGitRef(args)
+			version, err := getSingleArg(args)
 			if err != nil {
 				return err
 			}
-
-			qConfig := qapi.NewQConfig(q.QliksenseHome)
-			if version == "" {
-				if qcr, err := qConfig.GetCurrentCR(); err != nil {
-					return err
-				} else {
-					version = qcr.GetLabelFromCr("version")
-				}
-			}
-
-			if version != "" {
-				if !qConfig.IsRepoExistForCurrent(version) {
-					if err := q.FetchQK8s(version); err != nil {
-						return err
-					}
-				}
-				if err := qConfig.SwitchCurrentCRToVersionAndProfile(version, opts.Profile); err != nil {
-					return err
-				}
-			}
-
-			return q.PullImagesForCurrentCR()
+			return q.PullImages(version, opts.Profile)
 		},
 	}
 	f := cmd.Flags()
@@ -55,15 +34,22 @@ func pushQliksenseImages(q *qliksense.Qliksense) *cobra.Command {
 		Short:   "Push docker images for offline install",
 		Example: `qliksense push`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			qConfig := qapi.NewQConfig(q.QliksenseHome)
-			if qcr, err := qConfig.GetCurrentCR(); err != nil {
+			if err := ensureImageRegistrySetInCR(q); err != nil {
 				return err
-			} else if registry := qcr.GetImageRegistry(); registry == "" {
-				return errors.New("no image registry in config")
 			} else {
 				return q.PushImagesForCurrentCR()
 			}
 		},
 	}
 	return cmd
+}
+
+func ensureImageRegistrySetInCR(q *qliksense.Qliksense) error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if qcr, err := qConfig.GetCurrentCR(); err != nil {
+		return err
+	} else if registry := qcr.Spec.GetImageRegistry(); registry == "" {
+		return errors.New("no image registry set in the CR; to set it use: qliksense config set-image-registry")
+	}
+	return nil
 }

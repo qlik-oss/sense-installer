@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -20,8 +20,8 @@ func loadCrFile(q *qliksense.Qliksense) *cobra.Command {
 		Long:    `load a CR a file and create necessary structure for future use`,
 		Example: `qliksense load -f file_name or cat cr_file | qliksense load -f -`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runLoadOrApplyCommandE(cmd, func(reader io.Reader) error {
-				return q.LoadCr(reader, overwriteExistingContext)
+			return runLoadOrApplyCommandE(cmd, func(buffer []byte) error {
+				return q.LoadCr(bytes.NewReader(buffer), overwriteExistingContext)
 			})
 		},
 	}
@@ -30,7 +30,7 @@ func loadCrFile(q *qliksense.Qliksense) *cobra.Command {
 	c.MarkFlagRequired("file")
 	f.BoolVarP(&overwriteExistingContext, "overwrite", "o", overwriteExistingContext, "Overwrite any existing contexts with the same name")
 
-	eulaPreRunHooks.addValidator(c.Name(), loadOrApplyCommandEulaPreRunHook)
+	eulaPreRunHooks.addValidator(fmt.Sprintf("%v %v", rootCommandName, c.Name()), loadOrApplyCommandEulaPreRunHook)
 	return c
 }
 
@@ -70,15 +70,19 @@ func loadOrApplyCommandEulaPreRunHook(cmd *cobra.Command, q *qliksense.Qliksense
 	}
 }
 
-func runLoadOrApplyCommandE(cmd *cobra.Command, callBack func(io.Reader) error) error {
+func runLoadOrApplyCommandE(cmd *cobra.Command, callBack func(buffer []byte) error) error {
 	if crBytes := eulaPreRunHooks.getPostValidationArtifact("CR"); crBytes != nil {
-		return callBack(bytes.NewBuffer(crBytes.([]byte)))
+		return callBack(crBytes.([]byte))
 	} else {
 		file, err := getCrFileFromFlag(cmd, "file")
 		if err != nil {
 			return err
 		}
 		defer file.Close()
-		return callBack(file)
+		if crBytes, err := ioutil.ReadAll(file); err != nil {
+			return err
+		} else {
+			return callBack(crBytes)
+		}
 	}
 }

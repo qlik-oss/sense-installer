@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 
@@ -68,18 +69,30 @@ func setConfigsCmd(q *qliksense.Qliksense) *cobra.Command {
 	var (
 		cmd *cobra.Command
 	)
-
+	base64Encoded := false
 	cmd = &cobra.Command{
 		Use:   "set-configs",
 		Short: "set configurations into the qliksense context as key-value pairs",
 		Example: `
 qliksense config set-configs <service_name>.<attribute>="<value>"
-    - The above configuration will be displayed in the CR
+		- The above configuration will be displayed in the CR
+qliksense config set-configs <service_name>.<attribute>="<value" --base64
+		- if the value is base64 encoded
+echo "something" | base64 | qliksense config set-configs <service_name>.<attribute> --base64
+	- value is coming from input pipe as base64 encoded
+echo "something" | qliksense config set-configs <service_name>.<attribute>
+	- value is coming from input pipe
+
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.SetConfigs(args)
+			if isInputFromPipe() && len(args) == 1 {
+				return q.SetConfigFromReader(args[0], os.Stdin, base64Encoded)
+			}
+			return q.SetConfigs(args, base64Encoded)
 		},
 	}
+	f := cmd.Flags()
+	f.BoolVarP(&base64Encoded, "base64", "", false, "if the arguments value is base64 encoded")
 	return cmd
 }
 
@@ -88,7 +101,7 @@ func setSecretsCmd(q *qliksense.Qliksense) *cobra.Command {
 		cmd    *cobra.Command
 		secret bool
 	)
-
+	base64Encoded := false
 	cmd = &cobra.Command{
 		Use:   "set-secrets",
 		Short: "set secrets configurations into the qliksense context as key-value pairs",
@@ -101,13 +114,24 @@ qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=true
 qliksense config set-secrets <service_name>.<attribute>="<value>" --secret=false
 		- Encrypt the secret value and display it in the current context
 		- No secret resource is created
-        - The above configuration will be displayed in the CR `,
+		  - The above configuration will be displayed in the CR 
+qliksense config set-secrets <service_name>.<attribute>="<value>" --base64
+		- the <value> is base64 encoded
+echo "something" | base64 | qliksense config set-secrets <service_name>.<attribute> --base64
+		- value coming from input pipe as base64 encoded
+echo "something" | qliksense config set-secrets <service_name>.<attribute>
+		- value coming from input pipe`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return q.SetSecrets(args, secret)
+			if isInputFromPipe() && len(args) == 1 {
+				return q.SetSecretsFromReader(args[0], os.Stdin, secret, base64Encoded)
+			}
+			return q.SetSecrets(args, secret, base64Encoded)
 		},
 	}
 	f := cmd.Flags()
 	f.BoolVar(&secret, "secret", false, "Whether secrets should be encrypted as a Kubernetes Secret resource")
+	f.BoolVarP(&base64Encoded, "base64", "", false, "if the arguments value is base64 encoded")
+
 	return cmd
 }
 

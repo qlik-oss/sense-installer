@@ -24,7 +24,7 @@ func TestKubectlDirectOps(t *testing.T) {
 	ns := GetKubectlNamespace()
 	opr := fmt.Sprintf("version")
 	opr1 := strings.Fields(opr)
-	err := KubectlDirectOps(opr1, ns)
+	_, err := KubectlDirectOps(opr1, ns)
 	if err != nil {
 		t.Log(err)
 		t.Fail()

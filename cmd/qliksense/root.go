@@ -27,6 +27,13 @@ const (
 	qlikSenseDirVar         = ".qliksense"
 	keepPatchFilesFlagName  = "keep-config-repo-patches"
 	keepPatchFilesFlagUsage = "Keep config repo patch files (for debugging)"
+	pullFlagName            = "pull"
+	pullFlagShorthand       = "d"
+	pullFlagUsage           = "If using private docker registry, pull (download) all required Qliksense images before install"
+	pushFlagName            = "push"
+	pushFlagShorthand       = "u"
+	pushFlagUsage           = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
+	rootCommandName         = "qliksense"
 )
 
 func initAndExecute() error {
@@ -85,33 +92,40 @@ var versionCmd = &cobra.Command{
 }
 
 func commandUsesContext(commandName string) bool {
-	return commandName != "" && commandName != "qliksense" && commandName != "help" && commandName != "version"
+	return commandName != "" &&
+		commandName != rootCommandName &&
+		commandName != fmt.Sprintf("%v help", rootCommandName) &&
+		commandName != fmt.Sprintf("%v version", rootCommandName)
 }
 
 func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "qliksense",
+		Use:   rootCommandName,
 		Short: "Qliksense cli tool",
 		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			if commandUsesContext(cmd.Name()) {
+			if commandUsesContext(cmd.CommandPath()) {
 				globalEulaPreRun(cmd, p)
 				if err := p.SetUpQliksenseDefaultContext(); err != nil {
+					panic(err)
+				}
+				pf := api.NewPreflightConfig(p.QliksenseHome)
+				if err := pf.Initialize(); err != nil {
 					panic(err)
 				}
 				globalEulaPostRun(cmd, p)
 			}
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			if commandUsesContext(cmd.Name()) {
+			if commandUsesContext(cmd.CommandPath()) {
 				globalEulaPostRun(cmd, p)
 			}
 		},
 	}
 	origHelpFunc := cmd.HelpFunc()
 	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		if !commandUsesContext(cmd.Name()) {
+		if !commandUsesContext(cmd.CommandPath()) {
 			cmd.Flags().MarkHidden("acceptEULA")
 		}
 		origHelpFunc(cmd, args)
@@ -158,9 +172,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
 
-	//add upgrade command
-	cmd.AddCommand(upgradeCmd(p))
-
 	// add the set-context config command as a sub-command to the app config command
 	configCmd.AddCommand(setContextConfigCmd(p))
 
@@ -186,6 +197,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
 	
 
+	// open editor for config
+	configCmd.AddCommand(configEditCmd(p))
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
 
@@ -196,11 +209,17 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add preflight command
 	preflightCmd := preflightCmd(p)
-	preflightCmd.AddCommand(preflightCheckDnsCmd(p))
-	preflightCmd.AddCommand(preflightCheckK8sVersionCmd(p))
-	preflightCmd.AddCommand(preflightAllChecksCmd(p))
-	//preflightCmd.AddCommand(preflightCheckMongoCmd(p))
-	//preflightCmd.AddCommand(preflightCheckAllCmd(p))
+	preflightCmd.AddCommand(pfDnsCheckCmd(p))
+	preflightCmd.AddCommand(pfK8sVersionCheckCmd(p))
+	preflightCmd.AddCommand(pfAllChecksCmd(p))
+	preflightCmd.AddCommand(pfMongoCheckCmd(p))
+	preflightCmd.AddCommand(pfDeploymentCheckCmd(p))
+	preflightCmd.AddCommand(pfServiceCheckCmd(p))
+	preflightCmd.AddCommand(pfPodCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateRoleCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateRoleBindingCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateServiceAccountCheckCmd(p))
+	preflightCmd.AddCommand(pfCreateAuthCheckCmd(p))
 
 	cmd.AddCommand(preflightCmd)
 	cmd.AddCommand(loadCrFile(p))

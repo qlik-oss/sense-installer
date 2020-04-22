@@ -1,18 +1,20 @@
 package qliksense
 
 import (
-	"crypto/rsa"
+	"errors"
 	"fmt"
+	"io"
+
+	"github.com/qlik-oss/k-apis/pkg/config"
+	"github.com/robfig/cron/v3"
+
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"text/tabwriter"
-
-	"github.com/robfig/cron/v3"
-
-	"github.com/qlik-oss/k-apis/pkg/config"
 
 	b64 "encoding/base64"
 
@@ -32,48 +34,58 @@ const (
 	MaxContextNameLength    = 17
 	QliksenseSecretsDir     = "secrets"
 
-	imageRegistryConfigKey = "imageRegistry"
-	pullSecretName         = "artifactory-docker-secret"
+	imageRegistryConfigKey     = "imageRegistry"
+	pullSecretName             = "artifactory-docker-secret"
+	qliksenseOperatorImageRepo = "qlik-docker-oss.bintray.io"
+	qliksenseOperatorImageName = "qliksense-operator"
 )
 
+func (q *Qliksense) SetSecretsFromReader(arg string, reader io.Reader, createSecret, base64Encoded bool) error {
+	//take only name from the arguments, value should be from reader
+	argName := strings.SplitN(arg, "=", 1)
+	if len(argName) != 1 {
+		return errors.New("can only have one argument from pipe")
+	}
+	valueBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	return q.SetSecrets([]string{argName[0] + "=" + string(valueBytes)}, createSecret, base64Encoded)
+}
+
 // SetSecrets - set-secrets <key>=<value> commands
-func (q *Qliksense) SetSecrets(args []string, isSecretSet bool) error {
+func (q *Qliksense) SetSecrets(args []string, isSecretSet bool, base64Encoded bool) error {
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
 
 	// Metadata name in qliksense CR is the name of the current context
 	api.LogDebugMessage("Current context: %s", qliksenseCR.GetName())
-	rsaPublicKey, _, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return err
 	}
-	resultArgs, err := api.ProcessConfigArgs(args)
+	resultArgs, err := api.ProcessConfigArgs(args, base64Encoded)
 	if err != nil {
 		return err
 	}
 	for _, ra := range resultArgs {
 		api.LogDebugMessage("value args to be encrypted: %s", ra.Value)
-		if err := q.processSecret(ra, rsaPublicKey, qliksenseCR, isSecretSet); err != nil {
+		if err := q.processSecret(ra, encryptionKey, qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
 	}
 	// write modified content into context-yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	return qConfig.WriteCR(qliksenseCR)
 }
 
-func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.PublicKey, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
-	// encrypt value with RSA key pair
-	valueBytes := []byte(ra.Value)
-	cipherText, e2 := api.Encrypt(valueBytes, rsaPublicKey)
+func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, encryptionKey string, qliksenseCR *api.QliksenseCR, isSecretSet bool) error {
+	cipherText, e2 := api.EncryptData([]byte(ra.Value), encryptionKey)
 	if e2 != nil {
 		return e2
 	}
-	base64EncodedSecret := b64.StdEncoding.EncodeToString(cipherText)
 	secretName := ""
 	if isSecretSet {
 		secretFolder := qliksenseCR.GetK8sSecretsFolder(q.QliksenseHome)
@@ -105,7 +117,8 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 		if k8sSecret.Data == nil {
 			k8sSecret.Data = map[string][]byte{}
 		}
-		k8sSecret.Data[ra.Key] = []byte(base64EncodedSecret)
+		// v1.Secret does enconding, so no need to encode again
+		k8sSecret.Data[ra.Key] = []byte(cipherText)
 
 		// Write secret to file
 		k8sSecretBytes, err := api.K8sSecretToYaml(k8sSecret)
@@ -118,25 +131,36 @@ func (q *Qliksense) processSecret(ra *api.ServiceKeyValue, rsaPublicKey *rsa.Pub
 			return err
 		}
 		api.LogDebugMessage("Created a Kubernetes secret")
-
-		// Prepare args to update CR in the next step
-		base64EncodedSecret = ""
 	}
-
+	base64EncodedSecret := b64.StdEncoding.EncodeToString([]byte(cipherText))
 	// write into CR the keyref of the secret
 	qliksenseCR.Spec.AddToSecrets(ra.SvcName, ra.Key, base64EncodedSecret, secretName)
 	return nil
 }
 
+func (q *Qliksense) SetConfigFromReader(arg string, reader io.Reader, base64Encoded bool) error {
+	//take only name from the arguments, value should be from reader
+	argName := strings.SplitN(arg, "=", 1)
+	if len(argName) != 1 {
+		return errors.New("can only have one argument from pipe")
+	}
+	valueBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+	return q.SetConfigs([]string{argName[0] + "=" + string(valueBytes)}, base64Encoded)
+}
+
 // SetConfigs - set-configs <key>=<value> commands
-func (q *Qliksense) SetConfigs(args []string) error {
+func (q *Qliksense) SetConfigs(args []string, base64Encoded bool) error {
 	// retieve current context from config.yaml
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
 
-	resultArgs, err := api.ProcessConfigArgs(args)
+	resultArgs, err := api.ProcessConfigArgs(args, base64Encoded)
 	if err != nil {
 		return err
 	}
@@ -144,54 +168,66 @@ func (q *Qliksense) SetConfigs(args []string) error {
 		qliksenseCR.Spec.AddToConfigs(ra.SvcName, ra.Key, ra.Value)
 	}
 	// write modified content into context.yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
-
-	return nil
+	return qConfig.WriteCR(qliksenseCR)
 }
 
-func retrieveCurrentContextInfo(q *Qliksense) (*api.QliksenseCR, string, error) {
-	var qliksenseConfig api.QliksenseConfig
-	qliksenseConfigFile := filepath.Join(q.QliksenseHome, QliksenseConfigFile)
-	if err := api.ReadFromFile(&qliksenseConfig, qliksenseConfigFile); err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
-	currentContext := qliksenseConfig.Spec.CurrentContext
-	api.LogDebugMessage("Current-context from config.yaml: %s", currentContext)
-	if currentContext == "" {
-		// current-context is empty
-		err := fmt.Errorf(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
-		log.Println(err)
-		return nil, "", err
-	}
-	// read the context.yaml file
-	qliksenseCR := &api.QliksenseCR{}
-	if currentContext == "" {
-		// current-context is empty
-		err := fmt.Errorf(`Please run the "qliksense config set-context <context-name>" first before viewing the current context info`)
-		log.Println(err)
-		return nil, "", err
-	}
-	qliksenseContextsFile := filepath.Join(q.QliksenseHome, QliksenseContextsDir, currentContext, currentContext+".yaml")
-	if !api.FileExists(qliksenseContextsFile) {
-		err := fmt.Errorf("Context file does not exist.\nPlease try re-running `qliksense config set-context <context-name>` and then `qliksense config view` again")
-		log.Println(err)
-		return nil, "", err
-	}
-	if err := api.ReadFromFile(qliksenseCR, qliksenseContextsFile); err != nil {
-		log.Println(err)
-		return nil, "", err
-	}
+func caseInsenstiveFieldByName(v reflect.Value, name string) reflect.Value {
+	name = strings.ToLower(name)
+	return v.FieldByNameFunc(func(n string) bool { return strings.ToLower(n) == name })
+}
 
-	api.LogDebugMessage("Read context file: %s, Read QliksenseCR: %v", qliksenseContextsFile, qliksenseCR)
-
-	return qliksenseCR, qliksenseContextsFile, nil
+func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR) (bool, *api.QliksenseCR) {
+	cr := reflect.ValueOf(crSpec.Spec)
+	keyValid := caseInsenstiveFieldByName(reflect.Indirect(cr), key)
+	if !keyValid.IsValid() {
+		//not in main spec
+		fmt.Println(key, "is an invalid key")
+		return false, crSpec
+	} else if keySub == "" {
+		if key == "rotatekeys" {
+			if _, err := validateInput(value); err != nil {
+				return false, crSpec
+			}
+		}
+	}
+	// checks if it is git or gitops
+	if keySub != "" {
+		if !keyValid.IsNil() {
+			if !caseInsenstiveFieldByName(reflect.Indirect(keyValid), keySub).IsValid() {
+				fmt.Println(keySub, "is an invalid key")
+				return false, crSpec
+			} else {
+				// verify gitops enabled and gitops schedule
+				switch keySub {
+				case "schedule":
+					if _, err := cron.ParseStandard(value); err != nil {
+						fmt.Println("Please enter string with standard cron scheduling syntax ")
+						return false, crSpec
+					}
+				case "enabled":
+					if !strings.EqualFold(value, "yes") && !strings.EqualFold(value, "no") {
+						fmt.Println("Please use yes or no for key enabled")
+						return false, crSpec
+					}
+				}
+			}
+		} else {
+			switch key {
+			case "gitops":
+				crSpec.Spec.GitOps = &config.GitOps{}
+			case "git":
+				crSpec.Spec.Git = &config.Repo{}
+			}
+		}
+	}
+	return true, crSpec
 }
 
 // SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
@@ -204,72 +240,127 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 	}
 
 	for _, arg := range args {
-		argsString := strings.Split(arg, "=")
-		switch argsString[0] {
-		case "profile":
-			qliksenseCR.Spec.Profile = argsString[1]
-			api.LogDebugMessage("Current profile after modification: %s ", qliksenseCR.Spec.Profile)
-		case "git.repository":
-			if qliksenseCR.Spec.Git == nil {
-				qliksenseCR.Spec.Git = &config.Repo{}
-			}
-			qliksenseCR.Spec.Git.Repository = argsString[1]
-			api.LogDebugMessage("Current git repository after modification: %s ", qliksenseCR.Spec.Git.Repository)
-		case "storageClassName":
-			qliksenseCR.Spec.StorageClassName = argsString[1]
-			api.LogDebugMessage("Current StorageClassName after modification: %s ", qliksenseCR.Spec.StorageClassName)
-		case "manifestsRoot":
-			qliksenseCR.Spec.ManifestsRoot = argsString[1]
-		case "rotateKeys":
-			rotateKeys, err := validateInput(argsString[1])
-			if err != nil {
+		if strings.HasPrefix(arg, "fetchSource.") {
+			if err := q.processSetFetchSource(arg, qliksenseCR); err != nil {
 				return err
 			}
-			qliksenseCR.Spec.RotateKeys = rotateKeys
-			api.LogDebugMessage("Current rotateKeys after modification: %s ", qliksenseCR.Spec.RotateKeys)
-		case "gitops.enabled":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
-			}
-			if strings.EqualFold(argsString[1], "yes") || strings.EqualFold(argsString[1], "no") {
-				qliksenseCR.Spec.GitOps.Enabled = argsString[1]
-				api.LogDebugMessage("Current gitOps enabled status : %s ", qliksenseCR.Spec.GitOps.Enabled)
-			} else {
-				err := fmt.Errorf("Please use yes or no")
-				log.Println(err)
+		} else if strings.HasPrefix(arg, "git.") {
+			if err := q.processSetGit(arg, qliksenseCR); err != nil {
 				return err
 			}
-		case "gitops.schedule":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
-			}
-			if _, err := cron.ParseStandard(argsString[1]); err != nil {
-				err := fmt.Errorf("Please enter string with standard cron scheduling syntax ")
+		} else if strings.HasPrefix(arg, "gitOps.") {
+			if err := q.processSetGitOps(arg, qliksenseCR); err != nil {
 				return err
 			}
-			qliksenseCR.Spec.GitOps.Schedule = argsString[1]
-			api.LogDebugMessage("Current gitOps schedule is : %s ", qliksenseCR.Spec.GitOps.Schedule)
-		case "gitops.watchbranch":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
+		} else {
+			if err := processSetSingleArg(arg, qliksenseCR); err != nil {
+				return err
 			}
-			qliksenseCR.Spec.GitOps.WatchBranch = argsString[1]
-			api.LogDebugMessage("Current gitOps watchbranch is : %s ", qliksenseCR.Spec.GitOps.WatchBranch)
-		case "gitops.image":
-			if qliksenseCR.Spec.GitOps == nil {
-				qliksenseCR.Spec.GitOps = &config.GitOps{}
+		}
+		fmt.Println(chalk.Green.Color("Successfully added to Custom Resource Spec"))
+	}
+
+	// write modified content into context.yaml
+	return qConfig.WriteCR(qliksenseCR)
+}
+
+func processSetSingleArg(arg string, cr *api.QliksenseCR) error {
+	nv := strings.Split(arg, "=")
+	switch nv[0] {
+	case "manifestsRoot":
+		cr.Spec.ManifestsRoot = nv[1]
+	case "profile":
+		cr.Spec.Profile = nv[1]
+	case "storageClassName":
+		cr.Spec.StorageClassName = nv[1]
+	case "rotateKeys":
+		valid := false
+		for _, v := range []string{"yes", "no", "None"} {
+			if nv[1] == v {
+				valid = true
 			}
-			qliksenseCR.Spec.GitOps.Image = argsString[1]
-			api.LogDebugMessage("Current gitOps image is : %s ", qliksenseCR.Spec.GitOps.Image)
-		default:
-			err := fmt.Errorf("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git.repository or gitops arguments to configure the current context")
-			log.Println(err)
+		}
+		if !valid {
+			return errors.New("please povide rotateKeys=yes|no|None")
+		}
+		cr.Spec.RotateKeys = nv[1]
+	default:
+		return errors.New("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot to configure the current context")
+	}
+	return nil
+}
+
+func (q *Qliksense) processSetFetchSource(arg string, cr *api.QliksenseCR) error {
+	args := strings.Split(arg, "=")
+	subs := strings.Split(args[0], ".")
+	if cr.Spec.FetchSource == nil {
+		cr.Spec.FetchSource = &config.Repo{}
+	}
+	switch subs[1] {
+	case "repository":
+		cr.Spec.FetchSource.Repository = args[1]
+	case "accessToken":
+		qConfig := api.NewQConfig(q.QliksenseHome)
+		key, err := qConfig.GetEncryptionKeyFor(cr.GetName())
+		if err != nil {
 			return err
 		}
+		return cr.SetFetchAccessToken(args[1], key)
+	case "secretName":
+		cr.Spec.FetchSource.SecretName = args[1]
+	case "userName":
+		cr.Spec.FetchSource.UserName = args[1]
+	default:
+		return errors.New(arg + " does not match any cr spec")
 	}
-	// write modified content into context.yaml
-	api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+	return nil
+}
 
+func (q *Qliksense) processSetGit(arg string, cr *api.QliksenseCR) error {
+	args := strings.Split(arg, "=")
+	subs := strings.Split(args[0], ".")
+	if cr.Spec.Git == nil {
+		cr.Spec.Git = &config.Repo{}
+	}
+	switch subs[1] {
+	case "repository":
+		cr.Spec.Git.Repository = args[1]
+	case "accessToken":
+		cr.Spec.Git.AccessToken = args[1]
+	case "secretName":
+		cr.Spec.Git.SecretName = args[1]
+	case "userName":
+		cr.Spec.Git.UserName = args[1]
+	default:
+		return errors.New(arg + " does not match any cr spec")
+	}
+	return nil
+}
+
+func (q *Qliksense) processSetGitOps(arg string, cr *api.QliksenseCR) error {
+	args := strings.Split(arg, "=")
+	subs := strings.Split(args[0], ".")
+	if cr.Spec.Git == nil {
+		cr.Spec.GitOps = &config.GitOps{}
+	}
+	switch subs[1] {
+	case "enabled":
+		if args[1] != "yes" && args[1] != "no" {
+			return errors.New("Please use yes or no for key enabled")
+		}
+		cr.Spec.GitOps.Enabled = args[1]
+	case "schedule":
+		if _, err := cron.ParseStandard(args[1]); err != nil {
+			return errors.New("Please enter string with standard cron scheduling syntax ")
+		}
+		cr.Spec.GitOps.Schedule = args[1]
+	case "watchBranch":
+		cr.Spec.GitOps.WatchBranch = args[1]
+	case "image":
+		cr.Spec.GitOps.Image = args[1]
+	default:
+		return errors.New(arg + " does not match any cr spec")
+	}
 	return nil
 }
 
@@ -382,6 +473,12 @@ func (q *Qliksense) DeleteContextConfig(args []string, flag bool) error {
 
 // SetUpQliksenseDefaultContext - to setup dir structure for default qliksense context
 func (q *Qliksense) SetUpQliksenseDefaultContext() error {
+	if api.FileExists(filepath.Join(q.QliksenseHome, "config.yaml")) {
+		qliksenseConfig := api.NewQConfig(q.QliksenseHome)
+		if qliksenseConfig.IsContextExist(DefaultQliksenseContext) {
+			return nil
+		}
+	}
 	return q.SetUpQliksenseContext(DefaultQliksenseContext)
 }
 
@@ -412,7 +509,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	}
 
 	if qliksenseConfig.IsContextExist(contextName) {
-		return nil
+		qliksenseConfig.Spec.CurrentContext = contextName
+		return qliksenseConfig.Write()
 	}
 	qliksenseCR := &api.QliksenseCR{}
 	qliksenseCR.AddCommonConfig(contextName)
@@ -422,7 +520,7 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 	}
 
 	// set the encrypted default mongo
-	return q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false)
+	return q.SetSecrets([]string{`qliksense.mongoDbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false, false)
 }
 
 func validateInput(input string) (string, error) {
@@ -443,7 +541,8 @@ func validateInput(input string) (string, error) {
 	return input, err
 }
 
-// PrepareK8sSecret decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
+// PrepareK8sSecret targetFile contains base64 encoded value of encrypted value.
+// this method decodes and decrypts the secret value in the secret.yaml file and returns a B64encoded string
 func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 	// check if targetFile exists
 	if !api.FileExists(targetFile) {
@@ -452,7 +551,7 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 		return "", err
 	}
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	_, rsaPrivateKey, err := qConfig.GetCurrentContextEncryptionKeyPair()
+	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return "", err
 	}
@@ -470,17 +569,13 @@ func (q *Qliksense) PrepareK8sSecret(targetFile string) (string, error) {
 	dataMap := k8sSecret1.Data
 	var resultMap = make(map[string][]byte)
 	for k, v := range dataMap {
-		ba, err := b64.StdEncoding.DecodeString(string(v))
-		if err != nil {
-			err := fmt.Errorf("Not able to decode message: %v", err)
-			return "", err
-		}
-		decryptedString, err := api.Decrypt(ba, rsaPrivateKey)
+		//k8s secrets has already base64 decoed value
+		decryptedString, err := api.DecryptData(v, encryptionKey)
 		if err != nil {
 			err := fmt.Errorf("Not able to decrypt message: %v", err)
 			return "", err
 		}
-		resultMap[k] = decryptedString
+		resultMap[k] = []byte(decryptedString)
 	}
 
 	// putting the above map back into the k8sSecret struct
@@ -504,7 +599,7 @@ func readTargetfile(targetFile string) ([]byte, error) {
 
 func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullUsername, pullPassword string) error {
 	qConfig := api.NewQConfig(q.QliksenseHome)
-	qliksenseCR, qliksenseContextsFile, err := retrieveCurrentContextInfo(q)
+	qliksenseCR, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
@@ -531,7 +626,7 @@ func (q *Qliksense) SetImageRegistry(registry, pushUsername, pushPassword, pullU
 	}
 
 	qliksenseCR.Spec.AddToConfigs("qliksense", imageRegistryConfigKey, registry)
-	return api.WriteToFile(&qliksenseCR, qliksenseContextsFile)
+	return qConfig.WriteCR(qliksenseCR)
 }
 
 func (q *Qliksense) SetEulaAccepted() error {

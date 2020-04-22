@@ -68,6 +68,9 @@ const (
 )
 
 func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping pull/push tests in short mode")
+	}
 	var testCases = []struct {
 		name              string
 		registryAuth      bool
@@ -131,7 +134,7 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 			}
 			q := &Qliksense{
 				QliksenseHome: tmpQlikSenseHome,
-				CrdBox:        packr.New("crds", "./crds"),
+				CrdBox:        &packr.Box{},
 			}
 			var versionOut VersionOutput
 
@@ -170,29 +173,88 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 	}
 }
 
-func setupQlikSenseHome(t *testing.T, tmpQlikSenseHome string, registry *testRegistryV2, clientAuth clientAuthType) error {
-	if err := ioutil.WriteFile(path.Join(tmpQlikSenseHome, "config.yaml"), []byte(`
-apiVersion: config.qlik.com/v1
-kind: QliksenseConfig
+func Test_appendAdditionalImages(t *testing.T) {
+	tmpQlikSenseHome, err := ioutil.TempDir("", "tmp-qlik-sense-home-")
+	if err != nil {
+		t.Fatalf("unexpected error creating tmp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpQlikSenseHome)
+
+	setupQliksenseTestDefaultContext(t, tmpQlikSenseHome, `
+apiVersion: qlik.com/v1
+kind: Qliksense
 metadata:
-  name: QliksenseConfigMetadata
+  name: qlik-default
 spec:
-  contexts:
-  - name: qlik-default
-    crFile: contexts/qlik-default/qlik-default.yaml
-  currentContext: qlik-default
-`), os.ModePerm); err != nil {
-		return err
+  gitOps:
+    image: some-gitops-image
+`)
+
+	q := &Qliksense{
+		QliksenseHome: tmpQlikSenseHome,
+		CrdBox:        packr.New("crds", "./crds"),
 	}
 
-	defaultContextDir := path.Join(tmpQlikSenseHome, "contexts", "qlik-default")
-	if err := os.MkdirAll(defaultContextDir, os.ModePerm); err != nil {
-		return err
+	pf := api.NewPreflightConfig(q.QliksenseHome)
+	if err := pf.Initialize(); err != nil {
+		t.Fatalf("unexpected error initializing preflight: %v", err)
 	}
 
+	qConfig := api.NewQConfig(q.QliksenseHome)
+	qcr, err := qConfig.GetCurrentCR()
+	if err != nil {
+		t.Fatalf("unexpected error getting current CR: %v", err)
+	}
+
+	images := make([]string, 0)
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
+		t.Fatalf("unexpected error appending additional images: %v", err)
+	}
+
+	expectedNumberAdditionalImages := 5
+	if len(images) != expectedNumberAdditionalImages {
+		t.Fatalf("unexpected number of additional images: %v, expected: %v", len(images), expectedNumberAdditionalImages)
+	}
+
+	haveMatchingImage := func(test func(string) bool) bool {
+		for _, image := range images {
+			if test(image) {
+				return true
+			}
+		}
+		return false
+	}
+	if !haveMatchingImage(func(image string) bool {
+		return strings.Contains(image, "qlik-docker-oss.bintray.io/qliksense-operator:v")
+	}) {
+		t.Fatal("expected to find the operator image in the list, but it wasn't there")
+	}
+	if !haveMatchingImage(func(image string) bool {
+		return image == "some-gitops-image"
+	}) {
+		t.Fatal("expected to find the GitOps image in the list, but it wasn't there")
+	}
+	if !haveMatchingImage(func(image string) bool {
+		return image == "nginx"
+	}) {
+		t.Fatal("expected to find the nginx Preflight image in the list, but it wasn't there")
+	}
+	if !haveMatchingImage(func(image string) bool {
+		return image == "subfuzion/netcat"
+	}) {
+		t.Fatal("expected to find the netcat Preflight image in the list, but it wasn't there")
+	}
+	if !haveMatchingImage(func(image string) bool {
+		return image == "mongo"
+	}) {
+		t.Fatal("expected to find the mongo Preflight image in the list, but it wasn't there")
+	}
+}
+
+func setupQlikSenseHome(t *testing.T, tmpQlikSenseHome string, registry *testRegistryV2, clientAuth clientAuthType) error {
 	version := "foo"
-	manifestsRootDir := fmt.Sprintf("%s/repo/%s", defaultContextDir, version)
-	if err := ioutil.WriteFile(path.Join(defaultContextDir, "qlik-default.yaml"), []byte(fmt.Sprintf(`
+	manifestsRootDir := filepath.ToSlash(path.Join(tmpQlikSenseHome, "contexts", "qlik-default", "repo", version))
+	cr := fmt.Sprintf(`
 apiVersion: qlik.com/v1
 kind: Qliksense
 metadata:
@@ -208,9 +270,8 @@ spec:
   manifestsRoot: %s
   rotateKeys: "yes"
   releaseName: qlik-default
-`, version, registry.url, manifestsRootDir)), os.ModePerm); err != nil {
-		return err
-	}
+`, version, registry.url, manifestsRootDir)
+	setupQliksenseTestDefaultContext(t, tmpQlikSenseHome, cr)
 
 	if clientAuth == clientAuthProvided || clientAuth == clientAuthProvidedButIncorrect {
 		if registry.username == "" || clientAuth == clientAuthProvidedButIncorrect {
