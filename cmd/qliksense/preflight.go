@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/preflight"
 	"github.com/ttacon/chalk"
 
@@ -21,6 +22,7 @@ func preflightCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -35,7 +37,7 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight DNS check
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight DNS check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight DNS check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -43,11 +45,11 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckDns(namespace, kubeConfigContents); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight DNS check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight DNS check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight DNS check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight DNS check PASSED"))
 			return nil
 		},
 	}
@@ -57,6 +59,7 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -72,16 +75,16 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight Kubernetes minimum version check
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight kubernetes minimum version check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight kubernetes minimum version check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight kubernetes minimum version check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight kubernetes minimum version check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight kubernetes minimum version check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight kubernetes minimum version check PASSED"))
 			return nil
 		},
 	}
@@ -92,6 +95,7 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -108,7 +112,7 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 			fmt.Printf("Running all preflight checks...\n\n")
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Unable to run the preflight checks suite"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Unable to run the preflight checks suite"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -116,11 +120,11 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.RunAllPreflightChecks(kubeConfigContents, namespace, preflightOpts); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("1 or more preflight checks have FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("1 or more preflight checks have FAILED"))
 				fmt.Println("Completed running all preflight checks")
 				return nil
 			}
-			fmt.Printf("%s\n\n", chalk.Green.Color("All preflight checks have PASSED"))
+			fmt.Fprintf(out, "%s\n\n", chalk.Green.Color("All preflight checks have PASSED"))
 			return nil
 		},
 	}
@@ -137,6 +141,7 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -151,7 +156,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight deployments check
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight deployment check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight deployment check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -159,11 +164,11 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight deployment check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight deployment check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight deployment check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight deployment check PASSED"))
 			return nil
 		},
 	}
@@ -173,6 +178,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -188,7 +194,7 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight service check
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight service check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight service check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -197,11 +203,11 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckService(namespace, kubeConfigContents); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight service check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight service check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight service check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight service check PASSED"))
 			return nil
 		},
 	}
@@ -211,6 +217,7 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -226,7 +233,7 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight pod check
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight pod check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight pod check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -234,11 +241,11 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckPod(namespace, kubeConfigContents); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight pod check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight pod check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight pod check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight pod check PASSED"))
 			return nil
 		},
 	}
@@ -248,6 +255,7 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -263,16 +271,16 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight role check
 			namespace, _, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight role check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight role check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRole(namespace); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight role check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight role check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight role check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight role check PASSED"))
 			return nil
 		},
 	}
@@ -282,6 +290,7 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -297,16 +306,16 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight createRoleBinding check
 			namespace, _, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight rolebinding check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight rolebinding check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRoleBinding(namespace); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight rolebinding check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight rolebinding check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight rolebinding check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight rolebinding check PASSED"))
 			return nil
 		},
 	}
@@ -316,6 +325,7 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -331,16 +341,16 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight createServiceAccount check
 			namespace, _, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight ServiceAccount check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight ServiceAccount check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateServiceAccount(namespace); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight ServiceAccount check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight ServiceAccount check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight rolebinding check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight ServiceAccount check PASSED"))
 			return nil
 		},
 	}
@@ -350,6 +360,7 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -364,16 +375,16 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight authcheck
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight authcheck FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight authcheck FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRB(namespace, kubeConfigContents); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight authcheck FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight authcheck FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight authcheck PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight authcheck PASSED"))
 			return nil
 		},
 	}
@@ -383,6 +394,7 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 }
 
 func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
 	preflightOpts := &preflight.PreflightOptions{
 		MongoOptions: &preflight.MongoOptions{},
 	}
@@ -398,7 +410,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight mongo check
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight mongo check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight mongo check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -406,11 +418,11 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
-				fmt.Printf("%s\n", chalk.Red.Color("Preflight mongo check FAILED"))
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight mongo check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Printf("%s\n", chalk.Green.Color("Preflight mongo check PASSED"))
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight mongo check PASSED"))
 			return nil
 		},
 	}
