@@ -15,7 +15,7 @@ import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/ttacon/chalk"
+	. "github.com/logrusorgru/aurora"
 )
 
 // To run this project in debug mode, run:
@@ -250,7 +250,7 @@ func levenstein(cmd *cobra.Command) {
 			if !strings.EqualFold(arg[1], suggest[0]) {
 				arg[1] = suggest[0]
 				out := ansi.NewColorableStdout()
-				fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+				fmt.Fprintln(out, Green("Did you mean: "), Bold(strings.Join(arg, " ")), "?")
 			}
 		}
 	}

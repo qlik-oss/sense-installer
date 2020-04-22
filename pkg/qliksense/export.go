@@ -14,13 +14,12 @@ func (q *Qliksense) ExportContext(context string) error {
 	qliksenseContextFile := filepath.Join(qliksenseContextsDir, context)
 	qliksenseSecretsDir := filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir)
 	qliksenseSecretsFile := filepath.Join(qliksenseSecretsDir, context)
-	// files := []string{qliksenseContextFile, qliksenseSecretsFile}
 
 	fmt.Println(q.QliksenseHome)
 	fmt.Println(qliksenseSecretsFile)
 	fmt.Println(qliksenseContextFile)
 
-	filename := "result.zip"
+	filename := context + ".zip"
 	destinationFile, err := os.Create(q.QliksenseHome + "/" + filename)
 	var folders []string
 	if err != nil {
