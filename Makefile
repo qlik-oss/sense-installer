@@ -48,7 +48,7 @@ test-setup: clean generate
 ifeq ($(shell ${WHICH} docker-registry 2>${DEVNUL}),)
 	$(eval TMP-docker-distribution := $(shell go run _make_support/get_tmp_dir/do.go))
 	git clone https://github.com/docker/distribution.git "$(TMP-docker-distribution)/docker-distribution"
-	cd "$(TMP-docker-distribution)/docker-distribution" && git checkout -b v2.7.1 && $(MAKE)
+	cd "$(TMP-docker-distribution)/docker-distribution" && git checkout -b v2.7.1 && "$(MAKE)"
 	go run _make_support/copy/do.go --src "$(TMP-docker-distribution)/docker-distribution/bin/registry" --dst pkg/qliksense/docker-registry$(FILE_EXT)
 	go run _make_support/remove_all/do.go "$(TMP-docker-distribution)"
 endif
@@ -56,12 +56,12 @@ endif
 .PHONY: test-short
 test-short: test-setup
 	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
-	$(MAKE) clean
+	"$(MAKE)" clean
 
 .PHONY: test
 test: test-setup
 	go test -count=1 -tags "$(BUILDTAGS)" -v ./...
-	$(MAKE) clean
+	"$(MAKE)" clean
 
 xbuild-all: clean generate
 	$(foreach OS, $(SUPPORTED_PLATFORMS), \
@@ -103,7 +103,7 @@ get-crds:
 ifeq ($(QLIKSENSE_OPERATOR_DIR),)
 	$(eval TMP-operator := $(shell go run _make_support/get_tmp_dir/do.go))
 	git clone https://github.com/qlik-oss/qliksense-operator.git -b master $(TMP-operator)/operator
-	$(MAKE) QLIKSENSE_OPERATOR_DIR="$(TMP-operator)/operator" get-crds
+	"$(MAKE)" QLIKSENSE_OPERATOR_DIR="$(TMP-operator)/operator" get-crds
 	go run _make_support/remove_all/do.go "$(TMP-operator)"
 else
 	go run _make_support/mkdir_all/do.go pkg/qliksense/crds/cr
