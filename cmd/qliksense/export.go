@@ -6,7 +6,7 @@ import (
 )
 
 func exportCmd(q *qliksense.Qliksense) *cobra.Command {
-
+	filePath := q.QliksenseHome
 	c := &cobra.Command{
 		Use:     "export",
 		Short:   "export files for corresponding context",
@@ -16,11 +16,12 @@ func exportCmd(q *qliksense.Qliksense) *cobra.Command {
 
 			if len(args) != 0 {
 				context := args[0]
-				return q.ExportContext(context)
+				return q.ExportContext(context, filePath)
 			}
 			return nil
 		},
 	}
-
+	f := c.Flags()
+	f.StringVarP(&filePath, "output", "o", "", "Output Directory")
 	return c
 }

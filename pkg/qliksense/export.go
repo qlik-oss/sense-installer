@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (q *Qliksense) ExportContext(context string) error {
+func (q *Qliksense) ExportContext(context string, output string) error {
 	qliksenseContextsDir := filepath.Join(q.QliksenseHome, QliksenseContextsDir)
 	qliksenseContextFile := filepath.Join(qliksenseContextsDir, context)
 	qliksenseSecretsDir := filepath.Join(q.QliksenseHome, QliksenseSecretsDir, QliksenseContextsDir)
@@ -21,7 +21,7 @@ func (q *Qliksense) ExportContext(context string) error {
 	fmt.Println(qliksenseContextFile)
 
 	filename := "result.zip"
-	destinationFile, err := os.Create(q.QliksenseHome + "/" + filename)
+	destinationFile, err := os.Create(output + "/" + filename)
 	var folders []string
 	if err != nil {
 		return err
