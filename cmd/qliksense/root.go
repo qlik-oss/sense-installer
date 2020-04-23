@@ -15,7 +15,7 @@ import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/ttacon/chalk"
+	. "github.com/logrusorgru/aurora"
 )
 
 // To run this project in debug mode, run:
@@ -195,6 +195,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add clean-config-repo-patches command as a sub-command to the app config sub-command
 	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
+	
 
 	// open editor for config
 	configCmd.AddCommand(configEditCmd(p))
@@ -267,7 +268,7 @@ func levenstein(cmd *cobra.Command) {
 			if !strings.EqualFold(arg[1], suggest[0]) {
 				arg[1] = suggest[0]
 				out := ansi.NewColorableStdout()
-				fmt.Fprintln(out, chalk.Green.Color("Did you mean: "), chalk.Bold.TextStyle(strings.Join(arg, " ")), "?")
+				fmt.Fprintln(out, Green("Did you mean: "), Bold(strings.Join(arg, " ")), "?")
 			}
 		}
 	}
