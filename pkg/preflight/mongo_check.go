@@ -55,27 +55,32 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
 		return err
 	}
+	caCertSecretName = "preflight-mongo-test-cacert"
+	clientCertSecretName = "preflight-mongo-test-clientcert"
+	podName := "pf-mongo-pod"
+
+	// cleanup before starting check
+	qp.runMongoCleanup(clientset, namespace, podName, caCertSecretName, clientCertSecretName)
+
 	var secrets []string
 	if preflightOpts.MongoOptions.CaCertFile != "" {
-		caCertSecretName = "preflight-mongo-test-cacert"
 		caCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
 		if err != nil {
 			err = fmt.Errorf("unable to create a ca cert kubernetes secret: %v\n", err)
 			return err
 		}
 
-		defer qp.deleteK8sSecret(clientset, namespace, caCertSecret)
+		defer qp.deleteK8sSecret(clientset, namespace, caCertSecret.Name)
 		secrets = append(secrets, caCertSecretName)
 	}
 	if preflightOpts.MongoOptions.ClientCertFile != "" {
-		clientCertSecretName = "preflight-mongo-test-clientcert"
 		clientCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.ClientCertFile, clientCertSecretName)
 		if err != nil {
 			err = fmt.Errorf("unable to create a client cert kubernetes secret: %v\n", err)
 			return err
 		}
 
-		defer qp.deleteK8sSecret(clientset, namespace, clientCertSecret)
+		defer qp.deleteK8sSecret(clientset, namespace, clientCertSecret.Name)
 		secrets = append(secrets, clientCertSecretName)
 	}
 
@@ -107,7 +112,6 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	api.LogDebugMessage("Mongo command: %s\n", strings.Join(commandToRun, " "))
 
 	// create a pod
-	podName := "pf-mongo-pod"
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(mongo, true)
 	if err != nil {
 		err = fmt.Errorf("unable to retrieve image : %v\n", err)
@@ -156,4 +160,10 @@ func (qp *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, name
 		return nil, err
 	}
 	return certSecret, nil
+}
+
+func (qp *QliksensePreflight) runMongoCleanup(clientset *kubernetes.Clientset, namespace, podName, caCertSecretName, clientCertSecretName string) {
+	qp.deleteK8sSecret(clientset, namespace, caCertSecretName)
+	qp.deleteK8sSecret(clientset, namespace, clientCertSecretName)
+	qp.deletePod(clientset, namespace, podName)
 }

@@ -6,6 +6,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	depName     = "deployment-preflight-check"
+	podName     = "pod-pf-check"
+	serviceName = "svc-pf-check"
+)
+
 func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigContents []byte) error {
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
@@ -16,7 +22,8 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 	// Deployment check
 	qp.P.LogVerboseMessage("Preflight deployment check: \n")
 	qp.P.LogVerboseMessage("--------------------------- \n")
-	err = qp.checkPfDeployment(clientset, namespace, "deployment-preflight-check")
+
+	err = qp.checkPfDeployment(clientset, namespace)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Deployment check: FAILED\n")
 		return err
@@ -63,14 +70,15 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 }
 
 func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string) error {
-	// create a pod
-	podName := "pod-pf-check"
-	commandToRun := []string{}
+	// delete the deployment we are going to create, if it already exists in the cluster
+	qp.deletePod(clientset, namespace, podName)
 
+	commandToRun := []string{}
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
 	if err != nil {
 		return err
 	}
+	// create a pod
 	pod, err := qp.createPreflightTestPod(clientset, namespace, podName, imageName, nil, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("unable to create pod - %v\n", err)
@@ -88,8 +96,10 @@ func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namesp
 }
 
 func (qp *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, namespace string) error {
+	// delete the service we are going to create, if it already exists in the cluster
+	qp.deleteService(clientset, namespace, serviceName)
+
 	// creating service
-	serviceName := "svc-pf-check"
 	pfService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
 		err = fmt.Errorf("unable to create service - %v\n", err)
@@ -106,7 +116,10 @@ func (qp *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, na
 	return nil
 }
 
-func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace, depName string) error {
+func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace string) error {
+	// delete the deployment we are going to create, if it already exists in the cluster
+	qp.deleteDeployment(clientset, namespace, depName)
+
 	// check if we are able to create a deployment
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
 	if err != nil {

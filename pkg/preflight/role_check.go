@@ -89,6 +89,9 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	}
 	namespace = "" // namespace is handled when generating the manifests
 
+	// check if entity already exists in the cluster, if so - delete it
+	api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
+
 	defer func() {
 		qp.P.LogVerboseMessage("Cleaning up resources...\n")
 		err := api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)

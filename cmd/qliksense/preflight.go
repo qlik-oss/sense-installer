@@ -436,3 +436,42 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.BoolVar(&preflightOpts.MongoOptions.Tls, "tls", false, "enable tls?")
 	return preflightMongoCmd
 }
+
+func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
+
+	var pfCleanCmd = &cobra.Command{
+		Use:     "clean",
+		Short:   "perform preflight clean",
+		Long:    `perform preflight clean to ensure that all resources are cleared up in the cluster`,
+		Example: `qliksense preflight clean`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
+
+			// Preflight clean
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight cleanup FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+
+			if namespace == "" {
+				namespace = "default"
+			}
+			if err = qp.Cleanup(namespace, kubeConfigContents); err != nil {
+				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight cleanup FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight cleanup complete"))
+			return nil
+		},
+	}
+	f := pfCleanCmd.Flags()
+	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
+	return pfCleanCmd
+}

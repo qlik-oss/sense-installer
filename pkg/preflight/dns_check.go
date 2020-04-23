@@ -3,6 +3,8 @@ package preflight
 import (
 	"fmt"
 	"strings"
+
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -11,6 +13,10 @@ const (
 )
 
 func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
+	depName := "dep-dns-preflight-check"
+	serviceName := "svc-dns-pf-check"
+	podName := "pf-pod-1"
+
 	qp.P.LogVerboseMessage("Preflight DNS check: \n")
 	qp.P.LogVerboseMessage("------------------- \n")
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
@@ -19,12 +25,15 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 		return err
 	}
 
+	// delete the deployment we are going to create, if it already exists in the cluster
+	qp.runDNSCleanup(clientset, namespace, podName, serviceName, depName)
+
 	// creating deployment
-	depName := "dep-dns-preflight-check"
 	nginxImageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
 	if err != nil {
 		return err
 	}
+
 	dnsDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
 	if err != nil {
 		err = fmt.Errorf("unable to create deployment: %v\n", err)
@@ -37,7 +46,6 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	}
 
 	// creating service
-	serviceName := "svc-dns-pf-check"
 	dnsService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
 		err = fmt.Errorf("unable to create service : %s, %s\n", serviceName, err)
@@ -46,13 +54,13 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	defer qp.deleteService(clientset, namespace, serviceName)
 
 	// create a pod
-	podName := "pf-pod-1"
 	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
 	netcatImageName, err := qp.GetPreflightConfigObj().GetImageName(netcat, true)
 	if err != nil {
 		err = fmt.Errorf("unable to retrieve image : %v\n", err)
 		return err
 	}
+
 	dnsPod, err := qp.createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("unable to create pod : %s, %s\n", podName, err)
@@ -88,4 +96,10 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	qp.P.LogVerboseMessage("Cleaning up resources...\n")
 
 	return nil
+}
+
+func (qp *QliksensePreflight) runDNSCleanup(clientset *kubernetes.Clientset, namespace, podName, serviceName, depName string) {
+	qp.deleteDeployment(clientset, namespace, depName)
+	qp.deletePod(clientset, namespace, podName)
+	qp.deleteService(clientset, namespace, serviceName)
 }
