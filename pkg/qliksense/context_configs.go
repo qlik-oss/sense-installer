@@ -257,7 +257,7 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 				return err
 			}
 		}
-		fmt.Println(chalk.Green.Color("Successfully added to Custom Resource Spec"))
+		fmt.Println(Green("Successfully added to Custom Resource Spec"))
 	}
 
 	// write modified content into context.yaml
