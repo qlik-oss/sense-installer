@@ -55,12 +55,12 @@ endif
 
 .PHONY: test-short
 test-short: test-setup
-	go test -short -count=1 -tags "$(BUILDTAGS)" -v ./...
+	go test -count 1 -parallel 1 -tags "$(BUILDTAGS)" -v -short ./...
 	"$(MAKE)" clean
 
 .PHONY: test
 test: test-setup
-	go test -count=1 -tags "$(BUILDTAGS)" -v ./...
+	go test -count 1 -parallel 1 -tags "$(BUILDTAGS)" -v ./...
 	"$(MAKE)" clean
 
 xbuild-all: clean generate
