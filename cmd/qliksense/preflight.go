@@ -6,7 +6,6 @@ import (
 	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/preflight"
-	"github.com/ttacon/chalk"
 
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
@@ -455,7 +454,7 @@ func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight clean
 			namespace, kubeConfigContents, err := preflight.InitPreflight()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight cleanup FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("Preflight cleanup FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -464,11 +463,11 @@ func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.Cleanup(namespace, kubeConfigContents); err != nil {
-				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight cleanup FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("Preflight cleanup FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", chalk.Green.Color("Preflight cleanup complete"))
+			fmt.Fprintf(out, "%s\n", Green("Preflight cleanup complete"))
 			return nil
 		},
 	}
