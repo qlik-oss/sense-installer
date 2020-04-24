@@ -2,13 +2,14 @@ package qliksense
 
 import (
 	"fmt"
-	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 func Test_About_getImageList(t *testing.T) {
@@ -228,14 +229,6 @@ spec:
 			}
 		})
 	}
-}
-
-func Test_foo(t *testing.T) {
-	configDir := "C:\\Users\\abulynko\\AppData\\Local\\Temp\\03994898/repo"
-	fmt.Printf("--AB: 1: %v\n", path.Dir(configDir))
-
-	sub := path.Dir(configDir)
-	fmt.Printf("--AB: 2: %v\n", path.Dir(sub))
 }
 
 func Test_About_getConfigDirectory(t *testing.T) {
