@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobuffalo/packr/v2"
+	"github.com/markbates/pkger"
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/signature"
@@ -134,7 +134,7 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 			}
 			q := &Qliksense{
 				QliksenseHome: tmpQlikSenseHome,
-				CrdBox:        &packr.Box{},
+				CrdPkger:      "",
 			}
 			var versionOut VersionOutput
 
@@ -192,7 +192,7 @@ spec:
 
 	q := &Qliksense{
 		QliksenseHome: tmpQlikSenseHome,
-		CrdBox:        packr.New("crds", "./crds"),
+		CrdPkger:      pkger.Include("/pkg/qliksense/crds"),
 	}
 
 	pf := api.NewPreflightConfig(q.QliksenseHome)

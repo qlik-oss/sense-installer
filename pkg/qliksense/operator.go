@@ -5,7 +5,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+
+	"github.com/markbates/pkger"
 )
 
 func (q *Qliksense) ViewOperator() error {
@@ -37,15 +40,29 @@ func (q *Qliksense) GetOperatorControllerString() string {
 }
 
 func (q *Qliksense) getYamlFromPackrFile(packrFile string) string {
-	s, err := q.CrdBox.FindString(packrFile)
+	fmt.Println(packrFile)
+	s, err := pkger.Info(packrFile)
+	fmt.Println(s.Name)
 	if err != nil {
 		fmt.Printf("Cannot read file %s", packrFile)
 	}
-	return fmt.Sprintln("#soruce: " + packrFile + "\n\n" + s + "\n---")
+	return fmt.Sprintln("#soruce: " + packrFile + "\n\n" + s.Name + "\n---")
 }
+
 func (q *Qliksense) getFileList(resourceType string) []string {
 	var resList []string
-	for _, v := range q.CrdBox.List() {
+	var keys []string
+	pkger.Walk(q.CrdPkger, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			keys = append(keys, path)
+		}
+		return nil
+	})
+	sort.Strings(keys)
+	for _, v := range keys {
 		if strings.Contains(v, filepath.Join(resourceType, "")) {
 			resList = append(resList, []string{v}...)
 		}

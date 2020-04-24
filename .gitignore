@@ -4,6 +4,7 @@ cmd/qliksense/__debug_bin
 pkg/qliksense/crds
 pkg/qliksense/packrd
 pkg/qliksense/qliksense-packr.go
+pkg/qliksense/pkger/
 pkg/qliksense/docker-registry
 /pkg/qliksense/tests
 .DS_Store

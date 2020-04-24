@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/kustomize/api/resmap"
 	"sigs.k8s.io/kustomize/api/resource"
 
-	"github.com/gobuffalo/packr/v2"
+	"github.com/markbates/pkger"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
@@ -120,7 +120,7 @@ spec:
 
 	q := &Qliksense{
 		QliksenseHome: tmpQlikSenseHome,
-		CrdBox:        packr.New("crds", "./crds"),
+		CrdPkger:      pkger.Include("/pkg/qliksense/crds"),
 	}
 
 	qConfig := qapi.NewQConfig(q.QliksenseHome)

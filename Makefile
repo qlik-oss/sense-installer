@@ -84,20 +84,22 @@ else
 endif
 	upx $(BINDIR)/$(VERSION)/$(MIXIN)-$(CLIENT_PLATFORM)-$(CLIENT_ARCH)$(FILE_EXT)
 
-generate: get-crds packr2
+generate: get-crds generate-pkger
 	go generate ./...
 	go run _make_support/remove_all/do.go pkg/qliksense/crds
 
-packr2:
-ifeq ($(shell ${WHICH} packr2 2>${DEVNUL}),)
-	go get -u github.com/gobuffalo/packr/v2/packr2@v2.7.1
+pkgr:
+ifeq ($(shell ${WHICH} pkger 2>${DEVNUL}),)
+	go get -u github.com/markbates/pkger/cmd/pkger@v0.15.1
 endif
 
-clean: clean-packr
+clean:
 	go run _make_support/remove_all/do.go pkg/qliksense/crds
 
-clean-packr: packr2
-	cd pkg/qliksense && packr2 clean
+
+generate-pkger: pkgr
+	mkdir -p pkg/qliksense/pkger
+	pkger -o pkg/qliksense/pkger
 
 get-crds:
 ifeq ($(QLIKSENSE_OPERATOR_DIR),)

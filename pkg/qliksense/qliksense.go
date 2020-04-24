@@ -1,22 +1,20 @@
-//go:generate packr2
 package qliksense
 
 import (
-	"github.com/gobuffalo/packr/v2"
+	"github.com/markbates/pkger"
 )
 
 // Qliksense is the logic behind the qliksense client
 type Qliksense struct {
 	QliksenseHome string
-	CrdBox        *packr.Box ``
+	CrdPkger      string
 }
 
 // New qliksense client, initialized with useful defaults.
 func New(qliksenseHome string) *Qliksense {
 	qliksenseClient := &Qliksense{
 		QliksenseHome: qliksenseHome,
-		CrdBox:        packr.New("crds", "./crds"),
+		CrdPkger:      pkger.Include("/pkg/qliksense/crds"),
 	}
-
 	return qliksenseClient
 }
