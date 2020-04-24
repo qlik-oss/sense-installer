@@ -56,7 +56,6 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	caCertSecretName := "preflight-mongo-test-cacert"
 	clientCertSecretName := "preflight-mongo-test-clientcert"
 	mongoPodName := "pf-mongo-pod"
-	// var caCertSecretName, clientCertSecretName string
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)

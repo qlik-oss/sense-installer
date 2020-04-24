@@ -76,7 +76,7 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 }
 
 func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
-	// delete the deployment we are going to create, if it already exists in the cluster
+	// delete the pod we are going to create, if it already exists in the cluster
 	podName := "pod-pf-check"
 	qp.deletePod(clientset, namespace, podName)
 	if cleanup {
