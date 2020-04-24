@@ -17,8 +17,10 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	serviceName := "svc-dns-pf-check"
 	podName := "pf-pod-1"
 
-	qp.P.LogVerboseMessage("Preflight DNS check: \n")
-	qp.P.LogVerboseMessage("------------------- \n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight DNS check: \n")
+		qp.P.LogVerboseMessage("------------------- \n")
+	}
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
@@ -93,9 +95,10 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 		err = fmt.Errorf("Expected response not found\n")
 		return err
 	}
-
-	qp.P.LogVerboseMessage("Completed preflight DNS check\n")
-	qp.P.LogVerboseMessage("Cleaning up resources...\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight DNS check\n")
+		qp.P.LogVerboseMessage("Cleaning up resources...\n")
+	}
 
 	return nil
 }

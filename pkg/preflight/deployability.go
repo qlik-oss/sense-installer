@@ -14,15 +14,18 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 	}
 
 	// Deployment check
-	qp.P.LogVerboseMessage("Preflight deployment check: \n")
-	qp.P.LogVerboseMessage("--------------------------- \n")
-
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight deployment check: \n")
+		qp.P.LogVerboseMessage("--------------------------- \n")
+	}
 	err = qp.checkPfDeployment(clientset, namespace, cleanup)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Deployment check: FAILED\n")
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight deployment check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight deployment check\n")
+	}
 
 	return nil
 }
@@ -34,14 +37,19 @@ func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents 
 		return err
 	}
 	// Service check
-	qp.P.LogVerboseMessage("Preflight service check: \n")
-	qp.P.LogVerboseMessage("------------------------ \n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight service check: \n")
+		qp.P.LogVerboseMessage("------------------------ \n")
+	}
 	err = qp.checkPfService(clientset, namespace, cleanup)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Service check: FAILED\n")
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight service check\n")
+
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight service check\n")
+	}
 	return nil
 }
 
@@ -52,14 +60,18 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 		return err
 	}
 	// Pod check
-	qp.P.LogVerboseMessage("Preflight pod check: \n")
-	qp.P.LogVerboseMessage("-------------------- \n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight pod check: \n")
+		qp.P.LogVerboseMessage("-------------------- \n")
+	}
 	err = qp.checkPfPod(clientset, namespace, cleanup)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Pod check: FAILED\n")
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight pod check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight pod check\n")
+	}
 	return nil
 }
 

@@ -13,37 +13,49 @@ import (
 
 func (qp *QliksensePreflight) CheckCreateRole(namespace string, cleanup bool) error {
 	// create a Role
-	qp.P.LogVerboseMessage("Preflight role check: \n")
-	qp.P.LogVerboseMessage("--------------------- \n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight role check: \n")
+		qp.P.LogVerboseMessage("--------------------- \n")
+	}
 	err := qp.checkCreateEntity(namespace, "Role", cleanup)
 	if err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight role check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight role check\n")
+	}
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string, cleanup bool) error {
 	// create a RoleBinding
-	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
-	qp.P.LogVerboseMessage("---------------------------- \n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
+		qp.P.LogVerboseMessage("---------------------------- \n")
+	}
 	err := qp.checkCreateEntity(namespace, "RoleBinding", cleanup)
 	if err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight rolebinding check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight rolebinding check\n")
+	}
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string, cleanup bool) error {
 	// create a service account
-	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
-	qp.P.LogVerboseMessage("------------------------------- \n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
+		qp.P.LogVerboseMessage("------------------------------- \n")
+	}
 	err := qp.checkCreateEntity(namespace, "ServiceAccount", cleanup)
 	if err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n")
+	}
 	return nil
 }
 func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, cleanup bool) error {

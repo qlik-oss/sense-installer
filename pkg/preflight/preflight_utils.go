@@ -720,17 +720,26 @@ func (qp *QliksensePreflight) deleteK8sSecret(clientset *kubernetes.Clientset, n
 }
 
 func (qp *QliksensePreflight) Cleanup(namespace string, kubeConfigContents []byte) error {
+	qp.P.LogVerboseMessage("Preflight clean\n")
+	qp.P.LogVerboseMessage("----------------\n")
 
+	qp.P.LogVerboseMessage("Removing deployment...\n")
 	qp.CheckDeployment(namespace, kubeConfigContents, true)
+	qp.P.LogVerboseMessage("Removing service...\n")
 	qp.CheckService(namespace, kubeConfigContents, true)
+	qp.P.LogVerboseMessage("Removing pod...\n")
 	qp.CheckPod(namespace, kubeConfigContents, true)
 
+	qp.P.LogVerboseMessage("Removing role...\n")
 	qp.CheckCreateRole(namespace, true)
+	qp.P.LogVerboseMessage("Removing rolebinding...\n")
 	qp.CheckCreateRoleBinding(namespace, true)
+	qp.P.LogVerboseMessage("Removing serviceaccount...\n")
 	qp.CheckCreateServiceAccount(namespace, true)
 
+	qp.P.LogVerboseMessage("Removing DNS check components...\n")
 	qp.CheckDns(namespace, kubeConfigContents, true)
+	qp.P.LogVerboseMessage("Removing mongo check components...\n")
 	qp.CheckMongo(kubeConfigContents, namespace, &PreflightOptions{MongoOptions: &MongoOptions{}}, true)
-
 	return nil
 }

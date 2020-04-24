@@ -16,10 +16,11 @@ const (
 )
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions, cleanup bool) error {
-	qp.P.LogVerboseMessage("Preflight mongodb check: \n")
-	qp.P.LogVerboseMessage("------------------------ \n")
-
-	if preflightOpts != nil && preflightOpts.MongoOptions.MongodbUrl == "" {
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight mongodb check: \n")
+		qp.P.LogVerboseMessage("------------------------ \n")
+	}
+	if preflightOpts != nil && preflightOpts.MongoOptions.MongodbUrl == "" && !cleanup {
 		// infer mongoDbUrl from currentCR
 		qp.P.LogVerboseMessage("MongoDbUri is empty, infer from CR\n")
 		qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
@@ -39,12 +40,15 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 		}
 		preflightOpts.MongoOptions.MongodbUrl = decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri")
 	}
-
-	qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
+	if !cleanup {
+		qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
+	}
 	if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight mongodb check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight mongodb check\n")
+	}
 	return nil
 }
 
