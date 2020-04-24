@@ -40,7 +40,7 @@ endif
 .PHONY: build
 build: clean generate
 	go run _make_support/mkdir_all/do.go $(BINDIR)
-	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	go build -ldflags "$(LDFLAGS)" -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 	$(MAKE) clean
 
 .PHONY: test-setup
@@ -55,12 +55,12 @@ endif
 
 .PHONY: test-short
 test-short: test-setup
-	go test -count 1 -parallel 1 -tags "$(BUILDTAGS)" -v -short ./...
+	go test -count 1 -p 1 -tags "$(BUILDTAGS)" -v -short ./...
 	"$(MAKE)" clean
 
 .PHONY: test
 test: test-setup
-	go test -count 1 -parallel 1 -tags "$(BUILDTAGS)" -v ./...
+	go test -count 1 -p 1 -tags "$(BUILDTAGS)" -v ./...
 	"$(MAKE)" clean
 
 xbuild-all: clean generate
