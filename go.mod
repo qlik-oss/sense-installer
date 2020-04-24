@@ -45,7 +45,6 @@ require (
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
-	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
 	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
