@@ -40,7 +40,7 @@ endif
 .PHONY: build
 build: clean generate
 	go run _make_support/mkdir_all/do.go $(BINDIR)
-	go build -ldflags "$(LDFLAGS)" -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
+	go build -ldflags '$(LDFLAGS)' -tags "$(BUILDTAGS)" -o $(BINDIR)/$(MIXIN)$(FILE_EXT) ./cmd/$(MIXIN)
 	$(MAKE) clean
 
 .PHONY: test-setup
