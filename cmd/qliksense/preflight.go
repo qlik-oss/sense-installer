@@ -44,7 +44,7 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckDns(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckDns(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight DNS check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -163,7 +163,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckDeployment(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight deployment check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -202,7 +202,7 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckService(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckService(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight service check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -240,7 +240,7 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckPod(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckPod(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight pod check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -275,7 +275,7 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			if err = qp.CheckCreateRole(namespace); err != nil {
+			if err = qp.CheckCreateRole(namespace, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight role check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -310,7 +310,7 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			if err = qp.CheckCreateRoleBinding(namespace); err != nil {
+			if err = qp.CheckCreateRoleBinding(namespace, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight rolebinding check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -345,7 +345,7 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			if err = qp.CheckCreateServiceAccount(namespace); err != nil {
+			if err = qp.CheckCreateServiceAccount(namespace, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight ServiceAccount check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -417,7 +417,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
+			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts, false); err != nil {
 				fmt.Fprintf(out, "%s\n", chalk.Red.Color("Preflight mongo check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil

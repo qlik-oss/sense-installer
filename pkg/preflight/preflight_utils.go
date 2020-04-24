@@ -721,117 +721,16 @@ func (qp *QliksensePreflight) deleteK8sSecret(clientset *kubernetes.Clientset, n
 
 func (qp *QliksensePreflight) Cleanup(namespace string, kubeConfigContents []byte) error {
 
-	fmt.Println("Preflight Cleanup underway!!!!!!!!")
-	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
-	if err != nil {
-		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
-		return err
-	}
+	qp.CheckDeployment(namespace, kubeConfigContents, true)
+	qp.CheckService(namespace, kubeConfigContents, true)
+	qp.CheckPod(namespace, kubeConfigContents, true)
 
-	// cleanup services
-	svcList, err := clientset.CoreV1().Services(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("Unable to retrieve services from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(svcList.Items); i++ {
-		fmt.Printf("Service Name: %s\n", svcList.Items[i].Name)
-		err := qp.deleteService(clientset, namespace, svcList.Items[i].Name)
+	qp.CheckCreateRole(namespace, true)
+	qp.CheckCreateRoleBinding(namespace, true)
+	qp.CheckCreateServiceAccount(namespace, true)
 
-		if err != nil {
-			fmt.Printf("There was an error while deleting the service: %s : %v\n", svcList.Items[i].Name, err)
-		}
-	}
-
-	// cleanup deployments
-	depList, err := clientset.AppsV1().Deployments(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("Unable to retrieve deployments from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(depList.Items); i++ {
-		fmt.Printf("Deployment Name: %s\n", depList.Items[i].Name)
-		err := qp.deleteDeployment(clientset, namespace, depList.Items[i].Name)
-
-		if err != nil {
-			fmt.Printf("There was an error while deleting the deployment: %s : %v\n", depList.Items[i].Name, err)
-		}
-	}
-
-	// cleanup pods
-	podList, err := clientset.CoreV1().Pods(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("unable to retrieve pods from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(podList.Items); i++ {
-		fmt.Printf("Pod Name: %s\n", podList.Items[i].Name)
-		err := qp.deletePod(clientset, namespace, podList.Items[i].Name)
-
-		if err != nil {
-			fmt.Printf("There was an error while deleting the pod: %s : %v\n", podList.Items[i].Name, err)
-		}
-	}
-
-	// cleanup secrets
-	secretsList, err := clientset.CoreV1().Secrets(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("unable to retrieve secrets from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(secretsList.Items); i++ {
-		fmt.Printf("Secret Name: %s\n", secretsList.Items[i].Name)
-		err := qp.deleteK8sSecret(clientset, namespace, secretsList.Items[i].Name)
-
-		if err != nil {
-			fmt.Printf("There was an error while deleting the secret: %s : %v\n", secretsList.Items[i].Name, err)
-		}
-	}
-
-	// cleanup roles
-	rolesList, err := clientset.RbacV1beta1().Roles(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("unable to retrieve roles from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(rolesList.Items); i++ {
-		fmt.Printf("Role Name: %s\n", rolesList.Items[i].Name)
-		err := qp.deleteRole(clientset, namespace, rolesList.Items[i].Name)
-
-		if err != nil {
-			fmt.Printf("There was an error while deleting the role: %s : %v\n", rolesList.Items[i].Name, err)
-		}
-	}
-
-	// cleanup rolebinding
-	roleBindingsList, err := clientset.RbacV1beta1().RoleBindings(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("unable to retrieve rolebindings from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(roleBindingsList.Items); i++ {
-		fmt.Printf("RoleBinding Name: %s\n", roleBindingsList.Items[i].Name)
-		err := qp.deleteRoleBinding(clientset, namespace, roleBindingsList.Items[i].Name)
-
-		if err != nil {
-			fmt.Printf("There was an error while deleting the rolebinding: %s : %v\n", roleBindingsList.Items[i].Name, err)
-		}
-	}
-
-	// cleanup serviceaccount
-	serviceAccountsList, err := clientset.CoreV1().ServiceAccounts(namespace).List(v1.ListOptions{})
-	if err != nil {
-		err = fmt.Errorf("unable to retrieve serviceaccounts from the cluster: %v\n", err)
-		return err
-	}
-	for i := 0; i < len(serviceAccountsList.Items); i++ {
-		fmt.Printf("ServiceAccount Name: %s\n", serviceAccountsList.Items[i].Name)
-		err := qp.deleteServiceAccount(clientset, namespace, serviceAccountsList.Items[i].Name)
-
-		if err != nil {
-			fmt.Printf("There was an error while deleting the service account: %s : %v\n", serviceAccountsList.Items[i].Name, err)
-		}
-	}
+	qp.CheckDns(namespace, kubeConfigContents, true)
+	qp.CheckMongo(kubeConfigContents, namespace, &PreflightOptions{MongoOptions: &MongoOptions{}}, true)
 
 	return nil
 }

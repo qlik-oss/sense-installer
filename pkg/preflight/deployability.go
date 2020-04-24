@@ -6,13 +6,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	depName     = "deployment-preflight-check"
-	podName     = "pod-pf-check"
-	serviceName = "svc-pf-check"
-)
-
-func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigContents []byte) error {
+func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigContents []byte, cleanup bool) error {
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("Kube config error: %v\n", err)
@@ -23,7 +17,7 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 	qp.P.LogVerboseMessage("Preflight deployment check: \n")
 	qp.P.LogVerboseMessage("--------------------------- \n")
 
-	err = qp.checkPfDeployment(clientset, namespace)
+	err = qp.checkPfDeployment(clientset, namespace, cleanup)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Deployment check: FAILED\n")
 		return err
@@ -33,7 +27,7 @@ func (qp *QliksensePreflight) CheckDeployment(namespace string, kubeConfigConten
 	return nil
 }
 
-func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents []byte) error {
+func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents []byte, cleanup bool) error {
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
@@ -42,7 +36,7 @@ func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents 
 	// Service check
 	qp.P.LogVerboseMessage("Preflight service check: \n")
 	qp.P.LogVerboseMessage("------------------------ \n")
-	err = qp.checkPfService(clientset, namespace)
+	err = qp.checkPfService(clientset, namespace, cleanup)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Service check: FAILED\n")
 		return err
@@ -51,7 +45,7 @@ func (qp *QliksensePreflight) CheckService(namespace string, kubeConfigContents 
 	return nil
 }
 
-func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []byte) error {
+func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []byte, cleanup bool) error {
 	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("error: unable to create a kubernetes client: %v\n", err)
@@ -60,7 +54,7 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 	// Pod check
 	qp.P.LogVerboseMessage("Preflight pod check: \n")
 	qp.P.LogVerboseMessage("-------------------- \n")
-	err = qp.checkPfPod(clientset, namespace)
+	err = qp.checkPfPod(clientset, namespace, cleanup)
 	if err != nil {
 		qp.P.LogVerboseMessage("Preflight Pod check: FAILED\n")
 		return err
@@ -69,10 +63,13 @@ func (qp *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []by
 	return nil
 }
 
-func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string) error {
+func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
 	// delete the deployment we are going to create, if it already exists in the cluster
+	podName := "pod-pf-check"
 	qp.deletePod(clientset, namespace, podName)
-
+	if cleanup {
+		return nil
+	}
 	commandToRun := []string{}
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
 	if err != nil {
@@ -95,10 +92,13 @@ func (qp *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namesp
 	return nil
 }
 
-func (qp *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, namespace string) error {
+func (qp *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
 	// delete the service we are going to create, if it already exists in the cluster
+	serviceName := "svc-pf-check"
 	qp.deleteService(clientset, namespace, serviceName)
-
+	if cleanup {
+		return nil
+	}
 	// creating service
 	pfService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
@@ -116,9 +116,13 @@ func (qp *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, na
 	return nil
 }
 
-func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace string) error {
+func (qp *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
 	// delete the deployment we are going to create, if it already exists in the cluster
+	depName := "deployment-preflight-check"
 	qp.deleteDeployment(clientset, namespace, depName)
+	if cleanup {
+		return nil
+	}
 
 	// check if we are able to create a deployment
 	imageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)

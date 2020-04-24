@@ -12,7 +12,7 @@ const (
 	netcat = "netcat"
 )
 
-func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte) error {
+func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byte, cleanup bool) error {
 	depName := "dep-dns-preflight-check"
 	serviceName := "svc-dns-pf-check"
 	podName := "pf-pod-1"
@@ -27,7 +27,9 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 
 	// delete the deployment we are going to create, if it already exists in the cluster
 	qp.runDNSCleanup(clientset, namespace, podName, serviceName, depName)
-
+	if cleanup {
+		return nil
+	}
 	// creating deployment
 	nginxImageName, err := qp.GetPreflightConfigObj().GetImageName(nginx, true)
 	if err != nil {
