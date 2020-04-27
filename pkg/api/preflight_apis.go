@@ -17,8 +17,9 @@ type PreflightConfig struct {
 }
 
 type PreflightSpec struct {
-	MinK8sVersion string            `json:"minK8sVersion,omitempty" yaml:"minK8sVersion,omitempty"`
-	Images        map[string]string `json:"images,omitempty" yaml:"images,omitempty"`
+	MinK8sVersion   string            `json:"minK8sVersion,omitempty" yaml:"minK8sVersion,omitempty"`
+	MinMongoVersion string            `json:"minMongoVersion,omitempty" yaml:"minMongoVersion,omitempty"`
+	Images          map[string]string `json:"images,omitempty" yaml:"images,omitempty"`
 }
 
 //NewPreflightConfigEmpty create empty PreflightConfig object
@@ -74,6 +75,13 @@ func (p *PreflightConfig) AddMinK8sV(version string) {
 	p.Spec.MinK8sVersion = version
 }
 
+func (p *PreflightConfig) AddMinMongoV(version string) {
+	if p.Spec == nil {
+		p.Spec = &PreflightSpec{}
+	}
+	p.Spec.MinMongoVersion = version
+}
+
 func (p *PreflightConfig) AddImage(imageFor, imageName string) {
 	if p.Spec.Images == nil {
 		p.Spec.Images = make(map[string]string)
@@ -101,6 +109,11 @@ func (p *PreflightConfig) GetImageName(imageFor string, accountForImageRegistry 
 func (p *PreflightConfig) GetMinK8sVersion() string {
 	return p.Spec.MinK8sVersion
 }
+
+func (p *PreflightConfig) GetMinMongoVersion() string {
+	return p.Spec.MinMongoVersion
+}
+
 func (p *PreflightConfig) IsExistOnDisk() bool {
 	if _, err := os.Lstat(p.GetConfigFilePath()); err != nil {
 		return false
@@ -117,6 +130,7 @@ func (p *PreflightConfig) Initialize() error {
 		return nil
 	}
 	p.AddMinK8sV("1.15")
+	p.AddMinMongoV("3.6")
 	p.AddImage("nginx", "nginx")
 	p.AddImage("netcat", "subfuzion/netcat")
 	p.AddImage("mongo", "mongo")

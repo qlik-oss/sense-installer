@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
+	"github.com/pkg/errors"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	apiv1 "k8s.io/api/core/v1"
@@ -143,6 +145,42 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		return err
 	}
 
+	// check mongo server version
+	api.LogDebugMessage("Minimum required mongo version: %s\n", qp.GetPreflightConfigObj().GetMinMongoVersion())
+	mongoVersionStrToCheck := "MongoDB server version:"
+	if strings.Contains(logStr, mongoVersionStrToCheck) {
+		logLines := strings.Split(logStr, "\n")
+
+		for _, eachline := range logLines {
+			if strings.Contains(eachline, mongoVersionStrToCheck) {
+				mongoVersionLog := strings.Split(eachline, ":")
+				mongoVersionStr := strings.TrimSpace(mongoVersionLog[1])
+				api.LogDebugMessage("Extracted mongo version from pod log: %s\n", mongoVersionStr)
+				currentMongoVersionSemver, err := semver.NewVersion(mongoVersionStr)
+				if err != nil {
+					err = fmt.Errorf("Unable to convert minimum mongo version into semver version:%v\n", err)
+					return err
+				}
+				minMongoVersionSemver, err := semver.NewVersion(qp.GetPreflightConfigObj().GetMinMongoVersion())
+				if err != nil {
+					err = fmt.Errorf("Unable to convert required minimum mongo version into semver version:%v\n", err)
+					return err
+				}
+				if currentMongoVersionSemver.GreaterThan(minMongoVersionSemver) {
+					qp.P.LogVerboseMessage("Current mongodb server version %s is greater than or equal to minimum required mongodb version: %s\n", currentMongoVersionSemver, minMongoVersionSemver)
+				} else {
+					err = fmt.Errorf("Current mongodb server version %s is less than minimum required mongodb version: %s", currentMongoVersionSemver, minMongoVersionSemver)
+					return err
+				}
+				break
+			}
+		}
+	} else {
+		err = errors.New("Unable to infer mongodb server version")
+		return err
+	}
+
+	// check if connection succeeded
 	stringToCheck := "Implicit session:"
 	if strings.Contains(logStr, stringToCheck) {
 		qp.P.LogVerboseMessage("Preflight mongo check: PASSED\n")
