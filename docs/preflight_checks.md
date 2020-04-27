@@ -22,13 +22,14 @@ Available Commands:
 
 Flags:
   -h, --help   help for preflight
+  -v, --verbose   verbose mode
 ```
 
 ### DNS check
 Run the following command to perform preflight DNS check. We setup a kubernetes deployment and try to reach it as part of establishing DNS connectivity in this check. 
 The expected output should be similar to the one shown below.
 ```shell
-$ qliksense preflight dns
+$ qliksense preflight dns -v
 
 Preflight DNS check
 ---------------------
@@ -51,7 +52,7 @@ Deleted deployment: dep-dns-preflight-check
 We check the version of the target kubernetes cluster and ensure that it falls in the valid range of kubernetes versions that are supported by qliksense. 
 The command to run this check and the expected similar output are as shown below:
 ```shell
-$ qliksense preflight k8s-version
+$ qliksense preflight k8s-version -v
 
 Preflight kubernetes minimum version check
 ------------------------------------------
@@ -66,7 +67,7 @@ Completed Preflight kubernetes minimum version check
 ### Service check
 We use the commmand below to test if we are able to create a service in the cluster.
 ```shell
-$ qliksense preflight service
+$ qliksense preflight service -v
 
 Preflight service check
 -----------------------
@@ -82,7 +83,7 @@ Completed preflight service check
 ### Deployment check
 We use the commmand below to test if we are able to create a deployment in the cluster. After the test exexutes, we wait until the created deployment terminates before we exit the command. 
 ```shell
-$ qliksense preflight deployment
+$ qliksense preflight deployment -v
 
 Preflight deployment check
 -----------------------
@@ -97,7 +98,7 @@ Completed preflight deployment check
 ### Pod check
 We use the commmand below to test if we are able to create a pod in the cluster.
 ```shell
-$ qliksense preflight pod
+$ qliksense preflight pod -v
 
 Preflight pod check
 --------------------
@@ -110,61 +111,61 @@ Deleted pod: pod-pf-check
 Completed preflight pod check
 ```
 
-### Create-Role check
+### Role check
 We use the command below to test if we are able to create a role in the cluster
 ```shell
-$ qliksense preflight create-role
-Preflight create-role check
+$ qliksense preflight role -v
+Preflight role check
 ---------------------------
-Preflight create-role check: 
+Preflight ole check: 
 Created role: role-preflight-check
-Preflight create-role check: PASSED
+Preflight role check: PASSED
 Cleaning up resources...
 Deleted role: role-preflight-check
 
-Completed preflight create-role check
+Completed preflight role check
 ```
 
-### Create-RoleBinding check
+### RoleBinding check
 We use the command below to test if we are able to create a role binding in the cluster
 ```shell
-$ qliksense preflight createRoleBinding
+$ qliksense preflight rolebinding -v
 
-Preflight create roleBinding check
+Preflight oleBinding check
 ---------------------------
-Preflight createRoleBinding check: 
+Preflight rolebinding check: 
 Created RoleBinding: role-binding-preflight-check
-Preflight createRoleBinding check: PASSED
+Preflight rolebinding check: PASSED
 Cleaning up resources...
 Deleting RoleBinding: role-binding-preflight-check
 Deleted RoleBinding: role-binding-preflight-check
 
-Completed preflight createRoleBinding check
+Completed preflight rolebinding check
 ```
 
 ### Create-ServiceAccount check
 We use the command below to test if we are able to create a service account in the cluster
 ```shell
-$ qliksense preflight createServiceAccount
+$ qliksense preflight serviceaccount -v
 
-Preflight create ServiceAccount check
+Preflight ServiceAccount check
 -------------------------------------
-Preflight createServiceAccount check: 
+Preflight serviceaccount check: 
 Created Service Account: preflight-check-test-serviceaccount
-Preflight createServiceAccount check: PASSED
+Preflight serviceaccount check: PASSED
 Cleaning up resources...
 Deleting ServiceAccount: preflight-check-test-serviceaccount
 Deleted ServiceAccount: preflight-check-test-serviceaccount
 
-Completed preflight createServiceAccount check
+Completed preflight serviceaccount check
 ```
 
-### CreateRB check
+### Auth check
 We use the command below to combine creation of role, role binding, and service account tests
 ```shell
-$ qliksense preflight createRB
+$ qliksense preflight authcheck -v
 
-Preflight createRB check
+Preflight auth check
 -------------------------------------
 Preflight create-role check: 
 Created role: role-preflight-check
@@ -189,16 +190,16 @@ Cleaning up resources...
 Deleted ServiceAccount: preflight-check-test-serviceaccount
 
 Completed preflight createServiceAccount check
-Completed preflight CreateRB check
+Completed preflight auth check
 ```
 
 ### Mongodb check
 We can check if we are able to connect to an instance of mongodb on the cluster by either supplying the mongodbUri as part of the command or infer it from the current context.
 
 ```shell
-qliksense preflight mongo --url=<url> OR
-qliksense preflight mongo
-qliksense preflight mongo --url=<mongo-server url> --ca-cert=<path to ca-cert file>
+qliksense preflight mongo --url=<url> -v OR
+qliksense preflight mongo -v
+qliksense preflight mongo --url=<mongo-server url> --ca-cert=<path to ca-cert file> -v
 
 
 Preflight mongo check
@@ -221,8 +222,8 @@ Completed preflight mongodb check
 ### Running all checks
 Run the command shown below to execute all preflight checks.
 ```shell
-$ qliksense preflight all --mongodb-url=<url> OR
-$ qliksense preflight all --mongodb-url=<mongo-server url> --mongodb-ca-cert=<path to ca-cert file> 
+$ qliksense preflight all --mongodb-url=<url> -v OR
+$ qliksense preflight all --mongodb-url=<mongo-server url> --mongodb-ca-cert=<path to ca-cert file> -v
 
 Running all preflight checks
 
@@ -252,5 +253,24 @@ Completed Preflight kubernetes minimum version check
 ...
 All preflight checks have PASSED
 Completed running all preflight checks
+
+```
+
+### Clean
+Run the command below to cleanup entities that were created for the purpose of running preflight checks and left behind in the cluster.
+```shell
+$ qliksense preflight clean -v
+
+Preflight clean
+----------------
+Removing deployment...
+Removing service...
+Removing pod...
+Removing role...
+Removing rolebinding...
+Removing serviceaccount...
+Removing DNS check components...
+Removing mongo check components...
+Preflight cleanup complete
 
 ```

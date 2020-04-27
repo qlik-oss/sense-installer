@@ -12,12 +12,17 @@ import (
 )
 
 func preflightCmd(q *qliksense.Qliksense) *cobra.Command {
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
 	var preflightCmd = &cobra.Command{
 		Use:     "preflight",
 		Short:   "perform preflight checks on the cluster",
 		Long:    `perform preflight checks on the cluster`,
 		Example: `qliksense preflight <preflight_check_to_run>`,
 	}
+	f := preflightCmd.Flags()
+	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
 	return preflightCmd
 }
 

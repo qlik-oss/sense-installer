@@ -23,6 +23,12 @@ Run the following command to execute a specific check
 qliksense preflight dns
 ```
 
+#### Running cleanup
+Run the following command to cleanup entities created for preflight checks that were left behind on the cluster.
+```
+qliksense preflight clean
+```
+
 ### qliksense load
 
 `qliksense load` command takes input from a file or from pipe
