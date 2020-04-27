@@ -3,9 +3,9 @@ package preflight
 import (
 	"fmt"
 
+	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
 	"github.com/pkg/errors"
-	. "github.com/logrusorgru/aurora"
 )
 
 func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions) error {
@@ -24,7 +24,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight deployment check
-	if err := qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckDeployment(namespace, kubeConfigContents, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red("Preflight deployment check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -34,7 +34,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight service check
-	if err := qp.CheckService(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckService(namespace, kubeConfigContents, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red("Preflight service check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -44,7 +44,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight pod check
-	if err := qp.CheckPod(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckPod(namespace, kubeConfigContents, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red("Preflight pod check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -54,7 +54,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight role check
-	if err := qp.CheckCreateRole(namespace); err != nil {
+	if err := qp.CheckCreateRole(namespace, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red("Preflight role check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -64,7 +64,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight rolebinding check
-	if err := qp.CheckCreateRoleBinding(namespace); err != nil {
+	if err := qp.CheckCreateRoleBinding(namespace, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red(" Preflight rolebinding check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -74,7 +74,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight serviceaccount check
-	if err := qp.CheckCreateServiceAccount(namespace); err != nil {
+	if err := qp.CheckCreateServiceAccount(namespace, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red(" Preflight serviceaccount check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -84,7 +84,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight mongo check
-	if err := qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
+	if err := qp.CheckMongo(kubeConfigContents, namespace, preflightOpts, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red(" Preflight mongo check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
@@ -94,7 +94,7 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	totalCount++
 
 	// Preflight DNS check
-	if err := qp.CheckDns(namespace, kubeConfigContents); err != nil {
+	if err := qp.CheckDns(namespace, kubeConfigContents, false); err != nil {
 		fmt.Fprintf(out, "%s\n", Red(" Preflight DNS check FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
