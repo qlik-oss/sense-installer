@@ -1,7 +1,7 @@
 package qliksense
 
 import (
-	"archive/zip"
+	"archive/tar"
 	"fmt"
 	"io"
 	"os"
@@ -36,7 +36,7 @@ func (q *Qliksense) ExportContext(context string, output string) error {
 
 func RecursiveZip(pathToZip []string, destinationFile *os.File) error {
 
-	myZip := zip.NewWriter(destinationFile)
+	myZip := tar.NewWriter(destinationFile)
 	for _, element := range pathToZip {
 		err := filepath.Walk(element, func(filePath string, info os.FileInfo, err error) error {
 			if info.IsDir() {
