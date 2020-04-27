@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/kustomize/api/resource"
 	"sigs.k8s.io/kustomize/api/types"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 
 	"github.com/Shopify/ejson"
 	"github.com/qlik-oss/k-apis/pkg/config"
