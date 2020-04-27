@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
+	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/preflight"
-	. "github.com/logrusorgru/aurora"
 
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
@@ -44,7 +44,7 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckDns(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckDns(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight DNS check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -163,7 +163,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckDeployment(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckDeployment(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight deployment check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -202,7 +202,7 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckService(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckService(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight service check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -240,7 +240,7 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckPod(namespace, kubeConfigContents); err != nil {
+			if err = qp.CheckPod(namespace, kubeConfigContents, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight pod check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -275,7 +275,7 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			if err = qp.CheckCreateRole(namespace); err != nil {
+			if err = qp.CheckCreateRole(namespace, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight role check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -310,7 +310,7 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			if err = qp.CheckCreateRoleBinding(namespace); err != nil {
+			if err = qp.CheckCreateRoleBinding(namespace, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight rolebinding check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -345,7 +345,7 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			if err = qp.CheckCreateServiceAccount(namespace); err != nil {
+			if err = qp.CheckCreateServiceAccount(namespace, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight ServiceAccount check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -417,7 +417,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			if namespace == "" {
 				namespace = "default"
 			}
-			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts); err != nil {
+			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts, false); err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight mongo check FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
@@ -435,4 +435,43 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&preflightOpts.MongoOptions.ClientCertFile, "client-cert", "", "", "client-certificate to use for mongodb check")
 	f.BoolVar(&preflightOpts.MongoOptions.Tls, "tls", false, "enable tls?")
 	return preflightMongoCmd
+}
+
+func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
+
+	var pfCleanCmd = &cobra.Command{
+		Use:     "clean",
+		Short:   "perform preflight clean",
+		Long:    `perform preflight clean to ensure that all resources are cleared up in the cluster`,
+		Example: `qliksense preflight clean`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
+
+			// Preflight clean
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Fprintf(out, "%s\n", Red("Preflight cleanup FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+
+			if namespace == "" {
+				namespace = "default"
+			}
+			if err = qp.Cleanup(namespace, kubeConfigContents); err != nil {
+				fmt.Fprintf(out, "%s\n", Red("Preflight cleanup FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+			fmt.Fprintf(out, "%s\n", Green("Preflight cleanup complete"))
+			return nil
+		},
+	}
+	f := pfCleanCmd.Flags()
+	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
+	return pfCleanCmd
 }
