@@ -310,8 +310,8 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 			}
 			break
 		}
-		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[string]interface{})["name"].(string), "users-secrets-") {
-			keyIdBase64 = resource["data"].(map[string]interface{})["tokenAuthPrivateKeyId"].(string)
+		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[interface {}]interface {})["name"].(string), "users-secrets-") {
+			keyIdBase64 = resource["data"].(map[interface {}]interface {})["tokenAuthPrivateKeyId"].(string)
 			break
 		}
 	}
