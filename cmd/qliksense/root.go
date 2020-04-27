@@ -202,6 +202,9 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
 
+	// add export command
+	cmd.AddCommand(exportCmd(p))
+
 	// add crds
 	cmd.AddCommand(crdsCmd)
 	crdsCmd.AddCommand(crdsViewCmd(p))
