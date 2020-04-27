@@ -11,48 +11,59 @@ import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 )
 
-var resultYamlBytes = []byte("")
-
-func (qp *QliksensePreflight) CheckCreateRole(namespace string) error {
+func (qp *QliksensePreflight) CheckCreateRole(namespace string, cleanup bool) error {
 	// create a Role
-	qp.P.LogVerboseMessage("Preflight role check: \n")
-	qp.P.LogVerboseMessage("--------------------- \n")
-	err := qp.checkCreateEntity(namespace, "Role")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight role check: \n")
+		qp.P.LogVerboseMessage("--------------------- \n")
+	}
+	err := qp.checkCreateEntity(namespace, "Role", cleanup)
 	if err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight role check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight role check\n")
+	}
 	return nil
 }
 
-func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string) error {
+func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string, cleanup bool) error {
 	// create a RoleBinding
-	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
-	qp.P.LogVerboseMessage("---------------------------- \n")
-	err := qp.checkCreateEntity(namespace, "RoleBinding")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
+		qp.P.LogVerboseMessage("---------------------------- \n")
+	}
+	err := qp.checkCreateEntity(namespace, "RoleBinding", cleanup)
 	if err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight rolebinding check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight rolebinding check\n")
+	}
 	return nil
 }
 
-func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string) error {
+func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string, cleanup bool) error {
 	// create a service account
-	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
-	qp.P.LogVerboseMessage("------------------------------- \n")
-	err := qp.checkCreateEntity(namespace, "ServiceAccount")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
+		qp.P.LogVerboseMessage("------------------------------- \n")
+	}
+	err := qp.checkCreateEntity(namespace, "ServiceAccount", cleanup)
 	if err != nil {
 		return err
 	}
-	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n")
+	if !cleanup {
+		qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n")
+	}
 	return nil
 }
-func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) error {
+func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, cleanup bool) error {
 	qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
 	var currentCR *qapi.QliksenseCR
 	mfroot := ""
 	kusDir := ""
+	resultYamlBytes := []byte("")
 	var err error
 	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
@@ -89,6 +100,12 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string) 
 	}
 	namespace = "" // namespace is handled when generating the manifests
 
+	// check if entity already exists in the cluster, if so - delete it
+	api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
+	if cleanup {
+		return nil
+	}
+
 	defer func() {
 		qp.P.LogVerboseMessage("Cleaning up resources...\n")
 		err := api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
@@ -113,7 +130,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	qp.P.LogVerboseMessage("Preflight createRole check: \n")
 	qp.P.LogVerboseMessage("--------------------------- \n")
 	errStr := strings.Builder{}
-	err1 := qp.checkCreateEntity(namespace, "Role")
+	err1 := qp.checkCreateEntity(namespace, "Role", false)
 	if err1 != nil {
 		errStr.WriteString(err1.Error())
 		errStr.WriteString("\n")
@@ -125,7 +142,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	// create a roleBinding
 	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
 	qp.P.LogVerboseMessage("---------------------------- \n")
-	err2 := qp.checkCreateEntity(namespace, "RoleBinding")
+	err2 := qp.checkCreateEntity(namespace, "RoleBinding", false)
 	if err2 != nil {
 		errStr.WriteString(err2.Error())
 		errStr.WriteString("\n")
@@ -137,7 +154,7 @@ func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents
 	// create a service account
 	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
 	qp.P.LogVerboseMessage("------------------------------- \n")
-	err3 := qp.checkCreateEntity(namespace, "ServiceAccount")
+	err3 := qp.checkCreateEntity(namespace, "ServiceAccount", false)
 	if err3 != nil {
 		errStr.WriteString(err3.Error())
 		errStr.WriteString("\n")

@@ -288,7 +288,6 @@ func (qp *QliksensePreflight) deleteService(clientset *kubernetes.Clientset, nam
 	if err := retryOnError(func() (err error) {
 		return servicesClient.Delete(name, &deleteOptions)
 	}); err != nil {
-		fmt.Println(err)
 		return err
 	}
 	qp.P.LogVerboseMessage("Deleted service: %s\n", name)
@@ -568,18 +567,20 @@ func (qp *QliksensePreflight) createPfRole(clientset *kubernetes.Clientset, name
 	return role, nil
 }
 
-func (qp *QliksensePreflight) deleteRole(clientset *kubernetes.Clientset, namespace string, role *v1beta1.Role) {
+func (qp *QliksensePreflight) deleteRole(clientset *kubernetes.Clientset, namespace string, roleName string) error {
 	rolesClient := clientset.RbacV1beta1().Roles(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
 	deleteOptions := v1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}
-	err := rolesClient.Delete(role.GetName(), &deleteOptions)
+	err := rolesClient.Delete(roleName, &deleteOptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error: %v\n", err)
+		return err
 	}
-	qp.P.LogVerboseMessage("Deleted role: %s\n\n", role.Name)
+	qp.P.LogVerboseMessage("Deleted role: %s\n\n", roleName)
+	return nil
 }
 
 func (qp *QliksensePreflight) createPfRoleBinding(clientset *kubernetes.Clientset, namespace, roleBindingName string) (*v1beta1.RoleBinding, error) {
@@ -619,18 +620,20 @@ func (qp *QliksensePreflight) createPfRoleBinding(clientset *kubernetes.Clientse
 	return roleBinding, nil
 }
 
-func (qp *QliksensePreflight) deleteRoleBinding(clientset *kubernetes.Clientset, namespace string, roleBinding *v1beta1.RoleBinding) {
+func (qp *QliksensePreflight) deleteRoleBinding(clientset *kubernetes.Clientset, namespace string, roleBindingName string) error {
 	roleBindingClient := clientset.RbacV1beta1().RoleBindings(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
 	deleteOptions := v1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}
-	err := roleBindingClient.Delete(roleBinding.GetName(), &deleteOptions)
+	err := roleBindingClient.Delete(roleBindingName, &deleteOptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error: %v\n", err)
+		return err
 	}
-	qp.P.LogVerboseMessage("Deleted RoleBinding: %s\n\n", roleBinding.Name)
+	qp.P.LogVerboseMessage("Deleted RoleBinding: %s\n\n", roleBindingName)
+	return nil
 }
 
 func (qp *QliksensePreflight) createPfServiceAccount(clientset *kubernetes.Clientset, namespace, serviceAccountName string) (*apiv1.ServiceAccount, error) {
@@ -657,18 +660,20 @@ func (qp *QliksensePreflight) createPfServiceAccount(clientset *kubernetes.Clien
 	return serviceAccount, nil
 }
 
-func (qp *QliksensePreflight) deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, serviceAccount *apiv1.ServiceAccount) {
+func (qp *QliksensePreflight) deleteServiceAccount(clientset *kubernetes.Clientset, namespace string, serviceAccountName string) error {
 	serviceAccountClient := clientset.CoreV1().ServiceAccounts(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
 	deleteOptions := v1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}
-	err := serviceAccountClient.Delete(serviceAccount.GetName(), &deleteOptions)
+	err := serviceAccountClient.Delete(serviceAccountName, &deleteOptions)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error: %v\n", err)
+		return err
 	}
-	qp.P.LogVerboseMessage("Deleted ServiceAccount: %s\n\n", serviceAccount.Name)
+	qp.P.LogVerboseMessage("Deleted ServiceAccount: %s\n\n", serviceAccountName)
+	return nil
 }
 
 func (qp *QliksensePreflight) createPreflightTestSecret(clientset *kubernetes.Clientset, namespace, secretName string, secretData []byte) (*apiv1.Secret, error) {
@@ -699,16 +704,42 @@ func (qp *QliksensePreflight) createPreflightTestSecret(clientset *kubernetes.Cl
 	return secret, nil
 }
 
-func (qp *QliksensePreflight) deleteK8sSecret(clientset *kubernetes.Clientset, namespace string, k8sSecret *apiv1.Secret) {
+func (qp *QliksensePreflight) deleteK8sSecret(clientset *kubernetes.Clientset, namespace string, secretName string) error {
 	secretClient := clientset.CoreV1().Secrets(namespace)
 
 	deletePolicy := v1.DeletePropagationForeground
 	deleteOptions := v1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	}
-	err := secretClient.Delete(k8sSecret.GetName(), &deleteOptions)
+	err := secretClient.Delete(secretName, &deleteOptions)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	qp.P.LogVerboseMessage("Deleted Secret: %s\n", k8sSecret.Name)
+	qp.P.LogVerboseMessage("Deleted Secret: %s\n", secretName)
+	return nil
+}
+
+func (qp *QliksensePreflight) Cleanup(namespace string, kubeConfigContents []byte) error {
+	qp.P.LogVerboseMessage("Preflight clean\n")
+	qp.P.LogVerboseMessage("----------------\n")
+
+	qp.P.LogVerboseMessage("Removing deployment...\n")
+	qp.CheckDeployment(namespace, kubeConfigContents, true)
+	qp.P.LogVerboseMessage("Removing service...\n")
+	qp.CheckService(namespace, kubeConfigContents, true)
+	qp.P.LogVerboseMessage("Removing pod...\n")
+	qp.CheckPod(namespace, kubeConfigContents, true)
+
+	qp.P.LogVerboseMessage("Removing role...\n")
+	qp.CheckCreateRole(namespace, true)
+	qp.P.LogVerboseMessage("Removing rolebinding...\n")
+	qp.CheckCreateRoleBinding(namespace, true)
+	qp.P.LogVerboseMessage("Removing serviceaccount...\n")
+	qp.CheckCreateServiceAccount(namespace, true)
+
+	qp.P.LogVerboseMessage("Removing DNS check components...\n")
+	qp.CheckDns(namespace, kubeConfigContents, true)
+	qp.P.LogVerboseMessage("Removing mongo check components...\n")
+	qp.CheckMongo(kubeConfigContents, namespace, &PreflightOptions{MongoOptions: &MongoOptions{}}, true)
+	return nil
 }
