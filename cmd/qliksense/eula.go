@@ -48,13 +48,14 @@ var eulaPreRunHooks = eulaPreRunHooksT{
 }
 
 func commandAlwaysRequiresEulaAcceptance(commandName string) bool {
-	return commandName == "install" || commandName == "upgrade" || commandName == "apply"
+	return commandName == fmt.Sprintf("%v install", rootCommandName) ||
+		commandName == fmt.Sprintf("%v apply", rootCommandName)
 }
 
 func globalEulaPreRun(cmd *cobra.Command, q *qliksense.Qliksense) {
-	if isEulaEnforced(cmd.Name()) {
+	if isEulaEnforced(cmd.CommandPath()) {
 		if strings.TrimSpace(strings.ToLower(cmd.Flag("acceptEULA").Value.String())) != "yes" {
-			if eulaPreRunHook := eulaPreRunHooks.getValidator(cmd.Name()); eulaPreRunHook != nil {
+			if eulaPreRunHook := eulaPreRunHooks.getValidator(cmd.CommandPath()); eulaPreRunHook != nil {
 				if eulaAccepted, err := eulaPreRunHook(cmd, q); err != nil {
 					panic(err)
 				} else if !eulaAccepted {
@@ -70,7 +71,7 @@ func globalEulaPreRun(cmd *cobra.Command, q *qliksense.Qliksense) {
 }
 
 func globalEulaPostRun(cmd *cobra.Command, q *qliksense.Qliksense) {
-	if isEulaEnforced(cmd.Name()) {
+	if isEulaEnforced(cmd.CommandPath()) {
 		if err := q.SetEulaAccepted(); err != nil {
 			panic(err)
 		}
@@ -85,7 +86,6 @@ func doEnforceEula() {
 	fmt.Println(eulaText)
 	fmt.Print(eulaPrompt)
 	answer := readRuneFromTty()
-	fmt.Printf("%v\n", answer)
 	if strings.ToLower(answer) != "y" {
 		fmt.Println(eulaErrorInstruction)
 		os.Exit(1)
@@ -98,9 +98,9 @@ func readRuneFromTty() string {
 		panic(err)
 	}
 	defer t.Close()
-	answer, err := t.ReadRune()
+	answer, err := t.ReadString()
 	if err != nil {
 		panic(err)
 	}
-	return string(answer)
+	return answer
 }

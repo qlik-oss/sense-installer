@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
+	"strings"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
@@ -41,16 +41,17 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingCo
 		if !overwriteExistingContext {
 			return "", errors.New("Context with name: " + cr.GetName() + " already exists. " +
 				"Please delete the existing context first using the delete-context command or specify the --overwrite flag.")
-		} else if err := os.RemoveAll(qConfig.GetContextPath(cr.GetName())); err != nil {
-			return "", err
 		}
+		// else if err := os.RemoveAll(qConfig.GetContextPath(cr.GetName())); err != nil {
+		// 	return "", err
+		// }
 	}
 	if err := qConfig.CreateContextDirs(cr.GetName()); err != nil {
 		return "", err
 	}
 
 	// encrypt the secrets and do base64 then update the CR
-	rsaPublicKey, _, err := qConfig.GetContextEncryptionKeyPair(cr.GetName())
+	encryptionKey, err := qConfig.GetEncryptionKeyFor(cr.GetName())
 	if err != nil {
 		return "", err
 	}
@@ -62,15 +63,26 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingCo
 					Value:   nv.Value,
 					SvcName: svc,
 				}
-				if err := q.processSecret(skv, rsaPublicKey, cr, false); err != nil {
+				if err := q.processSecret(skv, encryptionKey, cr, false); err != nil {
 					return cr.GetName(), err
 				}
 			}
 		}
 	}
-
+	if cr.Spec.FetchSource != nil && cr.Spec.FetchSource.AccessToken != "" {
+		if err := cr.SetFetchAccessToken(cr.Spec.FetchSource.AccessToken, encryptionKey); err != nil {
+			return "", err
+		}
+	}
+	// update manifestsRoot in case already exist
+	if existingCr, err := qConfig.GetCR(cr.GetName()); err == nil {
+		// cr exists, so update the manifestsRoot if version exist
+		newV := cr.GetLabelFromCr("version")
+		if strings.HasSuffix(existingCr.Spec.ManifestsRoot, newV) {
+			cr.Spec.ManifestsRoot = existingCr.Spec.ManifestsRoot
+		}
+	}
 	// write to disk
-
 	if err = qConfig.CreateOrWriteCrAndContext(cr); err != nil {
 		return "", err
 	}

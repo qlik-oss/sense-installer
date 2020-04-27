@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	b64 "encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -46,7 +46,7 @@ func DirExists(dirname string) bool {
 // LogDebugMessage logs a debug message
 func LogDebugMessage(strMessage string, args ...interface{}) {
 	if os.Getenv("QLIKSENSE_DEBUG") == "true" {
-		log.Printf(strMessage, args...)
+		fmt.Printf(strMessage, args...)
 	}
 }
 
@@ -62,27 +62,38 @@ func ReadKeys(keyFile string) ([]byte, error) {
 }
 
 // ProcessConfigArgs processes args and returns an service, key, value slice
-func ProcessConfigArgs(args []string) ([]*ServiceKeyValue, error) {
+func ProcessConfigArgs(args []string, base64Encoded bool) ([]*ServiceKeyValue, error) {
 	// prepare received args
 	// split args[0] into key and value
 	if len(args) == 0 {
 		err := fmt.Errorf("No args were provided. Please provide args to configure the current context")
 		return nil, err
 	}
+	notValidErr := fmt.Errorf("Please provide valid args for this command")
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
-	re1 := regexp.MustCompile(`(\w{1,}).(\w{1,})=("*[\w\-?=_/:0-9]+"*)`)
+	// qliksense.mongodb=somethig
 	for i, arg := range args {
 		LogDebugMessage("Arg received: %s", arg)
-		result := re1.FindStringSubmatch(arg)
-		// check if result array's length is == 4 (index 0 - is the full match & indices 1,2,3- are the fields we need)
-		if len(result) != 4 {
-			err := fmt.Errorf("Please provide valid args for this command")
-			return nil, err
+		first := strings.SplitN(arg, "=", 2)
+		if len(first) != 2 {
+			return nil, notValidErr
+		}
+		second := strings.SplitN(first[0], ".", 2)
+		if len(second) != 2 {
+			return nil, notValidErr
+		}
+		resultValue := strings.Trim(first[1], "\"")
+		if base64Encoded {
+			if decodeByte, err := b64.StdEncoding.DecodeString(resultValue); err != nil {
+				return nil, err
+			} else {
+				resultValue = strings.Trim(string(decodeByte), "\n ")
+			}
 		}
 		resultSvcKV[i] = &ServiceKeyValue{
-			SvcName: result[1],
-			Key:     result[2],
-			Value:   strings.ReplaceAll(result[3], `"`, ""),
+			SvcName: second[0],
+			Key:     second[1],
+			Value:   resultValue,
 		}
 	}
 	return resultSvcKV, nil

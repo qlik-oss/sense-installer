@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -27,6 +28,31 @@ const (
 	imageSharedBlobsDirName = "blobs"
 )
 
+func (q *Qliksense) PullImages(version, profile string) error {
+	qConfig := qapi.NewQConfig(q.QliksenseHome)
+	if version != "" {
+		if !qConfig.IsRepoExistForCurrent(version) {
+			if err := q.FetchQK8s(version); err != nil {
+				return err
+			}
+		}
+	}
+	qcr, err := qConfig.GetCurrentCR()
+	if err != nil {
+		return err
+	}
+	if !qcr.IsRepoExist() {
+		return errors.New("ManifestsRoot not found")
+	}
+	if profile != "" {
+		qcr.Spec.Profile = profile
+		if err := qConfig.WriteCR(qcr); err != nil {
+			return err
+		}
+	}
+	return q.PullImagesForCurrentCR()
+}
+
 // PullImages ...
 func (q *Qliksense) PullImagesForCurrentCR() error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
@@ -49,7 +75,7 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 	}
 
 	images := versionOut.Images
-	if err := q.appendOperatorImages(&images); err != nil {
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
 		return err
 	}
 
@@ -67,6 +93,19 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 		}
 	}
 	return nil
+}
+
+func (q *Qliksense) appendGitOpsImage(images *[]string, qcr *qapi.QliksenseCR) {
+	if qcr.Spec.GitOps != nil && qcr.Spec.GitOps.Image != "" {
+		*images = append(*images, qcr.Spec.GitOps.Image)
+	}
+}
+
+func (q *Qliksense) appendPreflightImages(images *[]string) {
+	pf := qapi.NewPreflightConfig(q.QliksenseHome)
+	for _, preflightImage := range pf.GetImageMap() {
+		*images = append(*images, preflightImage)
+	}
 }
 
 func (q *Qliksense) appendOperatorImages(images *[]string) error {
@@ -116,7 +155,6 @@ func pullImage(image, imagesDir string) error {
 	return nil
 }
 
-// TagAndPushImages ...
 func (q *Qliksense) PushImagesForCurrentCR() error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	qcr, err := qConfig.GetCurrentCR()
@@ -131,7 +169,7 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	if err != nil {
 		if os.IsNotExist(err) {
 			dockerConfigJsonSecret = &qapi.DockerConfigJsonSecret{
-				Uri: qcr.GetImageRegistry(),
+				Uri: qcr.Spec.GetImageRegistry(),
 			}
 		} else {
 			return err
@@ -149,7 +187,7 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	}
 
 	images := versionOut.Images
-	if err := q.appendOperatorImages(&images); err != nil {
+	if err := q.appendAdditionalImages(&images, qcr); err != nil {
 		return err
 	}
 
@@ -167,6 +205,15 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 		}
 	}
 
+	return nil
+}
+
+func (q *Qliksense) appendAdditionalImages(images *[]string, qcr *qapi.QliksenseCR) error {
+	if err := q.appendOperatorImages(images); err != nil {
+		return err
+	}
+	q.appendGitOpsImage(images, qcr)
+	q.appendPreflightImages(images)
 	return nil
 }
 

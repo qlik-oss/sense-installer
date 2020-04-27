@@ -1,8 +1,10 @@
 package qliksense
 
 import (
+	"bufio"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/qlik-oss/sense-installer/pkg/api"
 
@@ -13,7 +15,8 @@ import (
 	"sigs.k8s.io/kustomize/api/types"
 )
 
-func executeKustomizeBuild(directory string) ([]byte, error) {
+//ExecuteKustomizeBuild execute kustomize to the directory and return manifest as byte array
+func ExecuteKustomizeBuild(directory string) ([]byte, error) {
 	return executeKustomizeBuildForFileSystem(directory, filesys.MakeFsOnDisk())
 }
 
@@ -39,10 +42,26 @@ func executeKustomizeBuildForFileSystem(directory string, fSys filesys.FileSyste
 
 func executeKustomizeBuildWithStdoutProgress(path string) (kuzManifest []byte, err error) {
 	result, err := api.ExecuteTaskWithBlinkingStdoutFeedback(func() (interface{}, error) {
-		return executeKustomizeBuild(path)
+		return ExecuteKustomizeBuild(path)
 	}, "...")
 	if err != nil {
 		return nil, err
 	}
 	return result.([]byte), nil
+}
+
+//GetYamlsFromMultiDoc filter yaml docs from multiyaml based on kind
+func GetYamlsFromMultiDoc(multiYaml string, kind string) string {
+	yamlDocs := strings.Split(string(multiYaml), "---")
+	resultDocs := ""
+	for _, doc := range yamlDocs {
+		scanner := bufio.NewScanner(strings.NewReader(doc))
+		for scanner.Scan() {
+			if scanner.Text() == "kind: "+kind {
+				resultDocs = resultDocs + "\n---\n" + doc
+				break
+			}
+		}
+	}
+	return resultDocs
 }
