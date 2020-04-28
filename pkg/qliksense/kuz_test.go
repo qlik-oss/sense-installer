@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/kustomize/api/resource"
 	"sigs.k8s.io/kustomize/api/types"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 
 	"github.com/Shopify/ejson"
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -310,8 +310,8 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 			}
 			break
 		}
-		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[string]interface{})["name"].(string), "users-secrets-") {
-			keyIdBase64 = resource["data"].(map[string]interface{})["tokenAuthPrivateKeyId"].(string)
+		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[interface {}]interface {})["name"].(string), "users-secrets-") {
+			keyIdBase64 = resource["data"].(map[interface {}]interface {})["tokenAuthPrivateKeyId"].(string)
 			break
 		}
 	}
