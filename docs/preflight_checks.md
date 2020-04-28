@@ -117,7 +117,7 @@ We use the command below to test if we are able to create a role in the cluster
 $ qliksense preflight role -v
 Preflight role check
 ---------------------------
-Preflight ole check: 
+Preflight role check: 
 Created role: role-preflight-check
 Preflight role check: PASSED
 Cleaning up resources...
