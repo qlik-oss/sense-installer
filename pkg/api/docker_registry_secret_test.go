@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 func TestDockerConfigJsonSecret(t *testing.T) {
@@ -34,10 +34,10 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 		t.Fatalf("error unmarshalling yaml string: %v, error: %v", string(dockerConfigJsonSecretYamlBytes), err)
 	} else if validYamlMap["apiVersion"] != "v1" ||
 		validYamlMap["kind"] != "Secret" ||
-		validYamlMap["metadata"].(map[string]interface{})["name"] != dockerConfigJsonSecret.Name ||
+		validYamlMap["metadata"].(map[interface {}]interface {})["name"] != dockerConfigJsonSecret.Name ||
 		validYamlMap["type"] != "kubernetes.io/dockerconfigjson" {
 		t.Fatalf("error verifying validity of secret yaml: %v", string(dockerConfigJsonSecretYamlBytes))
-	} else if dockerConfigJsonBytesBase64, ok := validYamlMap["data"].(map[string]interface{})[".dockerconfigjson"]; !ok {
+	} else if dockerConfigJsonBytesBase64, ok := validYamlMap["data"].(map[interface {}]interface {})[".dockerconfigjson"]; !ok {
 		t.Fatalf("no .dockerconfigjson data key in the secret yaml: %v", string(dockerConfigJsonSecretYamlBytes))
 	} else if dockerConfigJsonEncryptedBytes, err := base64.StdEncoding.DecodeString(dockerConfigJsonBytesBase64.(string)); err != nil {
 		t.Fatalf("error decoding dockerConfigJsonBytes from base64: %v", err)
@@ -45,14 +45,14 @@ func TestDockerConfigJsonSecret(t *testing.T) {
 		t.Fatalf("error decrypting dockerConfigJsonBytes: %v", err)
 	} else if err := json.Unmarshal(dockerConfigJsonBytes, &dockerConfigJsonMap); err != nil {
 		t.Fatalf("error unmarshalling dockerConfigJson from json: %v", err)
-	} else if dockerConfigJson, ok := dockerConfigJsonMap["auths"].(map[string]interface{})[dockerConfigJsonSecret.Uri]; !ok {
+	} else if dockerConfigJson, ok := dockerConfigJsonMap["auths"].(map[string]interface {})[dockerConfigJsonSecret.Uri]; !ok {
 		t.Fatalf("dockerConfigJson map does not contain data for the registry: %v", dockerConfigJsonSecret.Uri)
-	} else if dockerConfigJson.(map[string]interface{})["username"] != dockerConfigJsonSecret.Username ||
-		dockerConfigJson.(map[string]interface{})["password"] != dockerConfigJsonSecret.Password ||
-		dockerConfigJson.(map[string]interface{})["email"] != dockerConfigJsonSecret.Email {
+	} else if dockerConfigJson.(map[string]interface {})["username"] != dockerConfigJsonSecret.Username ||
+		dockerConfigJson.(map[string]interface {})["password"] != dockerConfigJsonSecret.Password ||
+		dockerConfigJson.(map[string]interface {})["email"] != dockerConfigJsonSecret.Email {
 		t.Fatal("dockerConfigJson map does not contain expected values")
 	} else {
-		authBase64 := dockerConfigJson.(map[string]interface{})["auth"]
+		authBase64 := dockerConfigJson.(map[string]interface {})["auth"]
 		if auth, err := base64.StdEncoding.DecodeString(authBase64.(string)); err != nil {
 			t.Fatal("error base64 decoding auth value")
 		} else if string(auth) != fmt.Sprintf("%s:%s", dockerConfigJsonSecret.Username, dockerConfigJsonSecret.Password) {
