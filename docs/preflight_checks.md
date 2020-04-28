@@ -131,7 +131,7 @@ We use the command below to test if we are able to create a role binding in the 
 ```shell
 $ qliksense preflight rolebinding -v
 
-Preflight oleBinding check
+Preflight rolebinding check
 ---------------------------
 Preflight rolebinding check: 
 Created RoleBinding: role-binding-preflight-check
