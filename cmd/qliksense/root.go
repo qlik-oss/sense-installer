@@ -46,7 +46,7 @@ func initAndExecute() error {
 		log.Fatal(err)
 	}
 	// create dirs and appropriate files for setting up contexts
-	api.LogDebugMessage("QliksenseHomeDir: %s", qlikSenseHome)
+	api.LogDebugMessage("QliksenseHomeDir: %s\n", qlikSenseHome)
 
 	qliksenseClient := qliksense.New(qlikSenseHome)
 	cmd := rootCmd(qliksenseClient)
