@@ -53,9 +53,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 	qConfig.WriteCurrentContextCR(qcr)
 
-	//if the docker pull secret exists on disk, install it in the cluster
-	//if it doesn't exist on disk, remove it in the cluster
-	if err := installOrRemoveImagePullSecret(qConfig); err != nil {
+	if err := applyImagePullSecret(qConfig); err != nil {
 		return err
 	}
 
@@ -132,21 +130,12 @@ func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) 
 	return operatorControllerString, nil
 }
 
-func installOrRemoveImagePullSecret(qConfig *qapi.QliksenseConfig) error {
+func applyImagePullSecret(qConfig *qapi.QliksenseConfig) error {
 	if pullDockerConfigJsonSecret, err := qConfig.GetPullDockerConfigJsonSecret(); err == nil {
 		if dockerConfigJsonSecretYaml, err := pullDockerConfigJsonSecret.ToYaml(""); err != nil {
 			return err
 		} else if err := qapi.KubectlApply(string(dockerConfigJsonSecretYaml), ""); err != nil {
 			return err
-		}
-	} else {
-		deleteDockerConfigJsonSecret := qapi.DockerConfigJsonSecret{
-			Name: pullSecretName,
-		}
-		if deleteDockerConfigJsonSecretYaml, err := deleteDockerConfigJsonSecret.ToYaml(""); err != nil {
-			return err
-		} else if err := qapi.KubectlDelete(string(deleteDockerConfigJsonSecretYaml), ""); err != nil {
-			qapi.LogDebugMessage("failed deleting %v, error: %v\n", pullSecretName, err)
 		}
 	}
 	return nil
