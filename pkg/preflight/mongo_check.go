@@ -46,14 +46,24 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 		tmpDir := os.TempDir()
 		caCrtFile := filepath.Join(tmpDir, "rootCA.crt")
 		clientCrtFile := filepath.Join(tmpDir, "mongoClient.crt")
-		if err := ioutil.WriteFile(caCrtFile, []byte(decryptedCR.Spec.GetFromSecrets("qliksense", "caCertificates")), 0644); err != nil {
-			return fmt.Errorf("unable to write CA crt to file: %v", err)
+		caCertStr := decryptedCR.Spec.GetFromSecrets("qliksense", "caCertificates")
+		clientCertStr := decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbClientCrt")
+
+		if preflightOpts.MongoOptions.CaCertFile == "" && caCertStr != "" {
+			api.LogDebugMessage("received ca crt: %s\n", caCertStr)
+			if err := ioutil.WriteFile(caCrtFile, []byte(caCertStr), 0644); err != nil {
+				return fmt.Errorf("unable to write CA crt to file: %v", err)
+			}
+			preflightOpts.MongoOptions.CaCertFile = caCrtFile
 		}
-		if err := ioutil.WriteFile(clientCrtFile, []byte(decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbClientCrt")), 0644); err != nil {
-			return fmt.Errorf("unable to write mongo client crt to file: %v", err)
+
+		if preflightOpts.MongoOptions.ClientCertFile == "" && clientCertStr != "" {
+			api.LogDebugMessage("received client crt: %s\n", clientCertStr)
+			if err := ioutil.WriteFile(clientCrtFile, []byte(clientCertStr), 0644); err != nil {
+				return fmt.Errorf("unable to write client crt to file: %v", err)
+			}
+			preflightOpts.MongoOptions.ClientCertFile = clientCrtFile
 		}
-		preflightOpts.MongoOptions.CaCertFile = caCrtFile
-		preflightOpts.MongoOptions.ClientCertFile = clientCrtFile
 	}
 	if !cleanup {
 		qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
@@ -119,7 +129,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		mongoCommand.WriteString(fmt.Sprintf(" --password %s", preflightOpts.MongoOptions.Password))
 		api.LogDebugMessage("Adding username and password\n")
 	}
-	if preflightOpts.MongoOptions.Tls || preflightOpts.MongoOptions.CaCertFile != "" || preflightOpts.MongoOptions.ClientCertFile != "" {
+	if preflightOpts.MongoOptions.Tls || preflightOpts.MongoOptions.ClientCertFile != "" {
 		mongoCommand.WriteString(" --tls")
 		api.LogDebugMessage("Adding --tls: Mongo command: %s\n", mongoCommand.String())
 	}

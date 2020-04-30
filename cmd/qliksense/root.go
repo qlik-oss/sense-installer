@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/sense-installer/pkg"
@@ -15,7 +16,6 @@ import (
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	. "github.com/logrusorgru/aurora"
 )
 
 // To run this project in debug mode, run:
@@ -195,7 +195,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add clean-config-repo-patches command as a sub-command to the app config sub-command
 	configCmd.AddCommand(cleanConfigRepoPatchesCmd(p))
-	
 
 	// open editor for config
 	configCmd.AddCommand(configEditCmd(p))
