@@ -480,3 +480,42 @@ func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
 	return pfCleanCmd
 }
+
+func pfStorageClassCheckCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
+
+	var pfStorageClassCmd = &cobra.Command{
+		Use:     "storageclass",
+		Short:   "perform preflight storage class check",
+		Long:    `perform preflight storage class check to ensure that we are able to create a storage class in the cluster`,
+		Example: `qliksense preflight storageclass`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts}
+
+			// Preflight storage class check
+			namespace, kubeConfigContents, err := preflight.InitPreflight()
+			if err != nil {
+				fmt.Fprintf(out, "%s\n", Red("Preflight storageclass check FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+
+			if namespace == "" {
+				namespace = "default"
+			}
+			if err = qp.CheckStorageClass(namespace, kubeConfigContents, false); err != nil {
+				fmt.Fprintf(out, "%s\n", Red("Preflight storageclass check FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+			fmt.Fprintf(out, "%s\n", Green("Preflight storageclass check PASSED"))
+			return nil
+		},
+	}
+	f := pfStorageClassCmd.Flags()
+	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
+	return pfStorageClassCmd
+}
