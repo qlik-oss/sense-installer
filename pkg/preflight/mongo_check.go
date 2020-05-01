@@ -67,11 +67,12 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	}
 	if !cleanup {
 		qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
-	}
-	// if mongoDbUrl is empty, abort check
-	if preflightOpts.MongoOptions.MongodbUrl == "" {
-		qp.P.LogVerboseMessage("Mongodb Url is empty, hence aborting preflight check\n")
-		return errors.New("MongoDbUrl is empty")
+
+		// if mongoDbUrl is empty, abort check
+		if preflightOpts.MongoOptions.MongodbUrl == "" {
+			qp.P.LogVerboseMessage("Mongodb Url is empty, hence aborting preflight check\n")
+			return errors.New("MongoDbUrl is empty")
+		}
 	}
 	if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
 		return err
