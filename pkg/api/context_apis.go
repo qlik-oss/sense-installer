@@ -96,7 +96,7 @@ func WriteToFile(content interface{}, targetFile string) error {
 		log.Println(err)
 		return err
 	}
-	LogDebugMessage("Wrote content into %s", targetFile)
+	LogDebugMessage("Wrote content into %s\n", targetFile)
 	return nil
 }
 

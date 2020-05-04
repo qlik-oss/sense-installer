@@ -18,12 +18,12 @@ import (
 
 	b64 "encoding/base64"
 
+	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	_ "gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	. "github.com/logrusorgru/aurora"
 )
 
 const (
@@ -62,7 +62,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool, base64Encoded bo
 	}
 
 	// Metadata name in qliksense CR is the name of the current context
-	api.LogDebugMessage("Current context: %s", qliksenseCR.GetName())
+	api.LogDebugMessage("Current context: %s\n", qliksenseCR.GetName())
 	encryptionKey, err := qConfig.GetEncryptionKeyForCurrent()
 	if err != nil {
 		return err
@@ -72,7 +72,7 @@ func (q *Qliksense) SetSecrets(args []string, isSecretSet bool, base64Encoded bo
 		return err
 	}
 	for _, ra := range resultArgs {
-		api.LogDebugMessage("value args to be encrypted: %s", ra.Value)
+		api.LogDebugMessage("value args to be encrypted: %s\n", ra.Value)
 		if err := q.processSecret(ra, encryptionKey, qliksenseCR, isSecretSet); err != nil {
 			return err
 		}
@@ -411,7 +411,7 @@ func (q *Qliksense) DeleteContextConfig(args []string, flag bool) error {
 		out := ansi.NewColorableStdout()
 		switch args[0] {
 		case qliksenseConfig.Spec.CurrentContext:
-			fmt.Fprintln(out,Yellow("Please switch contexts to be able to delete this context."))
+			fmt.Fprintln(out, Yellow("Please switch contexts to be able to delete this context."))
 			err := fmt.Errorf(Red("Cannot delete current context - %s").String(), White(Bold(qliksenseConfig.Spec.CurrentContext)))
 			return err
 		case DefaultQliksenseContext:
@@ -452,7 +452,7 @@ func (q *Qliksense) DeleteContextConfig(args []string, flag bool) error {
 						if ans == true {
 							api.WriteToFile(&qliksenseConfig, qliksenseConfigFile)
 							fmt.Fprintln(out, Yellow(Underline("Warning: Active resources may still be running in-cluster")))
-							fmt.Fprintln(out, Green("Successfully deleted context: "),Bold(args[0]))
+							fmt.Fprintln(out, Green("Successfully deleted context: "), Bold(args[0]))
 						} else {
 							return nil
 						}

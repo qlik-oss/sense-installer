@@ -23,7 +23,7 @@ func checkExists(filename string) os.FileInfo {
 	if os.IsNotExist(err) {
 		return nil
 	}
-	LogDebugMessage("File exists")
+	LogDebugMessage("File exists\n")
 	return info
 }
 
@@ -73,7 +73,7 @@ func ProcessConfigArgs(args []string, base64Encoded bool) ([]*ServiceKeyValue, e
 	resultSvcKV := make([]*ServiceKeyValue, len(args))
 	// qliksense.mongodb=somethig
 	for i, arg := range args {
-		LogDebugMessage("Arg received: %s", arg)
+		LogDebugMessage("Arg received: %s\n", arg)
 		first := strings.SplitN(arg, "=", 2)
 		if len(first) != 2 {
 			return nil, notValidErr
