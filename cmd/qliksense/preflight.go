@@ -152,7 +152,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	var pfDeploymentCheckCmd = &cobra.Command{
 		Use:     "deployment",
-		Short:   "perform preflight deploymwnt check",
+		Short:   "perform preflight deployment check",
 		Long:    `perform preflight deployment check to ensure that we can create deployments in the cluster`,
 		Example: `qliksense preflight deployment`,
 		RunE: func(cmd *cobra.Command, args []string) error {
