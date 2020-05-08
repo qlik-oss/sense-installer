@@ -83,18 +83,23 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 			return fmt.Errorf("unable to parse CA cert: %v", err)
 		}
 	}
-	if len(privKeys) == 0 {
+	privKeyCount := len(privKeys)
+	if privKeyCount == 0 {
+		api.LogDebugMessage("no private keys extrated from CA, hence proceeding with usual flow\n")
 		if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
 			return err
 		}
 	} else {
+		api.LogDebugMessage("found %d private keys\n", privKeyCount)
 		successCount := 0
 		for _, privKey := range privKeys {
 			preflightOpts.MongoOptions.ClientCertFile = privKey
-			if err = qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
+			if err1 := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err1 != nil {
+				err = err1
 				continue
 			}
 			successCount++
+			break
 		}
 		if successCount == 0 {
 			return err
@@ -271,8 +276,9 @@ func (qp *QliksensePreflight) runMongoCleanup(clientset *kubernetes.Clientset, n
 	qp.deleteK8sSecret(clientset, namespace, clientCertSecretName)
 }
 
-func (qp *QliksensePreflight) extractPrivateKeysFromCA(path string) ([]string, error) {
-	raw, err := ioutil.ReadFile(path)
+func (qp *QliksensePreflight) extractPrivateKeysFromCA(cafile string) ([]string, error) {
+	api.LogDebugMessage("extracting private keys from CA file: %s\n", cafile)
+	raw, err := ioutil.ReadFile(cafile)
 	if err != nil {
 		return nil, err
 	}
@@ -285,14 +291,25 @@ func (qp *QliksensePreflight) extractPrivateKeysFromCA(path string) ([]string, e
 			break
 		}
 		if block.Type != "CERTIFICATE" {
+			api.LogDebugMessage("found a private key\n")
 			privFile := filepath.Join(dirPath, fmt.Sprintf("mongo_priv_%d.key", count+1))
-			if err := ioutil.WriteFile(privFile, pem.EncodeToMemory(block), 0600); err != nil {
+			api.LogDebugMessage("creating a private key file: %s\n", privFile)
+			keyData := pem.EncodeToMemory(block)
+			block, rest = pem.Decode(rest)
+			if block != nil && block.Type == "CERTIFICATE" {
+				api.LogDebugMessage("block type: %s\n", block.Type)
+				keyData = append(keyData, pem.EncodeToMemory(block)...)
+			}
+			api.LogDebugMessage("key data: %s\n", keyData)
+			if err := ioutil.WriteFile(privFile, keyData, 0600); err != nil {
 				return nil, fmt.Errorf("error writing private key to file: \"%s\"", privFile)
 			}
+			api.LogDebugMessage("successfully wrote contents to the private key file\n")
 			files = append(files, privFile)
 			count++
 		}
 		raw = rest
 	}
+	api.LogDebugMessage("extracted private key files: %v\n", files)
 	return files, nil
 }
