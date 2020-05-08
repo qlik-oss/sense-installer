@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/pkg/errors"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	appsv1 "k8s.io/api/apps/v1"
@@ -115,13 +114,13 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 	if len(kubeconfig) == 0 {
 		clientConfig, err = rest.InClusterConfig()
 		if err != nil {
-			err = errors.Wrap(err, "Unable to load in-cluster kubeconfig")
+			err = fmt.Errorf("Unable to load in-cluster kubeconfig: %w", err)
 			return nil, nil, err
 		}
 	} else {
 		config, err := clientcmd.Load(kubeconfig)
 		if err != nil {
-			err = errors.Wrap(err, "Unable to load kubeconfig")
+			err = fmt.Errorf("Unable to load kubeconfig: %w", err)
 			return nil, nil, err
 		}
 		if contextName != "" {
@@ -129,13 +128,13 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 		}
 		clientConfig, err = clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 		if err != nil {
-			err = errors.Wrap(err, "Unable to create client config from config")
+			err = fmt.Errorf("Unable to create client config from config: %w", err)
 			return nil, nil, err
 		}
 	}
 	clientset, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
-		err = errors.Wrap(err, "Unable to create clientset")
+		err = fmt.Errorf("Unable to create clientset: %w", err)
 		return nil, nil, err
 	}
 	return clientset, clientConfig, nil
@@ -186,7 +185,7 @@ func (qp *QliksensePreflight) createPreflightTestDeployment(clientset *kubernete
 		result, err = deploymentsClient.Create(deployment)
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to create deployments in the %s namespace", namespace)
+		err = fmt.Errorf("unable to create deployments in the %s namespace: %w", namespace, err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created deployment %q\n", result.GetObjectMeta().GetName())
@@ -201,7 +200,7 @@ func getDeployment(clientset *kubernetes.Clientset, namespace, depName string) (
 		deployment, err = deploymentsClient.Get(depName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to get deployments in the %s namespace", namespace)
+		err = fmt.Errorf("unable to get deployments in the %s namespace: %w", namespace, err)
 		api.LogDebugMessage("%v\n", err)
 		return nil, err
 	}
@@ -271,7 +270,7 @@ func getService(clientset *kubernetes.Clientset, namespace, svcName string) (*ap
 		svc, err = servicesClient.Get(svcName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to get services in the %s namespace", namespace)
+		err = fmt.Errorf("unable to get services in the %s namespace: %w", namespace, err)
 		return nil, err
 	}
 
