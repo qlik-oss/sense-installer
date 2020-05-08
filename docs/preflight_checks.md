@@ -19,7 +19,7 @@ Available Commands:
   all            perform all checks
   authcheck      preflight authcheck
   clean          perform preflight clean
-  deployment     perform preflight deploymwnt check
+  deployment     perform preflight deployment check
   dns            perform preflight dns check
   kube-version   check kubernetes version
   mongo          preflight mongo OR preflight mongo --url=<url>
