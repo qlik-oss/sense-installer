@@ -1,6 +1,7 @@
 package preflight
 
 import (
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -74,8 +75,30 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 			return errors.New("MongoDbUrl is empty")
 		}
 	}
-	if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
-		return err
+	var privKeys []string
+	var err error
+	if preflightOpts.MongoOptions.CaCertFile != "" && preflightOpts.MongoOptions.ClientCertFile == "" {
+		privKeys, err = qp.extractPrivateKeysFromCA(preflightOpts.MongoOptions.CaCertFile)
+		if err != nil {
+			return fmt.Errorf("unable to parse CA cert: %v", err)
+		}
+	}
+	if len(privKeys) == 0 {
+		if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
+			return err
+		}
+	} else {
+		successCount := 0
+		for _, privKey := range privKeys {
+			preflightOpts.MongoOptions.ClientCertFile = privKey
+			if err = qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
+				continue
+			}
+			successCount++
+		}
+		if successCount == 0 {
+			return err
+		}
 	}
 	if !cleanup {
 		qp.P.LogVerboseMessage("Completed preflight mongodb check\n")
@@ -246,4 +269,30 @@ func (qp *QliksensePreflight) runMongoCleanup(clientset *kubernetes.Clientset, n
 	qp.deletePod(clientset, namespace, mongoPodName)
 	qp.deleteK8sSecret(clientset, namespace, caCertSecretName)
 	qp.deleteK8sSecret(clientset, namespace, clientCertSecretName)
+}
+
+func (qp *QliksensePreflight) extractPrivateKeysFromCA(path string) ([]string, error) {
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	dirPath := os.TempDir()
+	count := 0
+	var files []string
+	for {
+		block, rest := pem.Decode(raw)
+		if block == nil {
+			break
+		}
+		if block.Type != "CERTIFICATE" {
+			privFile := filepath.Join(dirPath, fmt.Sprintf("mongo_priv_%d.key", count+1))
+			if err := ioutil.WriteFile(privFile, pem.EncodeToMemory(block), 0600); err != nil {
+				return nil, fmt.Errorf("error writing private key to file: \"%s\"", privFile)
+			}
+			files = append(files, privFile)
+			count++
+		}
+		raw = rest
+	}
+	return files, nil
 }
