@@ -16,9 +16,18 @@ Examples:
 qliksense preflight <preflight_check_to_run>
 
 Available Commands:
-  all         perform all checks
-  dns         perform preflight dns check
-  k8s-version check k8s version
+  all            perform all checks
+  authcheck      preflight authcheck
+  clean          perform preflight clean
+  deployment     perform preflight deploymwnt check
+  dns            perform preflight dns check
+  kube-version   check kubernetes version
+  mongo          preflight mongo OR preflight mongo --url=<url>
+  pod            perform preflight pod check
+  role           preflight create role check
+  rolebinding    preflight create rolebinding check
+  service        perform preflight service check
+  serviceaccount preflight create ServiceAccount check
 
 Flags:
   -h, --help   help for preflight

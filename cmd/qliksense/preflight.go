@@ -337,7 +337,7 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	var preflightServiceAccountCmd = &cobra.Command{
 		Use:     "serviceaccount",
-		Short:   "preflight create ServiceAccount check",
+		Short:   "preflight create serviceaccount check",
 		Long:    `perform preflight serviceaccount check to ensure we are able to create a service account in the cluster`,
 		Example: `qliksense preflight serviceaccount`,
 		RunE: func(cmd *cobra.Command, args []string) error {
