@@ -213,8 +213,8 @@ func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR
 			}
 		} else {
 			switch key {
-			case "gitops":
-				crSpec.Spec.GitOps = &config.GitOps{}
+			case "opsrunner":
+				crSpec.Spec.OpsRunner = &config.OpsRunner{}
 			case "git":
 				crSpec.Spec.Git = &config.Repo{}
 			}
@@ -248,8 +248,8 @@ func (q *Qliksense) SetOtherConfigs(args []string) error {
 			if err := q.processSetGit(arg, qliksenseCR); err != nil {
 				return err
 			}
-		} else if strings.HasPrefix(arg, "gitOps.") {
-			if err := q.processSetGitOps(arg, qliksenseCR); err != nil {
+		} else if strings.HasPrefix(arg, "opsRunner.") {
+			if err := q.processSetOpsRunner(arg, qliksenseCR); err != nil {
 				return err
 			}
 		} else {
@@ -337,27 +337,29 @@ func (q *Qliksense) processSetGit(arg string, cr *api.QliksenseCR) error {
 	return nil
 }
 
-func (q *Qliksense) processSetGitOps(arg string, cr *api.QliksenseCR) error {
+func (q *Qliksense) processSetOpsRunner(arg string, cr *api.QliksenseCR) error {
 	args := strings.Split(arg, "=")
 	subs := strings.Split(args[0], ".")
-	if cr.Spec.Git == nil {
-		cr.Spec.GitOps = &config.GitOps{}
+	if cr.Spec.OpsRunner == nil {
+		cr.Spec.OpsRunner = &config.OpsRunner{}
 	}
 	switch subs[1] {
 	case "enabled":
 		if args[1] != "yes" && args[1] != "no" {
 			return errors.New("Please use yes or no for key enabled")
 		}
-		cr.Spec.GitOps.Enabled = args[1]
+		cr.Spec.OpsRunner.Enabled = args[1]
 	case "schedule":
 		if _, err := cron.ParseStandard(args[1]); err != nil {
 			return errors.New("Please enter string with standard cron scheduling syntax ")
 		}
-		cr.Spec.GitOps.Schedule = args[1]
+		cr.Spec.OpsRunner.Schedule = args[1]
 	case "watchBranch":
-		cr.Spec.GitOps.WatchBranch = args[1]
+		cr.Spec.OpsRunner.WatchBranch = args[1]
 	case "image":
-		cr.Spec.GitOps.Image = args[1]
+		cr.Spec.OpsRunner.Image = args[1]
+	case "crPvc":
+		cr.Spec.OpsRunner.CrPvc = args[1]
 	default:
 		return errors.New(arg + " does not match any cr spec")
 	}
