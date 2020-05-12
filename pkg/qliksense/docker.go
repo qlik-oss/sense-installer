@@ -96,8 +96,8 @@ func (q *Qliksense) PullImagesForCurrentCR() error {
 }
 
 func (q *Qliksense) appendGitOpsImage(images *[]string, qcr *qapi.QliksenseCR) {
-	if qcr.Spec.GitOps != nil && qcr.Spec.GitOps.Image != "" {
-		*images = append(*images, qcr.Spec.GitOps.Image)
+	if qcr.Spec.OpsRunner != nil && qcr.Spec.OpsRunner.Image != "" {
+		*images = append(*images, qcr.Spec.OpsRunner.Image)
 	}
 }
 

@@ -157,6 +157,8 @@ func (cr *QliksenseCR) GetFetchAccessToken(encryptionKey string) string {
 	if tok, err := cr.Spec.FetchSource.GetAccessToken(); err != nil {
 		fmt.Println(err)
 		return ""
+	} else if tok == "" {
+		return tok
 	} else {
 		by, _ := b64.StdEncoding.DecodeString(tok)
 		res, err := DecryptData(by, encryptionKey)
