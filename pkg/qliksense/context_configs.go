@@ -340,7 +340,7 @@ func (q *Qliksense) processSetGit(arg string, cr *api.QliksenseCR) error {
 func (q *Qliksense) processSetOpsRunner(arg string, cr *api.QliksenseCR) error {
 	args := strings.Split(arg, "=")
 	subs := strings.Split(args[0], ".")
-	if cr.Spec.Git == nil {
+	if cr.Spec.OpsRunner == nil {
 		cr.Spec.OpsRunner = &config.OpsRunner{}
 	}
 	switch subs[1] {
