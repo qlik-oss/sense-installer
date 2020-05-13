@@ -186,7 +186,7 @@ kind: Qliksense
 metadata:
   name: qlik-default
 spec:
-  gitOps:
+  opsRunner:
     image: some-gitops-image
 `)
 
