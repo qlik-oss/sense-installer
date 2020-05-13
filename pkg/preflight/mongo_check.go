@@ -25,37 +25,37 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 		qp.P.LogVerboseMessage("Preflight mongodb check: \n")
 		qp.P.LogVerboseMessage("------------------------ \n")
 	}
-	if preflightOpts != nil && preflightOpts.MongoOptions.MongodbUrl == "" && !cleanup {
+	var currentCR *qapi.QliksenseCR
+	var err error
+	qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
+	qConfig.SetNamespace(namespace)
+	currentCR, err = qConfig.GetCurrentCR()
+	if err != nil {
+		qp.P.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
+		return err
+	}
+	decryptedCR, err := qConfig.GetDecryptedCr(currentCR)
+	if err != nil {
+		qp.P.LogVerboseMessage("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
+		return err
+	}
+	if preflightOpts.MongoOptions.MongodbUrl == "" && !cleanup {
 		// infer mongoDbUrl from currentCR
 		qp.P.LogVerboseMessage("MongoDbUri is empty, infer from CR\n")
-		qConfig := qapi.NewQConfig(qp.Q.QliksenseHome)
-		var currentCR *qapi.QliksenseCR
-
-		var err error
-		qConfig.SetNamespace(namespace)
-		currentCR, err = qConfig.GetCurrentCR()
-		if err != nil {
-			qp.P.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
-			return err
-		}
-		decryptedCR, err := qConfig.GetDecryptedCr(currentCR)
-		if err != nil {
-			qp.P.LogVerboseMessage("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
-			return err
-		}
 		preflightOpts.MongoOptions.MongodbUrl = strings.TrimSpace(decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri"))
+	}
+
+	if preflightOpts.MongoOptions.CaCertFile == "" && !cleanup {
+		caCertStr := decryptedCR.Spec.GetFromSecrets("qliksense", "caCertificates")
 		tmpDir := os.TempDir()
 		caCrtFile := filepath.Join(tmpDir, "rootCA.crt")
-		caCertStr := decryptedCR.Spec.GetFromSecrets("qliksense", "caCertificates")
-
-		if preflightOpts.MongoOptions.CaCertFile == "" && caCertStr != "" {
-			api.LogDebugMessage("received ca crt: %s\n", caCertStr)
-			if err := ioutil.WriteFile(caCrtFile, []byte(caCertStr), 0644); err != nil {
-				return fmt.Errorf("unable to write CA crt to file: %v", err)
-			}
-			preflightOpts.MongoOptions.CaCertFile = caCrtFile
+		api.LogDebugMessage("received ca crt: %s\n", caCertStr)
+		if err := ioutil.WriteFile(caCrtFile, []byte(caCertStr), 0644); err != nil {
+			return fmt.Errorf("unable to write CA crt to file: %v", err)
 		}
+		preflightOpts.MongoOptions.CaCertFile = caCrtFile
 	}
+
 	if !cleanup {
 		qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
 
@@ -66,7 +66,6 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 		}
 	}
 
-	api.LogDebugMessage("no private keys extrated from CA, hence proceeding with usual flow\n")
 	if err := qp.mongoConnCheck(kubeConfigContents, namespace, preflightOpts, cleanup); err != nil {
 		return err
 	}
@@ -103,7 +102,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 		secrets[caCertSecretName] = caCertMountPath
 	}
 
-	commandToRun := []string{"sh", "-c", fmt.Sprintf(`sleep 10; ./preflight-mongo -url="%s"`, preflightOpts.MongoOptions.MongodbUrl)}
+	commandToRun := []string{"./preflight-mongo", fmt.Sprintf(`-url="%s"`, preflightOpts.MongoOptions.MongodbUrl)}
 	api.LogDebugMessage("Mongo command: %s\n", strings.Join(commandToRun, " "))
 
 	// create a pod

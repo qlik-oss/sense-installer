@@ -465,13 +465,13 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	}
 	validateFunc := func(data interface{}) bool {
 		po := data.(*apiv1.Pod)
-		return len(po.Status.ContainerStatuses) > 0 && po.Status.ContainerStatuses[0].Ready
+		return po.Status.Phase == apiv1.PodRunning || po.Status.Phase == apiv1.PodSucceeded || po.Status.Phase == apiv1.PodFailed
 	}
 
 	if err := waitForResource(checkFunc, validateFunc); err != nil {
 		return err
 	}
-	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
+	if pod.Status.Phase != apiv1.PodRunning && pod.Status.Phase != apiv1.PodSucceeded && pod.Status.Phase != apiv1.PodFailed {
 		err = fmt.Errorf("container is taking much longer than expected")
 		return err
 	}
