@@ -39,12 +39,8 @@ func (p *PreflightOptions) LogVerboseMessage(strMessage string, args ...interfac
 }
 
 type MongoOptions struct {
-	MongodbUrl     string
-	Username       string
-	Password       string
-	CaCertFile     string
-	ClientCertFile string
-	Tls            bool
+	MongodbUrl string
+	CaCertFile string
 }
 
 var gracePeriod int64 = 0
@@ -313,7 +309,7 @@ func (qp *QliksensePreflight) deletePod(clientset *kubernetes.Clientset, namespa
 	return nil
 }
 
-func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames []string, commandToRun []string) (*apiv1.Pod, error) {
+func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames map[string]string, commandToRun []string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
@@ -336,7 +332,7 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 		},
 	}
 	if len(secretNames) > 0 {
-		for _, secretName := range secretNames {
+		for secretName, mountPath := range secretNames {
 			pod.Spec.Volumes = append(pod.Spec.Volumes, apiv1.Volume{
 				Name: secretName,
 				VolumeSource: apiv1.VolumeSource{
@@ -345,7 +341,7 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 						Items: []apiv1.KeyToPath{
 							{
 								Key:  secretName,
-								Path: secretName,
+								Path: filepath.Base(mountPath),
 							},
 						},
 					},
@@ -354,7 +350,7 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 			if len(pod.Spec.Containers) > 0 {
 				pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, apiv1.VolumeMount{
 					Name:      secretName,
-					MountPath: "/etc/ssl/" + secretName,
+					MountPath: filepath.Dir(mountPath),
 					ReadOnly:  true,
 				})
 			}
@@ -490,7 +486,6 @@ func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *api
 			err = fmt.Errorf("unable to retrieve %s pod by name", podName)
 			return nil, err
 		}
-		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
 		return po, nil
 	}
 	validateFunc := func(r interface{}) bool {
