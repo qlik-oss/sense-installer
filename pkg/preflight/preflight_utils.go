@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/mitchellh/go-homedir"
-	"github.com/pkg/errors"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	appsv1 "k8s.io/api/apps/v1"
@@ -40,12 +39,8 @@ func (p *PreflightOptions) LogVerboseMessage(strMessage string, args ...interfac
 }
 
 type MongoOptions struct {
-	MongodbUrl     string
-	Username       string
-	Password       string
-	CaCertFile     string
-	ClientCertFile string
-	Tls            bool
+	MongodbUrl string
+	CaCertFile string
 }
 
 var gracePeriod int64 = 0
@@ -115,13 +110,13 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 	if len(kubeconfig) == 0 {
 		clientConfig, err = rest.InClusterConfig()
 		if err != nil {
-			err = errors.Wrap(err, "Unable to load in-cluster kubeconfig")
+			err = fmt.Errorf("Unable to load in-cluster kubeconfig: %w", err)
 			return nil, nil, err
 		}
 	} else {
 		config, err := clientcmd.Load(kubeconfig)
 		if err != nil {
-			err = errors.Wrap(err, "Unable to load kubeconfig")
+			err = fmt.Errorf("Unable to load kubeconfig: %w", err)
 			return nil, nil, err
 		}
 		if contextName != "" {
@@ -129,13 +124,13 @@ func getK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clients
 		}
 		clientConfig, err = clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{}).ClientConfig()
 		if err != nil {
-			err = errors.Wrap(err, "Unable to create client config from config")
+			err = fmt.Errorf("Unable to create client config from config: %w", err)
 			return nil, nil, err
 		}
 	}
 	clientset, err := kubernetes.NewForConfig(clientConfig)
 	if err != nil {
-		err = errors.Wrap(err, "Unable to create clientset")
+		err = fmt.Errorf("Unable to create clientset: %w", err)
 		return nil, nil, err
 	}
 	return clientset, clientConfig, nil
@@ -186,7 +181,7 @@ func (qp *QliksensePreflight) createPreflightTestDeployment(clientset *kubernete
 		result, err = deploymentsClient.Create(deployment)
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to create deployments in the %s namespace", namespace)
+		err = fmt.Errorf("unable to create deployments in the %s namespace: %w", namespace, err)
 		return nil, err
 	}
 	qp.P.LogVerboseMessage("Created deployment %q\n", result.GetObjectMeta().GetName())
@@ -201,7 +196,7 @@ func getDeployment(clientset *kubernetes.Clientset, namespace, depName string) (
 		deployment, err = deploymentsClient.Get(depName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to get deployments in the %s namespace", namespace)
+		err = fmt.Errorf("unable to get deployments in the %s namespace: %w", namespace, err)
 		api.LogDebugMessage("%v\n", err)
 		return nil, err
 	}
@@ -271,7 +266,7 @@ func getService(clientset *kubernetes.Clientset, namespace, svcName string) (*ap
 		svc, err = servicesClient.Get(svcName, v1.GetOptions{})
 		return err
 	}); err != nil {
-		err = errors.Wrapf(err, "unable to get services in the %s namespace", namespace)
+		err = fmt.Errorf("unable to get services in the %s namespace: %w", namespace, err)
 		return nil, err
 	}
 
@@ -314,7 +309,7 @@ func (qp *QliksensePreflight) deletePod(clientset *kubernetes.Clientset, namespa
 	return nil
 }
 
-func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames []string, commandToRun []string) (*apiv1.Pod, error) {
+func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clientset, namespace, podName, imageName string, secretNames map[string]string, commandToRun []string) (*apiv1.Pod, error) {
 	// build the pod definition we want to deploy
 	pod := &apiv1.Pod{
 		ObjectMeta: v1.ObjectMeta{
@@ -337,7 +332,7 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 		},
 	}
 	if len(secretNames) > 0 {
-		for _, secretName := range secretNames {
+		for secretName, mountPath := range secretNames {
 			pod.Spec.Volumes = append(pod.Spec.Volumes, apiv1.Volume{
 				Name: secretName,
 				VolumeSource: apiv1.VolumeSource{
@@ -346,7 +341,7 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 						Items: []apiv1.KeyToPath{
 							{
 								Key:  secretName,
-								Path: secretName,
+								Path: filepath.Base(mountPath),
 							},
 						},
 					},
@@ -355,7 +350,7 @@ func (qp *QliksensePreflight) createPreflightTestPod(clientset *kubernetes.Clien
 			if len(pod.Spec.Containers) > 0 {
 				pod.Spec.Containers[0].VolumeMounts = append(pod.Spec.Containers[0].VolumeMounts, apiv1.VolumeMount{
 					Name:      secretName,
-					MountPath: "/etc/ssl/" + secretName,
+					MountPath: filepath.Dir(mountPath),
 					ReadOnly:  true,
 				})
 			}
@@ -470,13 +465,13 @@ func waitForPod(clientset *kubernetes.Clientset, namespace string, pod *apiv1.Po
 	}
 	validateFunc := func(data interface{}) bool {
 		po := data.(*apiv1.Pod)
-		return len(po.Status.ContainerStatuses) > 0 && po.Status.ContainerStatuses[0].Ready
+		return po.Status.Phase == apiv1.PodRunning || po.Status.Phase == apiv1.PodSucceeded || po.Status.Phase == apiv1.PodFailed
 	}
 
 	if err := waitForResource(checkFunc, validateFunc); err != nil {
 		return err
 	}
-	if len(pod.Status.ContainerStatuses) == 0 || !pod.Status.ContainerStatuses[0].Ready {
+	if pod.Status.Phase != apiv1.PodRunning && pod.Status.Phase != apiv1.PodSucceeded && pod.Status.Phase != apiv1.PodFailed {
 		err = fmt.Errorf("container is taking much longer than expected")
 		return err
 	}
@@ -491,7 +486,6 @@ func waitForPodToDie(clientset *kubernetes.Clientset, namespace string, pod *api
 			err = fmt.Errorf("unable to retrieve %s pod by name", podName)
 			return nil, err
 		}
-		api.LogDebugMessage("pod status: %v\n", po.Status.Phase)
 		return po, nil
 	}
 	validateFunc := func(r interface{}) bool {

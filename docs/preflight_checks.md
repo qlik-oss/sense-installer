@@ -16,9 +16,18 @@ Examples:
 qliksense preflight <preflight_check_to_run>
 
 Available Commands:
-  all         perform all checks
-  dns         perform preflight dns check
-  k8s-version check k8s version
+  all            perform all checks
+  authcheck      preflight authcheck
+  clean          perform preflight clean
+  deployment     perform preflight deployment check
+  dns            perform preflight dns check
+  kube-version   check kubernetes version
+  mongo          preflight mongo OR preflight mongo --url=<url>
+  pod            perform preflight pod check
+  role           preflight create role check
+  rolebinding    preflight create rolebinding check
+  service        perform preflight service check
+  serviceaccount preflight create ServiceAccount check
 
 Flags:
   -h, --help   help for preflight
@@ -200,8 +209,8 @@ We can check if we are able to connect to an instance of mongodb on the cluster 
 qliksense preflight mongo --url=<url> -v OR
 qliksense preflight mongo -v
 qliksense preflight mongo --url=<mongo-server url> --ca-cert=<path to ca-cert file> -v
-
-
+```
+```shell
 Preflight mongo check
 ---------------------
 Preflight mongodb check: 
@@ -217,7 +226,29 @@ Deleted pod: pf-mongo-pod
 Completed preflight mongodb check
 ```
 
+#### Mongodb check with mutual tls
+In order to perform mutual tls with mongo we need to:
+- append client certificate to the beginning/end of CA certificate. Make sure to include the beginning and end tags on each certificate. 
+The CA certificate file should look like this in the end:
+```shell
+<existing contents of CA cert>
+...
+-----BEGIN RSA PRIVATE KEY-----
+<private key>
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+<public key>
+-----END CERTIFICATE-----
+```
+- Run the command below to set the ca certificate into the CR
+```shell
+cat <path_to_ca.crt> | base64 | qliksense config set-secrets qliksense.caCertificates --base64
+```
 
+Next, run: 
+```shell
+qliksense preflight mongo -v
+```
 
 ### Running all checks
 Run the command shown below to execute all preflight checks.

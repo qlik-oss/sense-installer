@@ -136,12 +136,7 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 	f := preflightAllChecksCmd.Flags()
 	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
 	f.StringVarP(&preflightOpts.MongoOptions.MongodbUrl, "mongodb-url", "", "", "mongodbUrl to try connecting to")
-	f.StringVarP(&preflightOpts.MongoOptions.Username, "mongodb-username", "", "", "username to connect to mongodb")
-	f.StringVarP(&preflightOpts.MongoOptions.Password, "mongodb-password", "", "", "password to connect to mongodb")
 	f.StringVarP(&preflightOpts.MongoOptions.CaCertFile, "mongodb-ca-cert", "", "", "certificate to use for mongodb check")
-	f.StringVarP(&preflightOpts.MongoOptions.ClientCertFile, "mongodb-client-cert", "", "", "client-certificate to use for mongodb check")
-	f.BoolVar(&preflightOpts.MongoOptions.Tls, "mongodb-tls", false, "enable tls?")
-
 	return preflightAllChecksCmd
 }
 
@@ -152,7 +147,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	var pfDeploymentCheckCmd = &cobra.Command{
 		Use:     "deployment",
-		Short:   "perform preflight deploymwnt check",
+		Short:   "perform preflight deployment check",
 		Long:    `perform preflight deployment check to ensure that we can create deployments in the cluster`,
 		Example: `qliksense preflight deployment`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -337,7 +332,7 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	var preflightServiceAccountCmd = &cobra.Command{
 		Use:     "serviceaccount",
-		Short:   "preflight create ServiceAccount check",
+		Short:   "preflight create serviceaccount check",
 		Long:    `perform preflight serviceaccount check to ensure we are able to create a service account in the cluster`,
 		Example: `qliksense preflight serviceaccount`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -434,11 +429,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	f := preflightMongoCmd.Flags()
 	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
 	f.StringVarP(&preflightOpts.MongoOptions.MongodbUrl, "url", "", "", "mongodbUrl to try connecting to")
-	f.StringVarP(&preflightOpts.MongoOptions.Username, "username", "", "", "username to connect to mongodb")
-	f.StringVarP(&preflightOpts.MongoOptions.Password, "password", "", "", "password to connect to mongodb")
 	f.StringVarP(&preflightOpts.MongoOptions.CaCertFile, "ca-cert", "", "", "ca certificate to use for mongodb check")
-	f.StringVarP(&preflightOpts.MongoOptions.ClientCertFile, "client-cert", "", "", "client-certificate to use for mongodb check")
-	f.BoolVar(&preflightOpts.MongoOptions.Tls, "tls", false, "enable tls?")
 	return preflightMongoCmd
 }
 
