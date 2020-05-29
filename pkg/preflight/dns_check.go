@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -18,10 +19,10 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 	podName := "pf-pod-1"
 
 	if !cleanup {
-		qp.P.LogVerboseMessage("Preflight DNS check: \n")
-		qp.P.LogVerboseMessage("------------------- \n")
+		qp.CG.LogVerboseMessage("Preflight DNS check: \n")
+		qp.CG.LogVerboseMessage("------------------- \n")
 	}
-	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	clientset, _, err := api.GetK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
 		return err
@@ -38,24 +39,24 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 		return err
 	}
 
-	dnsDeployment, err := qp.createPreflightTestDeployment(clientset, namespace, depName, nginxImageName)
+	dnsDeployment, err := qp.CG.CreatePreflightTestDeployment(clientset, namespace, depName, nginxImageName)
 	if err != nil {
 		err = fmt.Errorf("unable to create deployment: %v\n", err)
 		return err
 	}
-	defer qp.deleteDeployment(clientset, namespace, depName)
+	defer qp.CG.DeleteDeployment(clientset, namespace, depName)
 
-	if err := waitForDeployment(clientset, namespace, dnsDeployment); err != nil {
+	if err := api.WaitForDeployment(clientset, namespace, dnsDeployment); err != nil {
 		return err
 	}
 
 	// creating service
-	dnsService, err := qp.createPreflightTestService(clientset, namespace, serviceName)
+	dnsService, err := qp.CG.CreatePreflightTestService(clientset, namespace, serviceName)
 	if err != nil {
 		err = fmt.Errorf("unable to create service : %s, %s\n", serviceName, err)
 		return err
 	}
-	defer qp.deleteService(clientset, namespace, serviceName)
+	defer qp.CG.DeleteService(clientset, namespace, serviceName)
 
 	// create a pod
 	commandToRun := []string{"sh", "-c", "sleep 10; nc -z -v -w 1 " + dnsService.Name + " 80"}
@@ -65,15 +66,15 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 		return err
 	}
 
-	dnsPod, err := qp.createPreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
+	dnsPod, err := qp.CG.CreatePreflightTestPod(clientset, namespace, podName, netcatImageName, nil, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("unable to create pod : %s, %s\n", podName, err)
 		return err
 	}
 
-	defer qp.deletePod(clientset, namespace, podName)
+	defer qp.CG.DeletePod(clientset, namespace, podName)
 
-	if err := waitForPod(clientset, namespace, dnsPod); err != nil {
+	if err := api.WaitForPod(clientset, namespace, dnsPod); err != nil {
 		return err
 	}
 	if len(dnsPod.Spec.Containers) == 0 {
@@ -81,30 +82,30 @@ func (qp *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []by
 		return err
 	}
 
-	waitForPodToDie(clientset, namespace, dnsPod)
+	api.WaitForPodToDie(clientset, namespace, dnsPod)
 
-	logStr, err := getPodLogs(clientset, dnsPod)
+	logStr, err := api.GetPodLogs(clientset, dnsPod)
 	if err != nil {
 		err = fmt.Errorf("unable to execute dns check in the cluster: %v", err)
 		return err
 	}
 
 	if strings.HasSuffix(strings.TrimSpace(logStr), "succeeded!") {
-		qp.P.LogVerboseMessage("Preflight DNS check: PASSED\n")
+		qp.CG.LogVerboseMessage("Preflight DNS check: PASSED\n")
 	} else {
 		err = fmt.Errorf("Expected response not found\n")
 		return err
 	}
 	if !cleanup {
-		qp.P.LogVerboseMessage("Completed preflight DNS check\n")
-		qp.P.LogVerboseMessage("Cleaning up resources...\n")
+		qp.CG.LogVerboseMessage("Completed preflight DNS check\n")
+		qp.CG.LogVerboseMessage("Cleaning up resources...\n")
 	}
 
 	return nil
 }
 
 func (qp *QliksensePreflight) runDNSCleanup(clientset *kubernetes.Clientset, namespace, podName, serviceName, depName string) {
-	qp.deleteDeployment(clientset, namespace, depName)
-	qp.deletePod(clientset, namespace, podName)
-	qp.deleteService(clientset, namespace, serviceName)
+	qp.CG.DeleteDeployment(clientset, namespace, depName)
+	qp.CG.DeletePod(clientset, namespace, podName)
+	qp.CG.DeleteService(clientset, namespace, serviceName)
 }
