@@ -76,6 +76,8 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.BoolVar(&keepPatchFiles, keepPatchFilesFlagName, keepPatchFiles, keepPatchFilesFlagUsage)
 	f.StringVarP(&filePath, "file", "f", "", "Install from a CR file")
 
+	f.BoolVarP(&opts.DryRun, "dry-run", "", false, "Dry run will generate the patches without rotating keys")
+
 	f.BoolVarP(&pull, pullFlagName, pullFlagShorthand, pull, pullFlagUsage)
 	f.BoolVarP(&push, pushFlagName, pushFlagShorthand, push, pushFlagUsage)
 
