@@ -226,10 +226,17 @@ func unsetCmd(q *qliksense.Qliksense) *cobra.Command {
 		Use:   "unset",
 		Short: "remove a key from a context or a secrets or a configs from the context",
 		Example: `
-		qliksense config unset <key> # remove the key from CR, supports space separated multiple arguments
-		qliksense config unset <service>.<key> # remove the key from service inside configs/secrets of CR 
-		qliksense config usnet <servcie> # remove the service from inside configs/secrets of CR
-		`,
+# remove the key from CR
+qliksense config unset <key>
+
+# remove the key from service inside configs/secrets of CR
+qliksense config unset <service>.<key> 
+
+# remove the service from inside configs/secrets of CR
+qliksense config usnet <servcie> 
+
+all of the above supports space separated multiple arguments
+`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.UnsetCmd(args)
 		},
