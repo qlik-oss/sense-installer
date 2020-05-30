@@ -220,3 +220,20 @@ func cleanConfigRepoPatchesCmd(q *qliksense.Qliksense) *cobra.Command {
 		},
 	}
 }
+
+func unsetCmd(q *qliksense.Qliksense) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "unset",
+		Short: "remove a key from a context or a secrets or a configs from the context",
+		Example: `
+		qliksense config unset <key> # remove the key from CR, supports space separated multiple arguments
+		qliksense config unset <service>.<key> # remove the key from service inside configs/secrets of CR 
+		qliksense config usnet <servcie> # remove the service from inside configs/secrets of CR
+		`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return q.UnsetCmd(args)
+		},
+		Args: cobra.MinimumNArgs(1),
+	}
+	return cmd
+}

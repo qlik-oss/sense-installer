@@ -122,6 +122,7 @@ func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 				globalEulaPostRun(cmd, p)
 			}
 		},
+		SilenceUsage: true,
 	}
 	origHelpFunc := cmd.HelpFunc()
 	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
@@ -198,6 +199,10 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// open editor for config
 	configCmd.AddCommand(configEditCmd(p))
+
+	// add unset for config
+	configCmd.AddCommand((unsetCmd(p)))
+
 	// add uninstall command
 	cmd.AddCommand(uninstallCmd(p))
 
