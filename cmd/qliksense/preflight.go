@@ -41,7 +41,7 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight DNS check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight DNS check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -79,7 +79,7 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight Kubernetes minimum version check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight kubernetes minimum version check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -116,7 +116,7 @@ func pfAllChecksCmd(q *qliksense.Qliksense) *cobra.Command {
 
 			// Preflight run all checks
 			fmt.Printf("Running all preflight checks...\n\n")
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Unable to run the preflight checks suite"))
 				fmt.Printf("Error: %v\n", err)
@@ -155,7 +155,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight deployments check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight deployment check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -193,7 +193,7 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight service check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight service check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -232,7 +232,7 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight pod check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight pod check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -270,7 +270,7 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight role check
-			namespace, _, err := api.LoadKubeConfigAndNamespace()
+			namespace, _, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight role check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -305,7 +305,7 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight createRoleBinding check
-			namespace, _, err := api.LoadKubeConfigAndNamespace()
+			namespace, _, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight rolebinding check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -340,7 +340,7 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight createServiceAccount check
-			namespace, _, err := api.LoadKubeConfigAndNamespace()
+			namespace, _, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight ServiceAccount check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -374,7 +374,7 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight authcheck
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight authcheck FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -409,7 +409,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight mongo check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight mongo check FAILED"))
 				fmt.Printf("Error: %v\n", err)
@@ -449,7 +449,7 @@ func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 
 			// Preflight clean
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Preflight cleanup FAILED"))
 				fmt.Printf("Error: %v\n", err)

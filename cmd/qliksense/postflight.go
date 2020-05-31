@@ -5,7 +5,6 @@ import (
 
 	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
-	"github.com/qlik-oss/sense-installer/pkg/api"
 	postflight "github.com/qlik-oss/sense-installer/pkg/postflight"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
@@ -36,7 +35,7 @@ func pfMigrationCheck(q *qliksense.Qliksense) *cobra.Command {
 			pf := &postflight.QliksensePostflight{Q: q, P: postflightOpts}
 
 			// Postflight db_migration_check
-			namespace, kubeConfigContents, err := api.LoadKubeConfigAndNamespace()
+			namespace, kubeConfigContents, err := pf.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
 				fmt.Fprintf(out, "%s\n", Red("Postflight db_migration_check FAILED"))
 				fmt.Printf("Error: %v\n", err)
