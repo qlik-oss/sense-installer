@@ -39,14 +39,14 @@ func (p *ClientGoUtils) LogVerboseMessage(strMessage string, args ...interface{}
 func int32Ptr(i int32) *int32 { return &i }
 
 func (p *ClientGoUtils) LoadKubeConfigAndNamespace() (string, []byte, error) {
-	fmt.Println("Reading .kube/config file...")
+	LogDebugMessage("Reading .kube/config file...")
 
 	homeDir, err := homedir.Dir()
 	if err != nil {
 		err = fmt.Errorf("Unable to deduce home dir")
 		return "", nil, err
 	}
-	fmt.Printf("Kube config location: %s\n\n", filepath.Join(homeDir, ".kube", "config"))
+	LogDebugMessage("Kube config location: %s\n\n", filepath.Join(homeDir, ".kube", "config"))
 
 	kubeConfig := filepath.Join(homeDir, ".kube", "config")
 	kubeConfigContents, err := ioutil.ReadFile(kubeConfig)
@@ -77,7 +77,7 @@ func (p *ClientGoUtils) RetryOnError(mf func() error) error {
 	}, mf)
 }
 
-func (p *ClientGoUtils) GetK8SClientSet(kubeconfig []byte, contextName string) (kubernetes.Interface, *rest.Config, error) {
+func (p *ClientGoUtils) GetK8SClientSet(kubeconfig []byte, contextName string) (*kubernetes.Clientset, *rest.Config, error) {
 	var clientConfig *rest.Config
 	var err error
 	if len(kubeconfig) == 0 {
@@ -741,7 +741,7 @@ func (p *ClientGoUtils) CreateStatefulSet(clientset kubernetes.Interface, namesp
 		},
 	}
 
-	// Create Deployment
+	// Create Statefulset
 	var result *appsv1.StatefulSet
 	if err := p.RetryOnError(func() (err error) {
 		result, err = statefulSetsClient.Create(statefulset)
@@ -750,7 +750,7 @@ func (p *ClientGoUtils) CreateStatefulSet(clientset kubernetes.Interface, namesp
 		err = fmt.Errorf("unable to create statefulsets in the %s namespace: %w", namespace, err)
 		return nil, err
 	}
-	fmt.Printf("Created statefulset %q\n", result.GetObjectMeta().GetName())
+	LogDebugMessage("Created statefulset %q\n", result.GetObjectMeta().GetName())
 
 	return statefulset, nil
 }
@@ -760,7 +760,7 @@ func (p *ClientGoUtils) GetPodsForStatefulset(clientset kubernetes.Interface, st
 	listOptions := v1.ListOptions{LabelSelector: set.AsSelector().String()}
 	pods, err := clientset.CoreV1().Pods(namespace).List(listOptions)
 	for _, pod := range pods.Items {
-		fmt.Fprintf(os.Stdout, "*********** pod name: %v\n", pod.Name)
+		LogDebugMessage("pod: %v\n", pod.Name)
 	}
 	return pods, err
 }
@@ -821,7 +821,7 @@ func (p *ClientGoUtils) deleteStatefulSet(clientset kubernetes.Interface, namesp
 	if err := p.waitForStatefulsetToDelete(clientset, namespace, name); err != nil {
 		return err
 	}
-	fmt.Printf("Deleted statefulset: %s\n", name)
+	LogDebugMessage("Deleted statefulset: %s\n", name)
 	return nil
 }
 
@@ -843,7 +843,7 @@ func (p *ClientGoUtils) waitForStatefulsetToDelete(clientset kubernetes.Interfac
 	return err
 }
 
-func (p *ClientGoUtils) GetPodsAndPodLogsForFailedInitContainer(clientset kubernetes.Interface, lbls map[string]string, namespace, containerName string) error {
+func (p *ClientGoUtils) GetPodsAndPodLogsFromFailedInitContainer(clientset kubernetes.Interface, lbls map[string]string, namespace, containerName string) (string, error) {
 	set := labels.Set(lbls)
 	listOptions := v1.ListOptions{LabelSelector: set.AsSelector().String()}
 	podList, err := clientset.CoreV1().Pods(namespace).List(listOptions)
@@ -851,23 +851,23 @@ func (p *ClientGoUtils) GetPodsAndPodLogsForFailedInitContainer(clientset kubern
 		err = fmt.Errorf("unable to get podlist: %v", err)
 		fmt.Printf("%s\n", err)
 	}
-	fmt.Printf("%d Pods retrieved\n ", len(podList.Items))
+	LogDebugMessage("%d Pods retrieved\n ", len(podList.Items))
 
+	var logs string
 	for _, pod := range podList.Items {
-		fmt.Fprintf(os.Stdout, "*********** pod name: %v\n", pod.Name)
-		fmt.Printf("%d init containers retrieved\n", len(pod.Spec.InitContainers))
+		LogDebugMessage("pod: %v\n", pod.Name)
+		LogDebugMessage("%d init containers retrieved\n", len(pod.Spec.InitContainers))
 		for _, cs := range pod.Status.InitContainerStatuses {
-			if (cs.State.Terminated != nil && (cs.State.Terminated.Reason != "Completed" || cs.State.Terminated.ExitCode > 0)) ||
-				(cs.LastTerminationState.Terminated != nil && (cs.LastTerminationState.Terminated.Reason != "Completed" || cs.LastTerminationState.Terminated.ExitCode > 0)) && (cs.Name == containerName) {
-				logs, err := p.GetPodContainerLogs(clientset, &pod, cs.Name)
+			if cs.Name == containerName && ((cs.State.Terminated != nil && (cs.State.Terminated.Reason != "Completed" || cs.State.Terminated.ExitCode > 0)) ||
+				(cs.LastTerminationState.Terminated != nil && (cs.LastTerminationState.Terminated.Reason != "Completed" || cs.LastTerminationState.Terminated.ExitCode > 0))) {
+				logs, err = p.GetPodContainerLogs(clientset, &pod, cs.Name)
 				if err != nil {
 					err = fmt.Errorf("unable to get pod logs: %v", err)
 					fmt.Printf("%s\n", err)
-					return err
+					return "", err
 				}
-				fmt.Printf("Retrieved logs from init container: %s\n%s", cs.Name, logs)
 			}
 		}
 	}
-	return nil
+	return logs, nil
 }

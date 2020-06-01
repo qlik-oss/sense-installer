@@ -103,7 +103,7 @@ func (p *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byt
 	return nil
 }
 
-func (p *QliksensePreflight) runDNSCleanup(clientset *kubernetes.Clientset, namespace, podName, serviceName, depName string) {
+func (p *QliksensePreflight) runDNSCleanup(clientset kubernetes.Interface, namespace, podName, serviceName, depName string) {
 	p.CG.DeleteDeployment(clientset, namespace, depName)
 	p.CG.DeletePod(clientset, namespace, podName)
 	p.CG.DeleteService(clientset, namespace, serviceName)

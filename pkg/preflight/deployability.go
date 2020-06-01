@@ -75,7 +75,7 @@ func (p *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []byt
 	return nil
 }
 
-func (p *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
+func (p *QliksensePreflight) checkPfPod(clientset kubernetes.Interface, namespace string, cleanup bool) error {
 	// delete the pod we are going to create, if it already exists in the cluster
 	podName := "pod-pf-check"
 	p.CG.DeletePod(clientset, namespace, podName)
@@ -104,7 +104,7 @@ func (p *QliksensePreflight) checkPfPod(clientset *kubernetes.Clientset, namespa
 	return nil
 }
 
-func (p *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
+func (p *QliksensePreflight) checkPfService(clientset kubernetes.Interface, namespace string, cleanup bool) error {
 	// delete the service we are going to create, if it already exists in the cluster
 	serviceName := "svc-pf-check"
 	p.CG.DeleteService(clientset, namespace, serviceName)
@@ -128,7 +128,7 @@ func (p *QliksensePreflight) checkPfService(clientset *kubernetes.Clientset, nam
 	return nil
 }
 
-func (p *QliksensePreflight) checkPfDeployment(clientset *kubernetes.Clientset, namespace string, cleanup bool) error {
+func (p *QliksensePreflight) checkPfDeployment(clientset kubernetes.Interface, namespace string, cleanup bool) error {
 	// delete the deployment we are going to create, if it already exists in the cluster
 	depName := "deployment-preflight-check"
 	p.CG.DeleteDeployment(clientset, namespace, depName)

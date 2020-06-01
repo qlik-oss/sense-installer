@@ -49,7 +49,7 @@ func pfMigrationCheck(q *qliksense.Qliksense) *cobra.Command {
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Postflight db_migration_check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("Postflight db_migration_check completed"))
 			return nil
 		},
 	}

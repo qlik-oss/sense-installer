@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
+	apiv1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -124,6 +125,52 @@ func TestClientGoUtils_DeleteDeployment(t *testing.T) {
 			}
 			if err := p.DeleteDeployment(tt.args.clientset, tt.args.namespace, tt.args.name); (err != nil) != tt.wantErr {
 				t.Errorf("ClientGoUtils.DeleteDeployment() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestClientGoUtils_GetService(t *testing.T) {
+	type fields struct {
+		Verbose bool
+	}
+	type args struct {
+		clientset kubernetes.Interface
+		namespace string
+		svcName   string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    *apiv1.Service
+		wantErr bool
+	}{
+		{
+			name:   "valid case",
+			fields: fields{Verbose: true},
+			args:   args{},
+			want: &appsv1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-svc",
+					Namespace: "test-ns",
+				},
+				wantErr: false,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &ClientGoUtils{
+				Verbose: tt.fields.Verbose,
+			}
+			got, err := p.GetService(tt.args.clientset, tt.args.namespace, tt.args.svcName)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ClientGoUtils.GetService() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ClientGoUtils.GetService() = %v, want %v", got, tt.want)
 			}
 		})
 	}

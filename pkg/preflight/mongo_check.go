@@ -187,7 +187,7 @@ func (p *QliksensePreflight) checkMongoVersion(logStr string) (bool, error) {
 	return false, err
 }
 
-func (p *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
+func (p *QliksensePreflight) createSecret(clientset kubernetes.Interface, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
 	certBytes, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err
@@ -201,7 +201,7 @@ func (p *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, names
 	return certSecret, nil
 }
 
-func (p *QliksensePreflight) runMongoCleanup(clientset *kubernetes.Clientset, namespace, mongoPodName, caCertSecretName string) {
+func (p *QliksensePreflight) runMongoCleanup(clientset kubernetes.Interface, namespace, mongoPodName, caCertSecretName string) {
 	p.CG.DeletePod(clientset, namespace, mongoPodName)
 	p.CG.DeleteK8sSecret(clientset, namespace, caCertSecretName)
 }
