@@ -19,18 +19,19 @@ func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigConte
 		return err
 	}
 
-	var logs string
+	var logsMap map[string]string
+
 	// Retrieve all deployments
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	deployments, err := deploymentsClient.List(v1.ListOptions{})
 	api.LogDebugMessage("Number of deployments found: %d\n", deployments.Size())
 	for _, deployment := range deployments.Items {
 		api.LogDebugMessage("Deployment name: %s\n", deployment.GetName())
-		if logs, err = p.CG.GetPodsAndPodLogsFromFailedInitContainer(clientset, deployment.Spec.Template.Labels, namespace, initContainerNameToCheck); err != nil {
+		if logsMap, err = p.CG.GetPodsAndPodLogsFromFailedInitContainer(clientset, deployment.Spec.Template.Labels, namespace, initContainerNameToCheck); err != nil {
 			fmt.Printf("%s\n", err)
 			return err
 		}
-		p.filterLogsForErrors(logs)
+		p.filterLogsForErrors(logsMap)
 	}
 
 	// retrieve all statefulsets
@@ -39,26 +40,28 @@ func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigConte
 	api.LogDebugMessage("Number of statefulsets found: %d\n", statefulsets.Size())
 	for _, statefulset := range statefulsets.Items {
 		api.LogDebugMessage("Statefulset name: %s\n", statefulset.GetName())
-		if logs, err = p.CG.GetPodsAndPodLogsFromFailedInitContainer(clientset, statefulset.Spec.Template.Labels, namespace, initContainerNameToCheck); err != nil {
+		if logsMap, err = p.CG.GetPodsAndPodLogsFromFailedInitContainer(clientset, statefulset.Spec.Template.Labels, namespace, initContainerNameToCheck); err != nil {
 			fmt.Printf("%s\n", err)
 			return err
 		}
-		p.filterLogsForErrors(logs)
+		p.filterLogsForErrors(logsMap)
 	}
 
 	return nil
 }
 
-func (p *QliksensePostflight) filterLogsForErrors(logs string) {
-	containerLogs := strings.Split(logs, "\n")
-	if len(containerLogs) > 0 {
-		for _, logLine := range containerLogs {
-			api.LogDebugMessage("init container logs: \n")
-			if strings.Contains(strings.ToLower(logLine), "error") {
-				fmt.Printf("%s\n", logLine)
+func (p *QliksensePostflight) filterLogsForErrors(logsMap map[string]string) {
+	for podName, podLog := range logsMap {
+		containerLogs := strings.Split(podLog, "\n")
+		if len(containerLogs) > 0 {
+			for _, logLine := range containerLogs {
+				api.LogDebugMessage("init container logs: \n")
+				if strings.Contains(strings.ToLower(logLine), "error") {
+					fmt.Printf("Logs from pod: %s\n%s\n", podName, logLine)
+				}
 			}
+		} else {
+			p.CG.LogVerboseMessage("no logs obtained\n")
 		}
-	} else {
-		p.CG.LogVerboseMessage("no logs obtained\n")
 	}
 }

@@ -843,7 +843,7 @@ func (p *ClientGoUtils) waitForStatefulsetToDelete(clientset kubernetes.Interfac
 	return err
 }
 
-func (p *ClientGoUtils) GetPodsAndPodLogsFromFailedInitContainer(clientset kubernetes.Interface, lbls map[string]string, namespace, containerName string) (string, error) {
+func (p *ClientGoUtils) GetPodsAndPodLogsFromFailedInitContainer(clientset kubernetes.Interface, lbls map[string]string, namespace, containerName string) (map[string]string, error) {
 	set := labels.Set(lbls)
 	listOptions := v1.ListOptions{LabelSelector: set.AsSelector().String()}
 	podList, err := clientset.CoreV1().Pods(namespace).List(listOptions)
@@ -853,18 +853,19 @@ func (p *ClientGoUtils) GetPodsAndPodLogsFromFailedInitContainer(clientset kuber
 	}
 	LogDebugMessage("%d Pods retrieved\n ", len(podList.Items))
 
-	var logs string
+	// var logs map[string]string
+	logs := map[string]string{}
 	for _, pod := range podList.Items {
-		LogDebugMessage("pod: %v\n", pod.Name)
+		LogDebugMessage("pod: %v\n", pod.GetName())
 		LogDebugMessage("%d init containers retrieved\n", len(pod.Spec.InitContainers))
 		for _, cs := range pod.Status.InitContainerStatuses {
 			if cs.Name == containerName && ((cs.State.Terminated != nil && (cs.State.Terminated.Reason != "Completed" || cs.State.Terminated.ExitCode > 0)) ||
 				(cs.LastTerminationState.Terminated != nil && (cs.LastTerminationState.Terminated.Reason != "Completed" || cs.LastTerminationState.Terminated.ExitCode > 0))) {
-				logs, err = p.GetPodContainerLogs(clientset, &pod, cs.Name)
+				logs[pod.GetName()], err = p.GetPodContainerLogs(clientset, &pod, cs.Name)
 				if err != nil {
 					err = fmt.Errorf("unable to get pod logs: %v", err)
 					fmt.Printf("%s\n", err)
-					return "", err
+					return nil, err
 				}
 			}
 		}
