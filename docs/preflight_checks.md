@@ -2,7 +2,7 @@
 
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
 
-We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
+We support a couple of tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
 ```shell

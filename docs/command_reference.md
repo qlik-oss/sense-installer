@@ -4,7 +4,7 @@
 
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
 
-We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
+We support a couple of tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
 ```
@@ -27,6 +27,14 @@ qliksense preflight dns
 Run the following command to cleanup entities created for preflight checks that were left behind on the cluster.
 ```
 qliksense preflight clean
+```
+
+### qliksense postflight
+Postflight checks are performed after qliksense is installed on the cluster and during normal operating mode of the product. Such checks can range from validating certain conditions to checking the status of certain operations or entities.
+
+Run the following command to view help about the commands supported by postflight at any moment:
+```
+qliksense postflight
 ```
 
 ### qliksense load
