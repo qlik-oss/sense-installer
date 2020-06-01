@@ -22,6 +22,7 @@ func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigConte
 	var logsMap map[string]string
 
 	// Retrieve all deployments
+	p.CG.LogVerboseMessage("Retrieving logs from deployments\n")
 	deploymentsClient := clientset.AppsV1().Deployments(namespace)
 	deployments, err := deploymentsClient.List(v1.ListOptions{})
 	api.LogDebugMessage("Number of deployments found: %d\n", deployments.Size())
@@ -35,6 +36,7 @@ func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigConte
 	}
 
 	// retrieve all statefulsets
+	p.CG.LogVerboseMessage("Retrieving logs from statefulsets\n")
 	statefulsetsClient := clientset.AppsV1().StatefulSets(namespace)
 	statefulsets, err := statefulsetsClient.List(v1.ListOptions{})
 	api.LogDebugMessage("Number of statefulsets found: %d\n", statefulsets.Size())
@@ -54,8 +56,8 @@ func (p *QliksensePostflight) filterLogsForErrors(logsMap map[string]string) {
 	for podName, podLog := range logsMap {
 		containerLogs := strings.Split(podLog, "\n")
 		if len(containerLogs) > 0 {
+			p.CG.LogVerboseMessage("checking init container logs... \n")
 			for _, logLine := range containerLogs {
-				api.LogDebugMessage("init container logs: \n")
 				if strings.Contains(strings.ToLower(logLine), "error") {
 					fmt.Printf("Logs from pod: %s\n%s\n", podName, logLine)
 				}

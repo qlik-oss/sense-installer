@@ -5,6 +5,7 @@ import (
 
 	. "github.com/logrusorgru/aurora"
 	ansi "github.com/mattn/go-colorable"
+	"github.com/qlik-oss/sense-installer/pkg/api"
 	postflight "github.com/qlik-oss/sense-installer/pkg/postflight"
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
@@ -32,7 +33,7 @@ func pfMigrationCheck(q *qliksense.Qliksense) *cobra.Command {
 		Long:    `check mongodb migration status on the cluster`,
 		Example: `qliksense postflight db-migration-check`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			pf := &postflight.QliksensePostflight{Q: q, P: postflightOpts}
+			pf := &postflight.QliksensePostflight{Q: q, P: postflightOpts, CG: &api.ClientGoUtils{Verbose: postflightOpts.Verbose}}
 
 			// Postflight db_migration_check
 			namespace, kubeConfigContents, err := pf.CG.LoadKubeConfigAndNamespace()
