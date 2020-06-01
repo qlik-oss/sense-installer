@@ -225,7 +225,7 @@ spec:
 		return false
 	}
 	if !haveMatchingImage(func(image string) bool {
-		return strings.Contains(image, "qlik-docker-oss.bintray.io/qliksense-operator:v")
+		return strings.Contains(image, "qlik-docker-oss.bintray.io/qliksense-operator:")
 	}) {
 		t.Fatal("expected to find the operator image in the list, but it wasn't there")
 	}
