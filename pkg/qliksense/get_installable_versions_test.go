@@ -17,9 +17,9 @@ func TestGetLatestTag(t *testing.T) {
 		t.Log(err)
 		t.Log(sv)
 	}
-	baseV, _ := semver.NewVersion("v0.0.7")
+	baseV, _ := semver.NewVersion("v0.0.8")
 	if !sv.GreaterThan(baseV) {
-		t.Log("Expected greater than v0.0.7, but got:  " + s)
+		t.Log("Expected greater than v0.0.8, but got:  " + s)
 		t.Fail()
 	}
 }
