@@ -2,7 +2,6 @@ package qliksense
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -54,10 +53,7 @@ func (q *Qliksense) FetchK8sWithOpts(opts *FetchCommandOptions) error {
 		cr.SetFetchUrl(opts.GitUrl)
 	}
 	v := getVersion(opts, cr)
-	if v == "" {
-		return errors.New("Cannot find gitref/tag/branch/version to fetch")
-	}
-	if qConfig.IsRepoExistForCurrent(v) {
+	if v != "" && qConfig.IsRepoExistForCurrent(v) {
 		if opts.Overwrite || getVerionsOverwriteConfirmation(v) == "y" {
 			if err := qConfig.DeleteRepoForCurrent(v); err != nil {
 				return err
