@@ -26,8 +26,8 @@ func TestAddCommonConfig(t *testing.T) {
 		RotateKeys: DefaultRotateKeys,
 		Secrets: map[string]config.NameValues{
 			"qliksense": []config.NameValue{{
-				Name:  DefaultmongodbUriKey,
-				Value: DefaultmongodbUri,
+				Name:  DefaultMongodbUriKey,
+				Value: DefaultMongodbUri,
 			},
 			},
 		},
