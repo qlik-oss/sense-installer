@@ -32,7 +32,7 @@ func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigConte
 			fmt.Printf("%s\n", err)
 			return err
 		}
-		p.filterLogsForErrors(logsMap)
+		p.filterLogsForErrors(logsMap, namespace)
 	}
 
 	// retrieve all statefulsets
@@ -46,24 +46,28 @@ func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigConte
 			fmt.Printf("%s\n", err)
 			return err
 		}
-		p.filterLogsForErrors(logsMap)
+		p.filterLogsForErrors(logsMap, namespace)
 	}
 
 	return nil
 }
 
-func (p *QliksensePostflight) filterLogsForErrors(logsMap map[string]string) {
+func (p *QliksensePostflight) filterLogsForErrors(logsMap map[string]string, namespace string) {
+	errorLogsPresent := false
 	for podName, podLog := range logsMap {
 		containerLogs := strings.Split(podLog, "\n")
 		if len(containerLogs) > 0 {
-			p.CG.LogVerboseMessage("checking init container logs... \n")
 			for _, logLine := range containerLogs {
 				if strings.Contains(strings.ToLower(logLine), "error") {
+					errorLogsPresent = true
 					fmt.Printf("Logs from pod: %s\n%s\n", podName, logLine)
 				}
 			}
+			if errorLogsPresent {
+				fmt.Printf("To view more logs in this context, please run the command: kubectl logs -n %s %s %s\n", namespace, podName, initContainerNameToCheck)
+			}
 		} else {
-			p.CG.LogVerboseMessage("no logs obtained\n")
+			fmt.Printf("no logs obtained\n\n")
 		}
 	}
 }
