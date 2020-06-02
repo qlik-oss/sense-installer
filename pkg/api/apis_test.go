@@ -107,7 +107,7 @@ func TestGetDecryptedCr(t *testing.T) {
 	key, _ := setupGenerateKey(dir)
 	ecn, _ := EncryptData([]byte("mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"), key)
 	b := b64.StdEncoding.EncodeToString(ecn)
-	qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", b, "")
+	qcr.Spec.AddToSecrets("qliksense", "mongodbUri", b, "")
 
 	qcr.SetFetchAccessToken("mytoken", key)
 
@@ -117,8 +117,8 @@ func TestGetDecryptedCr(t *testing.T) {
 		t.Log(err)
 	}
 
-	decryptedValue := newCr.Spec.GetFromSecrets("qliksense", "mongoDbUri")
-	orignalValue := qcr.Spec.GetFromSecrets("qliksense", "mongoDbUri")
+	decryptedValue := newCr.Spec.GetFromSecrets("qliksense", "mongodbUri")
+	orignalValue := qcr.Spec.GetFromSecrets("qliksense", "mongodbUri")
 	if decryptedValue != "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false" {
 		t.Fail()
 		b, _ := K8sToYaml(newCr)

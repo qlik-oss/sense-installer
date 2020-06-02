@@ -29,7 +29,7 @@ const (
 var targetFileStringTemplate = `
 apiVersion: v1
 data:
-  mongoDbUri: %s
+  mongodbUri: %s
 kind: Secret
 metadata:
   name: testctx-qliksense-senseinstaller
@@ -296,7 +296,7 @@ func TestSetConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"qliksense.acceptEULA=\"yes\"", "qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				args: []string{"qliksense.acceptEULA=\"yes\"", "qliksense.mongodbUri=\"mongo://mongo:3307\""},
 			},
 			wantErr: false,
 		},
@@ -572,7 +572,7 @@ func Test_SetSecrets(t *testing.T) {
 				QliksenseHome: testDir,
 			},
 			args: args{
-				args:        []string{"qliksense.mongoDbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
+				args:        []string{"qliksense.mongodbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
 				isSecretSet: false,
 			},
 			wantErr: false,
@@ -583,7 +583,7 @@ func Test_SetSecrets(t *testing.T) {
 				QliksenseHome: testDir,
 			},
 			args: args{
-				args:        []string{"qliksense.mongoDbUri=bW9uZ29kYjovL3FsaWstZGVmYXVsdC1tb25nb2RiOjI3MDE3L3FsaWtzZW5zZT9zc2w9ZmFsc2U="},
+				args:        []string{"qliksense.mongodbUri=bW9uZ29kYjovL3FsaWstZGVmYXVsdC1tb25nb2RiOjI3MDE3L3FsaWtzZW5zZT9zc2w9ZmFsc2U="},
 				isSecretSet: false,
 				base64:      true,
 			},
@@ -595,7 +595,7 @@ func Test_SetSecrets(t *testing.T) {
 				QliksenseHome: testDir,
 			},
 			args: args{
-				args:        []string{"qliksense.mongoDbUri=\"mongo://mongo:3307\""},
+				args:        []string{"qliksense.mongodbUri=\"mongo://mongo:3307\""},
 				isSecretSet: true,
 			},
 			wantErr: false,
@@ -606,7 +606,7 @@ func Test_SetSecrets(t *testing.T) {
 				QliksenseHome: testDir,
 			},
 			args: args{
-				args:        []string{"qliksense.mongoDbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
+				args:        []string{"qliksense.mongodbUri=\"mongodb://qlik-default-mongodb:27017/qliksense?ssl=false\""},
 				isSecretSet: true,
 			},
 			wantErr: false,

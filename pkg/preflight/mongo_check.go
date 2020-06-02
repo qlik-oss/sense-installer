@@ -41,8 +41,8 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	}
 	if preflightOpts.MongoOptions.MongodbUrl == "" && !cleanup {
 		// infer mongoDbUrl from currentCR
-		qp.P.LogVerboseMessage("MongoDbUri is empty, infer from CR\n")
-		preflightOpts.MongoOptions.MongodbUrl = strings.TrimSpace(decryptedCR.Spec.GetFromSecrets("qliksense", "mongoDbUri"))
+		qp.P.LogVerboseMessage("mongodbUri is empty, infer from CR\n")
+		preflightOpts.MongoOptions.MongodbUrl = strings.TrimSpace(decryptedCR.Spec.GetFromSecrets("qliksense", "mongodbUri"))
 	}
 
 	if preflightOpts.MongoOptions.CaCertFile == "" && !cleanup {

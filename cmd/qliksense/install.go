@@ -71,10 +71,12 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 
 	f := c.Flags()
 	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
-	f.StringVarP(&opts.MongoDbUri, "mongoDbUri", "m", "", "mongoDbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
+	f.StringVarP(&opts.MongodbUri, "mongodbUri", "m", "", "mongodbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
 	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
 	f.BoolVar(&keepPatchFiles, keepPatchFilesFlagName, keepPatchFiles, keepPatchFilesFlagUsage)
 	f.StringVarP(&filePath, "file", "f", "", "Install from a CR file")
+
+	f.BoolVarP(&opts.DryRun, "dry-run", "", false, "Dry run will generate the patches without rotating keys")
 
 	f.BoolVarP(&pull, pullFlagName, pullFlagShorthand, pull, pullFlagUsage)
 	f.BoolVarP(&push, pushFlagName, pushFlagShorthand, push, pushFlagUsage)

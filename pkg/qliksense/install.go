@@ -8,7 +8,9 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/k-apis/pkg/config"
+	"github.com/qlik-oss/k-apis/pkg/cr"
 	"sigs.k8s.io/kustomize/api/filesys"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -16,8 +18,9 @@ import (
 
 type InstallCommandOptions struct {
 	StorageClass string
-	MongoDbUri   string
+	MongodbUri   string
 	RotateKeys   string
+	DryRun       bool
 }
 
 func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, keepPatchFiles bool) error {
@@ -42,14 +45,23 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	qcr.SetEULA("yes")
-	if opts.MongoDbUri != "" {
-		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")
+	if opts.MongodbUri != "" {
+		qcr.Spec.AddToSecrets("qliksense", "mongodbUri", opts.MongodbUri, "")
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
 	}
 	if opts.RotateKeys != "" {
 		qcr.Spec.RotateKeys = opts.RotateKeys
+	}
+	// for debugging purpose
+	if opts.DryRun {
+		// generate patches
+		qcr.Spec.RotateKeys = "None"
+		userHomeDir, _ := homedir.Dir()
+		fmt.Println("Generating patches only")
+		cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
+		return nil
 	}
 	qConfig.WriteCurrentContextCR(qcr)
 
