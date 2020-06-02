@@ -144,7 +144,7 @@ func getLatestTag(repoUrl, accessToken string) (string, error) {
 		v, err := semver.NewVersion(sv)
 		if err != nil {
 			// it may happen, in the repo some tags may not conform to semver
-			fmt.Print("Unconform tags: " + sv)
+			fmt.Println("the tag is not conform to semver: " + sv)
 			continue
 		}
 		if maxSem == nil || maxSem.LessThan(v) {
