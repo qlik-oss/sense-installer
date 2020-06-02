@@ -18,7 +18,7 @@ import (
 
 type InstallCommandOptions struct {
 	StorageClass string
-	MongoDbUri   string
+	MongodbUri   string
 	RotateKeys   string
 	DryRun       bool
 }
@@ -45,8 +45,8 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	qcr.SetEULA("yes")
-	if opts.MongoDbUri != "" {
-		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")
+	if opts.MongodbUri != "" {
+		qcr.Spec.AddToSecrets("qliksense", "mongodbUri", opts.MongodbUri, "")
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
