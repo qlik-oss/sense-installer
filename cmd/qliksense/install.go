@@ -61,9 +61,9 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 		if filePath != "" {
 			return loadOrApplyCommandEulaPreRunHook(cmd, q)
 		} else if qConfig, err := qapi.NewQConfigE(q.QliksenseHome); err != nil {
-			return false, err
+			return false, nil
 		} else if qcr, err := qConfig.GetCurrentCR(); err != nil {
-			return false, err
+			return false, nil
 		} else {
 			return qcr.IsEULA(), nil
 		}
