@@ -41,7 +41,7 @@ func (e *eulaPreRunHooksT) getPostValidationArtifact(artifactName string) interf
 var eulaEnforced = os.Getenv("QLIKSENSE_EULA_ENFORCE") == "true"
 var eulaText = "Please read the end user license agreement at: https://www.qlik.com/us/legal/license-terms"
 var eulaPrompt = "Do you accept our EULA? (y/n): "
-var eulaErrorInstruction = `You must enter "y" to continue`
+var eulaErrorInstruction = `You must enter "y" to continue or execute the command with the acceptEULA flag set to "yes"`
 var eulaPreRunHooks = eulaPreRunHooksT{
 	validators:              make(map[string]func(cmd *cobra.Command, q *qliksense.Qliksense) (bool, error)),
 	postValidationArtifacts: make(map[string]interface{}),
@@ -54,7 +54,10 @@ func commandAlwaysRequiresEulaAcceptance(commandName string) bool {
 
 func globalEulaPreRun(cmd *cobra.Command, q *qliksense.Qliksense) {
 	if isEulaEnforced(cmd.CommandPath()) {
-		if strings.TrimSpace(strings.ToLower(cmd.Flag("acceptEULA").Value.String())) != "yes" {
+		eulaFlagValue := strings.TrimSpace(strings.ToLower(cmd.Flag("acceptEULA").Value.String()))
+		if eulaFlagValue != "" && eulaFlagValue != "yes" {
+			doEnforceEula()
+		} else if eulaFlagValue == "" {
 			if eulaPreRunHook := eulaPreRunHooks.getValidator(cmd.CommandPath()); eulaPreRunHook != nil {
 				if eulaAccepted, err := eulaPreRunHook(cmd, q); err != nil {
 					panic(err)
