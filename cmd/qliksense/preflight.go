@@ -71,10 +71,10 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 
 	var preflightCheckK8sVersionCmd = &cobra.Command{
-		Use:     "kube-version",
+		Use:     "k8s-version",
 		Short:   "check kubernetes version",
 		Long:    `check minimum valid kubernetes version on the cluster`,
-		Example: `qliksense preflight kube-version`,
+		Example: `qliksense preflight k8s-version`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
 

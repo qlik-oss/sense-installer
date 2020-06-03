@@ -21,7 +21,7 @@ Available Commands:
   clean          perform preflight clean
   deployment     perform preflight deployment check
   dns            perform preflight dns check
-  kube-version   check kubernetes version
+  k8s-version   check kubernetes version
   mongo          preflight mongo OR preflight mongo --url=<url>
   pod            perform preflight pod check
   role           preflight create role check
