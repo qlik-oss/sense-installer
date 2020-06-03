@@ -211,7 +211,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	crdsCmd.AddCommand(crdsViewCmd(p))
 	crdsCmd.AddCommand(crdsInstallCmd(p))
 
-	// add preflight command
+	// add preflight commands
 	preflightCmd := preflightCmd(p)
 	preflightCmd.AddCommand(pfDnsCheckCmd(p))
 	preflightCmd.AddCommand(pfK8sVersionCheckCmd(p))
@@ -229,6 +229,12 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(preflightCmd)
 	cmd.AddCommand(loadCrFile(p))
 	cmd.AddCommand((applyCmd(p)))
+
+	// add postflight command
+	postflightCmd := postflightCmd(p)
+	postflightCmd.AddCommand(pfMigrationCheck(p))
+
+	cmd.AddCommand(postflightCmd)
 	return cmd
 }
 
