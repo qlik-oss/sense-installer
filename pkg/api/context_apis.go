@@ -24,8 +24,8 @@ const (
 	QliksenseDefaultProfile = "docker-desktop"
 	DefaultRotateKeys       = "yes"
 	QliksenseMetadataName   = "QliksenseConfigMetadata"
-	DefaultMongoDbUri       = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
-	DefaultMongoDbUriKey    = "mongoDbUri"
+	DefaultMongodbUri       = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
+	DefaultMongodbUriKey    = "mongodbUri"
 )
 
 // AddCommonConfig adds common configs into CRs
@@ -40,7 +40,7 @@ func (qliksenseCR *QliksenseCR) AddCommonConfig(contextName string) {
 		Profile:    QliksenseDefaultProfile,
 		RotateKeys: DefaultRotateKeys,
 	}
-	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongoDbUriKey, DefaultMongoDbUri, "")
+	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongodbUriKey, DefaultMongodbUri, "")
 }
 
 // AddBaseQliksenseConfigs adds configs into config.yaml

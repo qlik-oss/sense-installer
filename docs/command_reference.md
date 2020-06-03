@@ -71,7 +71,7 @@ spec:
       value: "yes"
   secrets:
     qliksense:
-    - name: mongoDbUri
+    - name: mongodbUri
       value: mongodb://qlik-test-mongodb:27017/qliksense?ssl=false
   profile: docker-desktop
   rotateKeys: "yes"
@@ -112,7 +112,7 @@ spec:
       value: "yes"
   secrets:
     qliksense:
-    - name: mongoDbUri
+    - name: mongodbUri
       value: "mongo://mongo:3307"
     - name: messagingPassword
       valueFromKey: messagingPassword

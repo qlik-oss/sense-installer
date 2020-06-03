@@ -40,7 +40,7 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 	}
 
 	// create patch dependent resoruces
-	fmt.Println("Installing resoruces used kuztomize patch")
+	fmt.Println("Installing resources used by the kuztomize patch")
 	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
 		return err
 	}
@@ -89,11 +89,13 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
+	fmt.Printf("Generating manifests for profile: %v\n", profilePath)
 	mByte, err := ExecuteKustomizeBuild(profilePath)
 	if err != nil {
-		fmt.Println("cannot generate manifests for "+profilePath, err)
+		fmt.Printf("error generating manifests: %v\n", err)
 		return err
 	}
+	fmt.Println("Applying manifests to the cluster")
 	if err = qapi.KubectlApply(string(mByte), qcr.GetNamespace()); err != nil {
 		return err
 	}

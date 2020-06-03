@@ -8,7 +8,9 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/k-apis/pkg/config"
+	"github.com/qlik-oss/k-apis/pkg/cr"
 	"sigs.k8s.io/kustomize/api/filesys"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
@@ -16,8 +18,9 @@ import (
 
 type InstallCommandOptions struct {
 	StorageClass string
-	MongoDbUri   string
+	MongodbUri   string
 	RotateKeys   string
+	DryRun       bool
 }
 
 func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, keepPatchFiles bool) error {
@@ -42,8 +45,8 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	qcr.SetEULA("yes")
-	if opts.MongoDbUri != "" {
-		qcr.Spec.AddToSecrets("qliksense", "mongoDbUri", opts.MongoDbUri, "")
+	if opts.MongodbUri != "" {
+		qcr.Spec.AddToSecrets("qliksense", "mongodbUri", opts.MongodbUri, "")
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
@@ -51,15 +54,26 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	if opts.RotateKeys != "" {
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
+	// for debugging purpose
+	if opts.DryRun {
+		// generate patches
+		qcr.Spec.RotateKeys = "None"
+		userHomeDir, _ := homedir.Dir()
+		fmt.Println("Generating patches only")
+		cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
+		return nil
+	}
 	qConfig.WriteCurrentContextCR(qcr)
+
+	if installed, err := q.CheckAllCrdsInstalled(); err != nil {
+		fmt.Println("error verifying whether CRDs are installed", err)
+		return err
+	} else if !installed {
+		return errors.New(`please install CRDs by executing: $ qliksense crds install --all`)
+	}
 
 	if err := applyImagePullSecret(qConfig); err != nil {
 		return err
-	}
-
-	// check if acceptEULA is yes or not
-	if !qcr.IsEULA() {
-		return errors.New(agreementTempalte + "\n Please do $ qliksense install --acceptEULA=yes\n")
 	}
 
 	//CRD will be installed outside of operator
@@ -74,7 +88,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	// create patch dependent resoruces
-	fmt.Println("Installing resoruces used kuztomize patch")
+	fmt.Println("Installing resources used by the kuztomize patch")
 	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
 		return err
 	}
@@ -103,7 +117,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	// install generated manifests into cluster
-	fmt.Println("Installing generated manifests into cluster")
+	fmt.Println("Installing generated manifests into the cluster")
 
 	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
 		return err
@@ -181,7 +195,7 @@ images:
 func (q *Qliksense) applyCR(cr *qapi.QliksenseCR) error {
 	// install operator cr into cluster
 	//get the current context cr
-	fmt.Println("Install operator CR into cluster")
+	fmt.Println("Installing operator CR into the cluster")
 	r, err := cr.GetString()
 	if err != nil {
 		return err
