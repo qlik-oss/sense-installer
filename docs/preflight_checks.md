@@ -2,7 +2,7 @@
 
 Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.
 
-We support the following tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
+We support a couple of tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.
 
 Run the following command to view help about the commands supported by preflight at any moment:
 ```shell
@@ -21,7 +21,7 @@ Available Commands:
   clean          perform preflight clean
   deployment     perform preflight deployment check
   dns            perform preflight dns check
-  kube-version   check kubernetes version
+  k8s-version   check kubernetes version
   mongo          preflight mongo OR preflight mongo --url=<url>
   pod            perform preflight pod check
   role           preflight create role check

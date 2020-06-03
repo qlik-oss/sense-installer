@@ -247,7 +247,7 @@ spec:
 	if !haveMatchingImage(func(image string) bool {
 		return image == "qlik-docker-oss.bintray.io/preflight-mongo"
 	}) {
-		t.Fatal("expected to find the mongo Preflight image in the list, but it wasn't there")
+		t.Fatal("expected to find the preflight-mongo image in the list, but it wasn't there")
 	}
 }
 
