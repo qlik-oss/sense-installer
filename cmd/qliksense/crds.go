@@ -17,14 +17,14 @@ func crdsViewCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	c := &cobra.Command{
 		Use:   "view",
-		Short: "View CRDs for qliksense application. use view --all=false to exclude the operator CRD",
-		Long:  "View CRDs for qliksense application. use view --all=false to exclude the operator CRD",
+		Short: "View CRDs for qliksense application. Use view --all=false to exclude the operator CRD",
+		Long:  "View CRDs for qliksense application. Use view --all=false to exclude the operator CRD",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.ViewCrds(opts)
 		},
 	}
 	f := c.Flags()
-	f.BoolVarP(&opts.All, "all", "", opts.All, "If set to false, then the operator CRD is excluded ")
+	f.BoolVarP(&opts.All, "all", "", opts.All, "If set to false, then the operator CRD is excluded")
 	return c
 }
 
