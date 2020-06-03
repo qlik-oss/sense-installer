@@ -2,8 +2,7 @@
 
 ## Requirements
 
-- Kubernetes cluster (Docker Desktop with enabled Kubernetes)
-- `kubectl` installed, configured and able to communicate with kubernetes cluster. _`qliksense` CLI uses `kubectl` under the hood to perform operations on cluster_
+- Docker Desktop with Kubernetes enabled
 
 ## Installing `qliksense` CLI
 
@@ -29,18 +28,26 @@ Download the executable for your platform from [releases page](https://github.co
     Download Windows executable and add it in your `PATH` as `qliksense.exe`
 
     [https://github.com/qlik-oss/sense-installer/releases/download/v0.7.0/qliksense-windows-amd64.exe](https://github.com/qlik-oss/sense-installer/releases/download/v0.7.0/qliksense-windows-amd64.exe)
-    
+
 
 
 ## Quick start
 
-- To download the version `v0.0.2` from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases).
+Pick a released version from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases)
+
+- Check that your environment fullfills Qlik Sense requirements
+
+```shell
+qliksense preflight all
+```
+
+- Fetch version `v0.0.2`
 
 ```shell
 qliksense fetch v0.0.2
 ```
 
-- To install CRDs for QSEoK and qliksense operator into the kubernetes cluster.
+- Install CRDs for QSEoK and qliksense operator into the kubernetes cluster
 
 ```shell
 qliksense crds install --all
@@ -51,3 +58,17 @@ qliksense crds install --all
 ```shell
 qliksense install --acceptEULA="yes"
 ```
+
+### Accessing newly installed Qlik Sense
+
+- Add to your hosts file the following line:
+
+    ```
+    127.0.0.1 elastic.example
+    ```
+
+    - Linux - `/etc/hosts`
+    - MacOS - `/etc/hosts`
+    - Windows - `C:\Windows\System32\drivers\etc\hosts`
+
+- Point your browser to <https://elastic.example>
