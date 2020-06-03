@@ -69,7 +69,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 		fmt.Println("error verifying whether CRDs are installed", err)
 		return err
 	} else if !installed {
-		return errors.New(`please install CRDs by executing: $ qliksense crds install --all`)
+		return errors.New(`please install CRDs by executing: $ qliksense crds install`)
 	}
 
 	if err := applyImagePullSecret(qConfig); err != nil {
@@ -87,9 +87,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 		return err
 	}
 
-	// create patch dependent resoruces
+	// create patch dependent resources
 	fmt.Println("Installing resources used by the kuztomize patch")
-	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+	if err := q.createK8sResourceBeforePatch(qcr); err != nil {
 		return err
 	}
 
@@ -207,7 +207,7 @@ func (q *Qliksense) applyCR(cr *qapi.QliksenseCR) error {
 	return nil
 }
 
-func (q *Qliksense) createK8sResoruceBeforePatch(qcr *qapi.QliksenseCR) error {
+func (q *Qliksense) createK8sResourceBeforePatch(qcr *qapi.QliksenseCR) error {
 	for svc, nvs := range qcr.Spec.Secrets {
 		for _, nv := range nvs {
 			if isK8sSecretNeedToCreate(nv) {

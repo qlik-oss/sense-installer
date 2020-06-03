@@ -41,7 +41,7 @@ func (q *Qliksense) getYamlFromPackrFile(packrFile string) string {
 	if err != nil {
 		fmt.Printf("Cannot read file %s", packrFile)
 	}
-	return fmt.Sprintln("#soruce: " + packrFile + "\n\n" + s + "\n---")
+	return fmt.Sprintln("#source: " + packrFile + "\n\n" + s + "\n---")
 }
 func (q *Qliksense) getFileList(resourceType string) []string {
 	var resList []string
