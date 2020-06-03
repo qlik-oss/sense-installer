@@ -65,13 +65,15 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 	qConfig.WriteCurrentContextCR(qcr)
 
-	if err := applyImagePullSecret(qConfig); err != nil {
+	if installed, err := q.CheckAllCrdsInstalled(); err != nil {
+		fmt.Println("error verifying whether CRDs are installed", err)
 		return err
+	} else if !installed {
+		return errors.New(`please install CRDs by executing: $ qliksense crds install --all`)
 	}
 
-	// check if acceptEULA is yes or not
-	if !qcr.IsEULA() {
-		return errors.New(agreementTempalte + "\n Please do $ qliksense install --acceptEULA=yes\n")
+	if err := applyImagePullSecret(qConfig); err != nil {
+		return err
 	}
 
 	//CRD will be installed outside of operator
@@ -86,7 +88,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	// create patch dependent resoruces
-	fmt.Println("Installing resoruces used kuztomize patch")
+	fmt.Println("Installing resources used by the kuztomize patch")
 	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
 		return err
 	}
@@ -115,7 +117,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 	}
 
 	// install generated manifests into cluster
-	fmt.Println("Installing generated manifests into cluster")
+	fmt.Println("Installing generated manifests into the cluster")
 
 	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
 		return err
@@ -193,7 +195,7 @@ images:
 func (q *Qliksense) applyCR(cr *qapi.QliksenseCR) error {
 	// install operator cr into cluster
 	//get the current context cr
-	fmt.Println("Install operator CR into cluster")
+	fmt.Println("Installing operator CR into the cluster")
 	r, err := cr.GetString()
 	if err != nil {
 		return err
