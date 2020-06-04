@@ -323,15 +323,15 @@ spec:
 apiVersion: builtin
 kind: AnnotationsTransformer
 metadata:
-	name: common-annotations
+  name: common-annotations
 annotations:
-	app.kubernetes.io/name: qliksense
-	app.kubernetes.io/instance: $(PREFIX)
-	app.kubernetes.io/version: 1.21.23
-	app.kubernetes.io/managed-by: qliksense-operator
+  app.kubernetes.io/name: qliksense
+  app.kubernetes.io/instance: $(PREFIX)
+  app.kubernetes.io/version: 1.21.23
+  app.kubernetes.io/managed-by: qliksense-operator
 fieldSpecs:
-	- path: metadata/annotations
-	create: true
+  - path: metadata/annotations
+    create: true
 `), os.ModePerm); err != nil {
 		return err
 	}
