@@ -39,9 +39,9 @@ func (q *Qliksense) ConfigApplyQK8s() error {
 		return errors.New(agreementTempalte + "\nPlease do $ qliksense config set-configs qliksense.acceptEULA=yes\n")
 	}
 
-	// create patch dependent resoruces
+	// create patch dependent resources
 	fmt.Println("Installing resources used by the kuztomize patch")
-	if err := q.createK8sResoruceBeforePatch(qcr); err != nil {
+	if err := q.createK8sResourceBeforePatch(qcr); err != nil {
 		return err
 	}
 

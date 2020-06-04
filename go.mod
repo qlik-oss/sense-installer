@@ -10,7 +10,7 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.17.0
 	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191219154910-1528d4eea6dd
 
-	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200514233516-4ac83864b7bd
+	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200604075616-c46582ece468
 )
 
 require (
@@ -40,7 +40,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/otiai10/copy v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/qlik-oss/k-apis v0.1.4
+	github.com/qlik-oss/k-apis v0.1.5
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6

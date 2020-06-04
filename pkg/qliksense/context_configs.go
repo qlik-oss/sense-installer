@@ -358,8 +358,6 @@ func (q *Qliksense) processSetOpsRunner(arg string, cr *api.QliksenseCR) error {
 		cr.Spec.OpsRunner.WatchBranch = args[1]
 	case "image":
 		cr.Spec.OpsRunner.Image = args[1]
-	case "crPvc":
-		cr.Spec.OpsRunner.CrPvc = args[1]
 	default:
 		return errors.New(arg + " does not match any cr spec")
 	}
