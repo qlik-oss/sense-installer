@@ -18,7 +18,7 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func TestCreateK8sResoruceBeforePatch(t *testing.T) {
+func TestCreateK8sResourceBeforePatch(t *testing.T) {
 	td := setup()
 	sampleCr := `
 apiVersion: qlik.com/v1
@@ -66,7 +66,7 @@ spec:
 		t.Log(err)
 		t.FailNow()
 	}
-	if err = q.createK8sResoruceBeforePatch(cr); err != nil {
+	if err = q.createK8sResourceBeforePatch(cr); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
