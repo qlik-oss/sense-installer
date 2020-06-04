@@ -35,16 +35,20 @@ Download the executable for your platform from [releases page](https://github.co
 
 Pick a released version from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases)
 
+- Get Qlik Sense release
+
+```shell
+# Get latest release
+qliksense fetch
+
+# Or specific version
+qliksense fetch v0.0.2
+```
+
 - Check that your environment fullfills Qlik Sense requirements
 
 ```shell
 qliksense preflight all
-```
-
-- Fetch version `v0.0.2`
-
-```shell
-qliksense fetch v0.0.2
 ```
 
 - Install CRDs for QSEoK and qliksense operator into the kubernetes cluster
@@ -56,7 +60,7 @@ qliksense crds install --all
 - To install QSEoK into a namespace in the kubernetes cluster where `kubectl` is pointing to.
 
 ```shell
-qliksense install --acceptEULA="yes"
+qliksense install
 ```
 
 ### Accessing newly installed Qlik Sense
@@ -67,6 +71,7 @@ qliksense install --acceptEULA="yes"
     127.0.0.1 elastic.example
     ```
 
+    File location:
     - Linux - `/etc/hosts`
     - MacOS - `/etc/hosts`
     - Windows - `C:\Windows\System32\drivers\etc\hosts`
