@@ -93,7 +93,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 		return err
 	}
 
-	if qcr.Spec.Git != nil && qcr.Spec.Git.Repository != "" {
+	if qcr.Spec.OpsRunner != nil {
 		// fetching and applying manifest will be in the operator controller
 		// get decrypted cr
 		if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
