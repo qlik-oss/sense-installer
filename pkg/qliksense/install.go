@@ -135,13 +135,15 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 }
 
 func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) (string, error) {
-	operatorControllerString := q.GetOperatorControllerString()
-	if imageRegistry := qcr.Spec.GetImageRegistry(); imageRegistry != "" {
+	if operatorControllerString, err := q.GetOperatorControllerString(); err != nil {
+		return "", err
+	} else if imageRegistry := qcr.Spec.GetImageRegistry(); imageRegistry != "" {
 		return kustomizeForImageRegistry(operatorControllerString, pullSecretName,
 			path.Join(qliksenseOperatorImageRepo, qliksenseOperatorImageName),
 			path.Join(imageRegistry, qliksenseOperatorImageName))
+	} else {
+		return operatorControllerString, nil
 	}
-	return operatorControllerString, nil
 }
 
 func applyImagePullSecret(qConfig *qapi.QliksenseConfig) error {

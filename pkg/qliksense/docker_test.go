@@ -22,16 +22,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobuffalo/packr/v2"
-
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports/alltransports"
 	imageTypes "github.com/containers/image/v5/types"
-	"golang.org/x/net/context"
-
 	"github.com/qlik-oss/sense-installer/pkg/api"
-
+	"golang.org/x/net/context"
 	"gopkg.in/yaml.v2"
 )
 
@@ -134,7 +130,6 @@ func Test_Pull_Push_ImagesForCurrentCR(t *testing.T) {
 			}
 			q := &Qliksense{
 				QliksenseHome: tmpQlikSenseHome,
-				CrdBox:        &packr.Box{},
 			}
 			var versionOut VersionOutput
 
@@ -192,7 +187,6 @@ spec:
 
 	q := &Qliksense{
 		QliksenseHome: tmpQlikSenseHome,
-		CrdBox:        packr.New("crds", "./crds"),
 	}
 
 	pf := api.NewPreflightConfig(q.QliksenseHome)

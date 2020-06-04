@@ -23,10 +23,6 @@ require (
 	github.com/containers/image/v5 v5.1.0
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/go-git/go-git/v5 v5.0.0
-	github.com/gobuffalo/envy v1.9.0 // indirect
-	github.com/gobuffalo/logger v1.0.3 // indirect
-	github.com/gobuffalo/packd v1.0.0 // indirect
-	github.com/gobuffalo/packr/v2 v2.7.1
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.3.3 // indirect
@@ -35,6 +31,7 @@ require (
 	github.com/jinzhu/copier v0.0.0-20190924061706-b57f9002281a
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381
+	github.com/markbates/pkger v0.15.1
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-tty v0.0.3
 	github.com/mitchellh/go-homedir v1.1.0
@@ -42,7 +39,6 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/qlik-oss/k-apis v0.1.5
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect

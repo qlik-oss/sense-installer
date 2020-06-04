@@ -45,7 +45,12 @@ func (q *Qliksense) ViewCrds(opts *CrdCommandOptions) error {
 
 	if opts.All {
 		fmt.Println("---")
-		fmt.Printf("%s", q.GetOperatorCRDString())
+		if operatorCRDString, err := q.GetOperatorCRDString(); err != nil {
+			fmt.Println("cannot read operator CRD", err)
+			return err
+		} else {
+			fmt.Printf("%s", operatorCRDString)
+		}
 	}
 	return nil
 }
@@ -73,8 +78,11 @@ func (q *Qliksense) InstallCrds(opts *CrdCommandOptions) error {
 	}
 
 	if opts.All { // install opeartor crd
-		if err := qapi.KubectlApply(q.GetOperatorCRDString(), ""); err != nil {
-			fmt.Println("cannot do kubectl apply on opeartor CRD", err)
+		if operatorCRDString, err := q.GetOperatorCRDString(); err != nil {
+			fmt.Println("cannot read operator CRD", err)
+			return err
+		} else if err := qapi.KubectlApply(operatorCRDString, ""); err != nil {
+			fmt.Println("cannot do kubectl apply on operator CRD", err)
 			return err
 		}
 	}

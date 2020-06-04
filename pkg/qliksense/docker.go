@@ -109,7 +109,9 @@ func (q *Qliksense) appendPreflightImages(images *[]string) {
 }
 
 func (q *Qliksense) appendOperatorImages(images *[]string) error {
-	if operatorImages, err := getImageList([]byte(q.GetOperatorControllerString())); err != nil {
+	if operatorControllerString, err := q.GetOperatorControllerString(); err != nil {
+		return err
+	} else if operatorImages, err := getImageList([]byte(operatorControllerString)); err != nil {
 		return err
 	} else {
 		*images = append(*images, operatorImages...)
