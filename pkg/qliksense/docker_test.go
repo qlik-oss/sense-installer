@@ -315,23 +315,23 @@ spec:
 		return err
 	}
 
-	transformersDir := path.Join(manifestsRootDir, "transformers")
+	transformersDir := path.Join(manifestsRootDir, "manifests", "base", "transformers", "release")
 	if err := os.MkdirAll(transformersDir, os.ModePerm); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(path.Join(transformersDir, "qseokversion.yaml"), []byte(`
-apiVersion: qlik.com/v1
-kind: SelectivePatch
+	if err := ioutil.WriteFile(path.Join(transformersDir, "annotations.yaml"), []byte(`
+apiVersion: builtin
+kind: AnnotationsTransformer
 metadata:
-  name: qseokversion
-enabled: true
-patches:
-- target:
-    kind: HelmChart
-    labelSelector: name!=qliksense-init
-  patch: |-
-    chartName: qliksense
-    chartVersion: 1.21.23
+  name: common-annotations
+annotations:
+  app.kubernetes.io/name: qliksense
+  app.kubernetes.io/instance: $(PREFIX)
+  app.kubernetes.io/version: 1.21.23
+  app.kubernetes.io/managed-by: qliksense-operator
+fieldSpecs:
+  - path: metadata/annotations
+    create: true
 `), os.ModePerm); err != nil {
 		return err
 	}
