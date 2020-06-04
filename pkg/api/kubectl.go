@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// KubectlApply create resoruces in the provided namespace,
+// KubectlApply create resources in the provided namespace,
 // if namespace="" then use whatever the kubectl default is
 func KubectlApply(manifests, namespace string) error {
 	return kubectlOperation(manifests, "apply", namespace)
@@ -19,7 +19,7 @@ func KubectlApplyVerbose(manifests, namespace string, verbose bool) error {
 	return kubectlOperationVerbose(manifests, "apply", namespace, verbose)
 }
 
-// KubectlDelete delete resoruces in the provided namespace,
+// KubectlDelete delete resources in the provided namespace,
 // if namespace="" then use whatever the kubectl default is
 func KubectlDelete(manifests, namespace string) error {
 	return kubectlOperation(manifests, "delete", namespace)
