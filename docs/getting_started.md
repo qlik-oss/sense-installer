@@ -37,31 +37,31 @@ Pick a released version from qliksense-k8s [releases](https://github.com/qlik-os
 
 - Get Qlik Sense release
 
-```shell
-# Get latest release
-qliksense fetch
+    ```shell
+    # Get latest release
+    qliksense fetch
 
-# Or specific version
-qliksense fetch v0.0.2
-```
+    # Or specific version
+    qliksense fetch v0.0.2
+    ```
 
-- Check that your environment fullfills Qlik Sense requirements
+- *(Optional) check that your environment fullfills Qlik Sense requirements*
 
-```shell
-qliksense preflight all
-```
+    ```shell
+    qliksense preflight all
+    ```
 
-- Install CRDs for QSEoK and qliksense operator into the kubernetes cluster
+- Install QSEoK
 
-```shell
-qliksense crds install --all
-```
+    *(Optional) create a namespace to install QSEoK to and set it to `kubectl` context*
+    ```shell
+    kubectl create namespace myNamespace
+    kubectl config set-context --current --namespace=myNamespace
+    ```
 
-- To install QSEoK into a namespace in the kubernetes cluster where `kubectl` is pointing to.
-
-```shell
-qliksense install
-```
+    ```shell
+    qliksense install
+    ```
 
 ### Accessing newly installed Qlik Sense
 
