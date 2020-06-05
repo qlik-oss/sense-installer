@@ -138,7 +138,7 @@ func getVersion(opts *FetchCommandOptions, qcr *qapi.QliksenseCR) string {
 
 func getVerionsOverwriteConfirmation(version string) string {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("The version  [" + version + "] already exist")
+	fmt.Println("The version  [" + version + "] already exists")
 	cfm := "n"
 	for {
 		fmt.Print("Do you want to delete and fetch again [y/N]: ")

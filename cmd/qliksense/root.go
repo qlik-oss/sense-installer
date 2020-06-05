@@ -23,17 +23,17 @@ import (
 // qliksense <command>
 
 const (
-	qlikSenseHomeVar        = "QLIKSENSE_HOME"
-	qlikSenseDirVar         = ".qliksense"
-	keepPatchFilesFlagName  = "keep-config-repo-patches"
-	keepPatchFilesFlagUsage = "Keep config repo patch files (for debugging)"
-	pullFlagName            = "pull"
-	pullFlagShorthand       = "d"
-	pullFlagUsage           = "If using private docker registry, pull (download) all required Qliksense images before install"
-	pushFlagName            = "push"
-	pushFlagShorthand       = "u"
-	pushFlagUsage           = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
-	rootCommandName         = "qliksense"
+	qlikSenseHomeVar         = "QLIKSENSE_HOME"
+	qlikSenseDirVar          = ".qliksense"
+	cleanPatchFilesFlagName  = "clean"
+	cleanPatchFilesFlagUsage = "Set --clean=false to keep any prior config repo file changes on install (for debugging)"
+	pullFlagName             = "pull"
+	pullFlagShorthand        = "d"
+	pullFlagUsage            = "If using private docker registry, pull (download) all required Qliksense images before install"
+	pushFlagName             = "push"
+	pushFlagShorthand        = "u"
+	pushFlagUsage            = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
+	rootCommandName          = "qliksense"
 )
 
 func initAndExecute() error {
