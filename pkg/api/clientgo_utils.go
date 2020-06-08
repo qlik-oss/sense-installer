@@ -371,7 +371,6 @@ func (p *ClientGoUtils) GetPodContainerLogs(clientset kubernetes.Interface, pod 
 		return "", err
 	}
 	defer podLogs.Close()
-	// time.Sleep(15 * time.Second)
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)
 	if err != nil {
