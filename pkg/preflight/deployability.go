@@ -15,8 +15,8 @@ func (p *QliksensePreflight) CheckDeployment(namespace string, kubeConfigContent
 
 	// Deployment check
 	if !cleanup {
-		p.CG.LogVerboseMessage("Preflight deployment check: \n")
-		p.CG.LogVerboseMessage("--------------------------- \n")
+		fmt.Print("Preflight deployment check... ")
+		p.CG.LogVerboseMessage("\n--------------------------- \n")
 	}
 	err = p.checkPfDeployment(clientset, namespace, cleanup)
 	if err != nil {
@@ -38,8 +38,8 @@ func (p *QliksensePreflight) CheckService(namespace string, kubeConfigContents [
 	}
 	// Service check
 	if !cleanup {
-		p.CG.LogVerboseMessage("Preflight service check: \n")
-		p.CG.LogVerboseMessage("------------------------ \n")
+		fmt.Print("Preflight service check... ")
+		p.CG.LogVerboseMessage("\n------------------------ \n")
 	}
 	err = p.checkPfService(clientset, namespace, cleanup)
 	if err != nil {
@@ -61,8 +61,8 @@ func (p *QliksensePreflight) CheckPod(namespace string, kubeConfigContents []byt
 	}
 	// Pod check
 	if !cleanup {
-		p.CG.LogVerboseMessage("Preflight pod check: \n")
-		p.CG.LogVerboseMessage("-------------------- \n")
+		fmt.Print("Preflight pod check... ")
+		p.CG.LogVerboseMessage("\n-------------------- \n")
 	}
 	err = p.checkPfPod(clientset, namespace, cleanup)
 	if err != nil {

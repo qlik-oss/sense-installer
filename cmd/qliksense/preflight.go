@@ -43,7 +43,7 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight DNS check
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight DNS check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -51,11 +51,11 @@ func pfDnsCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckDns(namespace, kubeConfigContents, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight DNS check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight DNS check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -81,16 +81,16 @@ func pfK8sVersionCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight Kubernetes minimum version check
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight kubernetes minimum version check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight kubernetes minimum version check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight kubernetes minimum version check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -157,7 +157,7 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight deployments check
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight deployment check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -165,11 +165,11 @@ func pfDeploymentCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckDeployment(namespace, kubeConfigContents, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight deployment check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight deployment check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -195,7 +195,7 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight service check
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight service check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -204,11 +204,11 @@ func pfServiceCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckService(namespace, kubeConfigContents, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight service check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight service check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -234,7 +234,7 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight pod check
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight pod check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -242,11 +242,11 @@ func pfPodCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckPod(namespace, kubeConfigContents, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight pod check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight pod check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -272,16 +272,16 @@ func pfCreateRoleCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight role check
 			namespace, _, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight role check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRole(namespace, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight role check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight role check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -307,16 +307,16 @@ func pfCreateRoleBindingCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight createRoleBinding check
 			namespace, _, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight rolebinding check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRoleBinding(namespace, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight rolebinding check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight rolebinding check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -342,16 +342,16 @@ func pfCreateServiceAccountCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight createServiceAccount check
 			namespace, _, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight ServiceAccount check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateServiceAccount(namespace, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight ServiceAccount check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight ServiceAccount check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -376,16 +376,16 @@ func pfCreateAuthCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight authcheck
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight authcheck FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
 			if err = qp.CheckCreateRB(namespace, kubeConfigContents); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight authcheck FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight authcheck PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}
@@ -411,7 +411,7 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 			// Preflight mongo check
 			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
 			if err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight mongo check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
@@ -419,11 +419,11 @@ func pfMongoCheckCmd(q *qliksense.Qliksense) *cobra.Command {
 				namespace = "default"
 			}
 			if err = qp.CheckMongo(kubeConfigContents, namespace, preflightOpts, false); err != nil {
-				fmt.Fprintf(out, "%s\n", Red("Preflight mongo check FAILED"))
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
 				fmt.Printf("Error: %v\n", err)
 				return nil
 			}
-			fmt.Fprintf(out, "%s\n", Green("Preflight mongo check PASSED"))
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
 			return nil
 		},
 	}

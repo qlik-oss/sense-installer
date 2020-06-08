@@ -14,8 +14,8 @@ import (
 func (qp *QliksensePreflight) CheckCreateRole(namespace string, cleanup bool) error {
 	// create a Role
 	if !cleanup {
-		qp.CG.LogVerboseMessage("Preflight role check: \n")
-		qp.CG.LogVerboseMessage("--------------------- \n")
+		fmt.Print("Preflight role check... ")
+		qp.CG.LogVerboseMessage("\n--------------------- \n")
 	}
 	err := qp.checkCreateEntity(namespace, "Role", cleanup)
 	if err != nil {
@@ -30,8 +30,8 @@ func (qp *QliksensePreflight) CheckCreateRole(namespace string, cleanup bool) er
 func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string, cleanup bool) error {
 	// create a RoleBinding
 	if !cleanup {
-		qp.CG.LogVerboseMessage("Preflight rolebinding check: \n")
-		qp.CG.LogVerboseMessage("---------------------------- \n")
+		fmt.Print("Preflight rolebinding check... ")
+		qp.CG.LogVerboseMessage("\n---------------------------- \n")
 	}
 	err := qp.checkCreateEntity(namespace, "RoleBinding", cleanup)
 	if err != nil {
@@ -46,8 +46,8 @@ func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string, cleanup b
 func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string, cleanup bool) error {
 	// create a service account
 	if !cleanup {
-		qp.CG.LogVerboseMessage("Preflight serviceaccount check: \n")
-		qp.CG.LogVerboseMessage("------------------------------- \n")
+		fmt.Print("Preflight serviceaccount check... ")
+		qp.CG.LogVerboseMessage("\n------------------------------- \n")
 	}
 	err := qp.checkCreateEntity(namespace, "ServiceAccount", cleanup)
 	if err != nil {

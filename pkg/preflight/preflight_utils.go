@@ -10,13 +10,6 @@ type PreflightOptions struct {
 	MongoOptions *MongoOptions
 }
 
-// // LogVerboseMessage logs a verbose message
-// func (p *PreflightOptions) LogVerboseMessage(strMessage string, args ...interface{}) {
-// 	if p.Verbose || os.Getenv("QLIKSENSE_DEBUG") == "true" {
-// 		fmt.Printf(strMessage, args...)
-// 	}
-// }
-
 type MongoOptions struct {
 	MongodbUrl string
 	CaCertFile string

@@ -22,8 +22,8 @@ const (
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions, cleanup bool) error {
 	if !cleanup {
-		qp.CG.LogVerboseMessage("Preflight mongodb check: \n")
-		qp.CG.LogVerboseMessage("------------------------ \n")
+		fmt.Print("Preflight mongodb check... ")
+		qp.CG.LogVerboseMessage("\n------------------------ \n")
 	}
 	var currentCR *qapi.QliksenseCR
 	var err error

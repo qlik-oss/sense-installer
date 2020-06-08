@@ -15,90 +15,90 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	out := ansi.NewColorableStdout()
 	// Preflight minimum kuberenetes version check
 	if err := qp.CheckK8sVersion(namespace, kubeConfigContents); err != nil {
-		fmt.Fprintf(out, "%s\n", Red("Preflight kubernetes minimum version check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight kubernetes minimum version check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight deployment check
 	if err := qp.CheckDeployment(namespace, kubeConfigContents, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red("Preflight deployment check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight deployment check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight service check
 	if err := qp.CheckService(namespace, kubeConfigContents, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red("Preflight service check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight service check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight pod check
 	if err := qp.CheckPod(namespace, kubeConfigContents, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red("Preflight pod check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight pod check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight role check
 	if err := qp.CheckCreateRole(namespace, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red("Preflight role check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight role check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight rolebinding check
 	if err := qp.CheckCreateRoleBinding(namespace, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red(" Preflight rolebinding check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight rolebinding check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight serviceaccount check
 	if err := qp.CheckCreateServiceAccount(namespace, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red(" Preflight serviceaccount check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight serviceaccount check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight mongo check
 	if err := qp.CheckMongo(kubeConfigContents, namespace, preflightOpts, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red(" Preflight mongo check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight mongo check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
 
 	// Preflight DNS check
 	if err := qp.CheckDns(namespace, kubeConfigContents, false); err != nil {
-		fmt.Fprintf(out, "%s\n", Red(" Preflight DNS check FAILED"))
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
 		fmt.Printf("Error: %v\n\n", err)
 	} else {
-		fmt.Fprintf(out, "%s\n\n", Green("Preflight DNS check PASSED"))
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
 		checkCount++
 	}
 	totalCount++
