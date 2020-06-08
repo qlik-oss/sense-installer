@@ -23,7 +23,7 @@ type InstallCommandOptions struct {
 	DryRun       bool
 }
 
-func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, keepPatchFiles bool) error {
+func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cleanPatchFiles bool) error {
 
 	// step1: fetch 1.0.0 # pull down qliksense-k8s@1.0.0
 	// step2: operator view | kubectl apply -f # operator manifest (CRD)
@@ -32,7 +32,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 
 	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	if !keepPatchFiles {
+	if cleanPatchFiles {
 		if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
 			fmt.Printf("error removing temporary changes to the config: %v\n", err)
 		}
@@ -123,7 +123,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, kee
 		return err
 	} else {
 		if IsQliksenseInstalled(dcr.GetName()) {
-			return q.UpgradeQK8s(keepPatchFiles)
+			return q.UpgradeQK8s(cleanPatchFiles)
 		}
 		if err := q.applyConfigToK8s(dcr); err != nil {
 			fmt.Println("cannot do kubectl apply on manifests")

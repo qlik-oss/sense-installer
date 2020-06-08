@@ -7,7 +7,7 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) ApplyCRFromReader(r io.Reader, opts *InstallCommandOptions, keepPatchFiles, overwriteExistingContext, pull, push bool) error {
+func (q *Qliksense) ApplyCRFromReader(r io.Reader, opts *InstallCommandOptions, cleanPatchFiles, overwriteExistingContext, pull, push bool) error {
 	if err := q.LoadCr(r, overwriteExistingContext); err != nil {
 		return err
 	}
@@ -40,9 +40,9 @@ func (q *Qliksense) ApplyCRFromReader(r io.Reader, opts *InstallCommandOptions, 
 				}
 			}
 		}
-		return q.UpgradeQK8s(keepPatchFiles)
+		return q.UpgradeQK8s(cleanPatchFiles)
 	}
-	return q.InstallQK8s(version, opts, keepPatchFiles)
+	return q.InstallQK8s(version, opts, cleanPatchFiles)
 }
 
 func IsQliksenseInstalled(crName string) bool {

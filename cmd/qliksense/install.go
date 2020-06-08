@@ -13,7 +13,7 @@ import (
 func installCmd(q *qliksense.Qliksense) *cobra.Command {
 	opts := &qliksense.InstallCommandOptions{}
 	filePath := ""
-	keepPatchFiles, pull, push := false, false, false
+	cleanPatchFiles, pull, push := true, false, false
 	c := &cobra.Command{
 		Use:   "install",
 		Short: "install a qliksense release",
@@ -29,7 +29,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 					} else if err := validatePullPushFlagsOnApply(cr, pull, push); err != nil {
 						return err
 					} else {
-						return q.ApplyCRFromReader(bytes.NewReader(crBytesWithEula), opts, keepPatchFiles, true, pull, push)
+						return q.ApplyCRFromReader(bytes.NewReader(crBytesWithEula), opts, cleanPatchFiles, true, pull, push)
 					}
 				})
 			} else {
@@ -52,7 +52,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 						return err
 					}
 				}
-				return q.InstallQK8s(version, opts, keepPatchFiles)
+				return q.InstallQK8s(version, opts, cleanPatchFiles)
 			}
 		},
 	}
@@ -73,7 +73,7 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
 	f.StringVarP(&opts.MongodbUri, "mongodbUri", "m", "", "mongodbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
 	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
-	f.BoolVar(&keepPatchFiles, keepPatchFilesFlagName, keepPatchFiles, keepPatchFilesFlagUsage)
+	f.BoolVar(&cleanPatchFiles, cleanPatchFilesFlagName, cleanPatchFiles, cleanPatchFilesFlagUsage)
 	f.StringVarP(&filePath, "file", "f", "", "Install from a CR file")
 
 	f.BoolVarP(&opts.DryRun, "dry-run", "", false, "Dry run will generate the patches without rotating keys")

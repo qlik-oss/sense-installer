@@ -23,13 +23,12 @@ type patch struct {
 	Patch string `yaml:"patch"`
 }
 
-type selectivePatch struct {
+type annotationTransformer struct {
 	APIVersion string `yaml:"apiVersion"`
 	Metadata   struct {
 		Name string `yaml:"name"`
 	} `yaml:"metadata"`
-	Enabled bool    `yaml:"enabled"`
-	Patches []patch `yaml:"patches"`
+	Annotations map[string]string `json:"annotations,omitempty" yaml:"annotations,omitempty"`
 }
 
 type helmChart struct {
@@ -73,7 +72,7 @@ func (q *Qliksense) About(gitRef, profile string) (*VersionOutput, error) {
 }
 
 func (q *Qliksense) AboutDir(configDirectory, profile string) (*VersionOutput, error) {
-	if chartVersion, err := getChartVersion(filepath.Join(configDirectory, "transformers", "qseokversion.yaml"), "qliksense"); err != nil {
+	if chartVersion, err := getChartVersion(filepath.Join(configDirectory, "manifests", "base", "transformers", "release", "annotations.yaml"), "app.kubernetes.io/version"); err != nil {
 		return nil, err
 	} else if kuzManifest, err := executeKustomizeBuildWithStdoutProgress(filepath.Join(configDirectory, "manifests", profile)); err != nil {
 		return nil, err
@@ -223,22 +222,16 @@ func traverseYamlDecodedMapRecursively(val reflect.Value, path []string, visitor
 	}
 }
 
-func getChartVersion(versionFile, chartName string) (string, error) {
-	var patchInst patch
-	var selPatch selectivePatch
-	var chart helmChart
+func getChartVersion(versionFile, versionAnnotation string) (string, error) {
+	var annTransformer annotationTransformer
 
 	if bytes, err := ioutil.ReadFile(versionFile); err != nil {
 		return "", err
-	} else if err = yaml.Unmarshal(bytes, &selPatch); err != nil {
+	} else if err = yaml.Unmarshal(bytes, &annTransformer); err != nil {
 		return "", err
 	}
-	for _, patchInst = range selPatch.Patches {
-		if err := yaml.Unmarshal([]byte(patchInst.Patch), &chart); err == nil {
-			if chart.ChartName == chartName {
-				return chart.ChartVersion, nil
-			}
-		}
+	if version, ok := annTransformer.Annotations[versionAnnotation]; ok {
+		return version, nil
 	}
 	return "", nil
 }
