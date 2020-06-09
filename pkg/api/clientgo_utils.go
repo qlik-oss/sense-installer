@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
-	"k8s.io/api/rbac/v1beta1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -25,6 +23,8 @@ import (
 )
 
 var gracePeriod int64 = 0
+
+var waitTimeout = 2 * time.Minute
 
 type ClientGoUtils struct {
 	Verbose bool
@@ -371,7 +371,6 @@ func (p *ClientGoUtils) GetPodContainerLogs(clientset kubernetes.Interface, pod 
 		return "", err
 	}
 	defer podLogs.Close()
-	time.Sleep(15 * time.Second)
 	buf := new(bytes.Buffer)
 	_, err = io.Copy(buf, podLogs)
 	if err != nil {
@@ -382,7 +381,7 @@ func (p *ClientGoUtils) GetPodContainerLogs(clientset kubernetes.Interface, pod 
 }
 
 func (p *ClientGoUtils) waitForResource(checkFunc func() (interface{}, error), validateFunc func(interface{}) bool) error {
-	timeout := time.NewTicker(2 * time.Minute)
+	timeout := time.NewTicker(waitTimeout)
 	defer timeout.Stop()
 OUT:
 	for {
@@ -514,142 +513,6 @@ func (p *ClientGoUtils) WaitForDeploymentToDelete(clientset kubernetes.Interface
 	return err
 }
 
-func (p *ClientGoUtils) CreatePfRole(clientset kubernetes.Interface, namespace, roleName string) (*v1beta1.Role, error) {
-	// build the role defination we want to create
-	var role *v1beta1.Role
-	roleSpec := &v1beta1.Role{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      roleName,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"app": "preflight",
-			},
-		},
-		Rules: []v1beta1.PolicyRule{},
-	}
-
-	// now create the role in kubernetes cluster using the clientset
-	if err := p.RetryOnError(func() (err error) {
-		role, err = clientset.RbacV1beta1().Roles(namespace).Create(roleSpec)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-
-	p.LogVerboseMessage("Created role: %s\n", role.Name)
-
-	return role, nil
-}
-
-func (p *ClientGoUtils) DeleteRole(clientset kubernetes.Interface, namespace string, roleName string) error {
-	rolesClient := clientset.RbacV1beta1().Roles(namespace)
-
-	deletePolicy := v1.DeletePropagationForeground
-	deleteOptions := v1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-	err := rolesClient.Delete(roleName, &deleteOptions)
-	if err != nil {
-		log.Printf("Error: %v\n", err)
-		return err
-	}
-	p.LogVerboseMessage("Deleted role: %s\n\n", roleName)
-	return nil
-}
-
-func (p *ClientGoUtils) CreatePfRoleBinding(clientset kubernetes.Interface, namespace, roleBindingName string) (*v1beta1.RoleBinding, error) {
-	var roleBinding *v1beta1.RoleBinding
-	// build the rolebinding defination we want to create
-	roleBindingSpec := &v1beta1.RoleBinding{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      roleBindingName,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"app": "preflight",
-			},
-		},
-		Subjects: []v1beta1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				APIGroup:  "",
-				Name:      "preflight-check-subject",
-				Namespace: namespace,
-			},
-		},
-		RoleRef: v1beta1.RoleRef{
-			APIGroup: "",
-			Kind:     "Role",
-			Name:     "preflight-check-roleref",
-		},
-	}
-
-	// now create the roleBinding in kubernetes cluster using the clientset
-	if err := p.RetryOnError(func() (err error) {
-		roleBinding, err = clientset.RbacV1beta1().RoleBindings(namespace).Create(roleBindingSpec)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-	p.LogVerboseMessage("Created RoleBinding: %s\n", roleBindingSpec.Name)
-	return roleBinding, nil
-}
-
-func (p *ClientGoUtils) DeleteRoleBinding(clientset kubernetes.Interface, namespace string, roleBindingName string) error {
-	roleBindingClient := clientset.RbacV1beta1().RoleBindings(namespace)
-
-	deletePolicy := v1.DeletePropagationForeground
-	deleteOptions := v1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-	err := roleBindingClient.Delete(roleBindingName, &deleteOptions)
-	if err != nil {
-		log.Printf("Error: %v\n", err)
-		return err
-	}
-	p.LogVerboseMessage("Deleted RoleBinding: %s\n\n", roleBindingName)
-	return nil
-}
-
-func (p *ClientGoUtils) CreatePfServiceAccount(clientset kubernetes.Interface, namespace, serviceAccountName string) (*apiv1.ServiceAccount, error) {
-	var serviceAccount *apiv1.ServiceAccount
-	// build the serviceAccount defination we want to create
-	serviceAccountSpec := &apiv1.ServiceAccount{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      "preflight-check-test-serviceaccount",
-			Namespace: namespace,
-			Labels: map[string]string{
-				"app": "preflight",
-			},
-		},
-	}
-
-	// now create the serviceAccount in kubernetes cluster using the clientset
-	if err := p.RetryOnError(func() (err error) {
-		serviceAccount, err = clientset.CoreV1().ServiceAccounts(namespace).Create(serviceAccountSpec)
-		return err
-	}); err != nil {
-		return nil, err
-	}
-	p.LogVerboseMessage("Created Service Account: %s\n", serviceAccountSpec.Name)
-	return serviceAccount, nil
-}
-
-func (p *ClientGoUtils) DeleteServiceAccount(clientset kubernetes.Interface, namespace string, serviceAccountName string) error {
-	serviceAccountClient := clientset.CoreV1().ServiceAccounts(namespace)
-
-	deletePolicy := v1.DeletePropagationForeground
-	deleteOptions := v1.DeleteOptions{
-		PropagationPolicy: &deletePolicy,
-	}
-	err := serviceAccountClient.Delete(serviceAccountName, &deleteOptions)
-	if err != nil {
-		log.Printf("Error: %v\n", err)
-		return err
-	}
-	p.LogVerboseMessage("Deleted ServiceAccount: %s\n\n", serviceAccountName)
-	return nil
-}
-
 func (p *ClientGoUtils) CreatePreflightTestSecret(clientset kubernetes.Interface, namespace, secretName string, secretData []byte) (*apiv1.Secret, error) {
 	var secret *apiv1.Secret
 	var err error
@@ -753,16 +616,6 @@ func (p *ClientGoUtils) CreateStatefulSet(clientset kubernetes.Interface, namesp
 	LogDebugMessage("Created statefulset %q\n", result.GetObjectMeta().GetName())
 
 	return statefulset, nil
-}
-
-func (p *ClientGoUtils) GetPodsForStatefulset(clientset kubernetes.Interface, statefulset *appsv1.StatefulSet, namespace string) (*apiv1.PodList, error) {
-	set := labels.Set(statefulset.Spec.Template.Labels)
-	listOptions := v1.ListOptions{LabelSelector: set.AsSelector().String()}
-	pods, err := clientset.CoreV1().Pods(namespace).List(listOptions)
-	for _, pod := range pods.Items {
-		LogDebugMessage("pod: %v\n", pod.Name)
-	}
-	return pods, err
 }
 
 func (p *ClientGoUtils) waitForStatefulSet(clientset kubernetes.Interface, namespace string, pfStatefulset *appsv1.StatefulSet) error {

@@ -22,8 +22,8 @@ const (
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions, cleanup bool) error {
 	if !cleanup {
-		qp.CG.LogVerboseMessage("Preflight mongodb check: \n")
-		qp.CG.LogVerboseMessage("------------------------ \n")
+		fmt.Print("Preflight mongodb check... ")
+		qp.CG.LogVerboseMessage("\n------------------------ \n")
 	}
 	var currentCR *qapi.QliksenseCR
 	var err error
@@ -59,10 +59,10 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	if !cleanup {
 		qp.CG.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
 
-		// if mongoDbUrl is empty, abort check
+		// if mongodbUrl is empty, abort check
 		if preflightOpts.MongoOptions.MongodbUrl == "" {
 			qp.CG.LogVerboseMessage("Mongodb Url is empty, hence aborting preflight check\n")
-			return errors.New("MongoDbUrl is empty")
+			return errors.New("MongodbUrl is empty")
 		}
 	}
 

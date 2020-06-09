@@ -18,8 +18,8 @@ func (p *QliksensePreflight) CheckDns(namespace string, kubeConfigContents []byt
 	podName := "pf-pod-1"
 
 	if !cleanup {
-		p.CG.LogVerboseMessage("Preflight DNS check: \n")
-		p.CG.LogVerboseMessage("------------------- \n")
+		fmt.Print("Preflight DNS check... ")
+		p.CG.LogVerboseMessage("\n------------------- \n")
 	}
 	clientset, _, err := p.CG.GetK8SClientSet(kubeConfigContents, "")
 	if err != nil {
