@@ -2,6 +2,7 @@ package api
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -27,7 +28,7 @@ func TestAddCommonConfig(t *testing.T) {
 		Secrets: map[string]config.NameValues{
 			"qliksense": []config.NameValue{{
 				Name:  DefaultMongodbUriKey,
-				Value: DefaultMongodbUri,
+				Value: strings.Replace(DefaultMongodbUri, "qlik-default", "myqliksense", 1),
 			},
 			},
 		},
