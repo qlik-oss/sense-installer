@@ -519,8 +519,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 		return err
 	}
 
-	// set the encrypted default mongo
-	return q.SetSecrets([]string{`qliksense.mongodbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false, false)
+	// set the encrypted default mongo for the context in current CR
+	return q.SetSecrets([]string{fmt.Sprintf("qliksense.mongodbUri=mongodb://%s-mongodb:27017/qliksense?ssl=false", contextName)}, false, false)
 }
 
 func validateInput(input string) (string, error) {
