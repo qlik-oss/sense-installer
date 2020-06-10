@@ -50,7 +50,7 @@ In this mode `qliksense` CLI downloads the specified version from [qliksense-k8s
 
 The qliksense cli creates a CR for the QlikSense operator and all config operations are performed to edit the CR.
 
-`qliksense install` or `qliksense config apply` will generate patches in local file system (i.e `~/.qliksense/contexts/<context-name>/qlik-k8s`) and
+`qliksense install` will generate patches in local file system (i.e `~/.qliksense/contexts/<context-name>/qlik-k8s`) and
 
 - Install those manifests into the cluster 
 - Create a custom resource (CR) for the `qliksene operator`.
@@ -68,7 +68,7 @@ qliksense config set git.repository="https://github.com/my-org/qliksense-k8s"
 qliksense config set git.accessToken="<mySecretToken>"
 ```
 
-When you perform `qliksense install` or `qliksene config apply`, qliksense operator performs these tasks:
+When you perform `qliksense install`, qliksense operator performs these tasks:
 
 - Download corresponding version of manifests from the your git repo
 - Generate kustomize patches
