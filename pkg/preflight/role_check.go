@@ -95,7 +95,8 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, 
 	if sa != "" {
 		sa = strings.Replace(sa, "name: qliksense", "name: preflight", -1)
 	} else {
-		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster from dir: %s, error: %v", kusDir, err)
+		err = fmt.Errorf(`We were unable to retrieve valid %ss from running "kustomize" in your %s directory. 
+Please check the value in the "Profile" field of your CR. `, strings.ToLower(entityToTest), kusDir)
 		return err
 	}
 	namespace = "" // namespace is handled when generating the manifests
