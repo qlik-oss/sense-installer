@@ -45,3 +45,24 @@ func contains(arr []string, str string) bool {
 	}
 	return false
 }
+
+func TestGetSvcAndKey(t *testing.T) {
+	s1 := "qliksense[tls.cert]"
+	sa := getSvcAndKey(s1)
+	if sa[0] != "qliksense" || sa[1] != "tls.cert" {
+		t.Fail()
+		t.Logf("expected service: qliksense but got %s", sa[0])
+		t.Logf("expected key: tls.cert but got %s", sa[1])
+	}
+	s1 = "qliksense-idps.tls"
+	sa = getSvcAndKey(s1)
+	for _, s := range sa {
+		t.Logf("|%s|", s)
+	}
+	if sa[0] != "qliksense-idps" || sa[1] != "tls" {
+		t.Fail()
+		t.Logf("expected service: qliksense-idps but got %s", sa[0])
+		t.Logf("expected key: tls but got %s", sa[1])
+	}
+
+}

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/qlik-oss/k-apis/pkg/config"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,7 +41,7 @@ func (qliksenseCR *QliksenseCR) AddCommonConfig(contextName string) {
 		Profile:    QliksenseDefaultProfile,
 		RotateKeys: DefaultRotateKeys,
 	}
-	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongodbUriKey, DefaultMongodbUri, "")
+	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongodbUriKey, strings.Replace(DefaultMongodbUri, "qlik-default", contextName, 1), "")
 }
 
 // AddBaseQliksenseConfigs adds configs into config.yaml

@@ -22,8 +22,8 @@ const (
 
 func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions, cleanup bool) error {
 	if !cleanup {
-		qp.P.LogVerboseMessage("Preflight mongodb check: \n")
-		qp.P.LogVerboseMessage("------------------------ \n")
+		fmt.Print("Preflight mongodb check... ")
+		qp.CG.LogVerboseMessage("\n------------------------ \n")
 	}
 	var currentCR *qapi.QliksenseCR
 	var err error
@@ -31,17 +31,17 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	qConfig.SetNamespace(namespace)
 	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
-		qp.P.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
+		qp.CG.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
 		return err
 	}
 	decryptedCR, err := qConfig.GetDecryptedCr(currentCR)
 	if err != nil {
-		qp.P.LogVerboseMessage("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
+		qp.CG.LogVerboseMessage("An error occurred while retrieving mongodbUrl from current CR: %v\n", err)
 		return err
 	}
 	if preflightOpts.MongoOptions.MongodbUrl == "" && !cleanup {
 		// infer mongoDbUrl from currentCR
-		qp.P.LogVerboseMessage("mongodbUri is empty, infer from CR\n")
+		qp.CG.LogVerboseMessage("mongodbUri is empty, infer from CR\n")
 		preflightOpts.MongoOptions.MongodbUrl = strings.TrimSpace(decryptedCR.Spec.GetFromSecrets("qliksense", "mongodbUri"))
 	}
 
@@ -57,12 +57,12 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	}
 
 	if !cleanup {
-		qp.P.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
+		qp.CG.LogVerboseMessage("MongodbUrl: %s\n", preflightOpts.MongoOptions.MongodbUrl)
 
-		// if mongoDbUrl is empty, abort check
+		// if mongodbUrl is empty, abort check
 		if preflightOpts.MongoOptions.MongodbUrl == "" {
-			qp.P.LogVerboseMessage("Mongodb Url is empty, hence aborting preflight check\n")
-			return errors.New("MongoDbUrl is empty")
+			qp.CG.LogVerboseMessage("Mongodb Url is empty, hence aborting preflight check\n")
+			return errors.New("MongodbUrl is empty")
 		}
 	}
 
@@ -71,34 +71,34 @@ func (qp *QliksensePreflight) CheckMongo(kubeConfigContents []byte, namespace st
 	}
 
 	if !cleanup {
-		qp.P.LogVerboseMessage("Completed preflight mongodb check\n")
+		qp.CG.LogVerboseMessage("Completed preflight mongodb check\n")
 	}
 	return nil
 }
 
-func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions, cleanup bool) error {
+func (p *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespace string, preflightOpts *PreflightOptions, cleanup bool) error {
 	caCertSecretName := "ca-certificates-crt"
 	mongoPodName := "pf-mongo-pod"
-	clientset, _, err := getK8SClientSet(kubeConfigContents, "")
+	clientset, _, err := p.CG.GetK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create a kubernetes client: %v\n", err)
 		return err
 	}
 
 	// cleanup before starting check
-	qp.runMongoCleanup(clientset, namespace, mongoPodName, caCertSecretName)
+	p.runMongoCleanup(clientset, namespace, mongoPodName, caCertSecretName)
 	if cleanup {
 		return nil
 	}
 	secrets := map[string]string{}
 	if preflightOpts.MongoOptions.CaCertFile != "" {
-		caCertSecret, err := qp.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
+		caCertSecret, err := p.createSecret(clientset, namespace, preflightOpts.MongoOptions.CaCertFile, caCertSecretName)
 		if err != nil {
 			err = fmt.Errorf("unable to create a ca cert kubernetes secret: %v\n", err)
 			return err
 		}
 
-		defer qp.deleteK8sSecret(clientset, namespace, caCertSecret.Name)
+		defer p.CG.DeleteK8sSecret(clientset, namespace, caCertSecret.Name)
 		secrets[caCertSecretName] = caCertMountPath
 	}
 
@@ -106,35 +106,35 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	api.LogDebugMessage("Mongo command: %s\n", strings.Join(commandToRun, " "))
 
 	// create a pod
-	imageName, err := qp.GetPreflightConfigObj().GetImageName(preflight_mongo, true)
+	imageName, err := p.GetPreflightConfigObj().GetImageName(preflight_mongo, true)
 	if err != nil {
 		err = fmt.Errorf("unable to retrieve image : %v\n", err)
 		return err
 	}
 	api.LogDebugMessage("image name to be used: %s\n", imageName)
-	mongoPod, err := qp.createPreflightTestPod(clientset, namespace, mongoPodName, imageName, secrets, commandToRun)
+	mongoPod, err := p.CG.CreatePreflightTestPod(clientset, namespace, mongoPodName, imageName, secrets, commandToRun)
 	if err != nil {
 		err = fmt.Errorf("unable to create pod : %v\n", err)
 		return err
 	}
-	defer qp.deletePod(clientset, namespace, mongoPodName)
+	defer p.CG.DeletePod(clientset, namespace, mongoPodName)
 
-	if err := waitForPod(clientset, namespace, mongoPod); err != nil {
+	if err := p.CG.WaitForPod(clientset, namespace, mongoPod); err != nil {
 		return err
 	}
 	if len(mongoPod.Spec.Containers) == 0 {
 		err := fmt.Errorf("there are no containers in the pod- %v\n", err)
 		return err
 	}
-	waitForPodToDie(clientset, namespace, mongoPod)
-	logStr, err := getPodLogs(clientset, mongoPod)
+	p.CG.WaitForPodToDie(clientset, namespace, mongoPod)
+	logStr, err := p.CG.GetPodLogs(clientset, mongoPod)
 	if err != nil {
 		err = fmt.Errorf("unable to execute mongo check in the cluster: %v\n", err)
 		return err
 	}
 
 	// check mongo server version
-	ok, err := qp.checkMongoVersion(logStr)
+	ok, err := p.checkMongoVersion(logStr)
 	if !ok || err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	// check if connection succeeded
 	stringToCheck := "qlik - connection succeeded!!"
 	if strings.Contains(logStr, stringToCheck) {
-		qp.P.LogVerboseMessage("Preflight mongo check: PASSED\n")
+		p.CG.LogVerboseMessage("Preflight mongo check: PASSED\n")
 	} else {
 		err = fmt.Errorf("Connection failed: %s\n", logStr)
 		return err
@@ -150,9 +150,9 @@ func (qp *QliksensePreflight) mongoConnCheck(kubeConfigContents []byte, namespac
 	return nil
 }
 
-func (qp *QliksensePreflight) checkMongoVersion(logStr string) (bool, error) {
+func (p *QliksensePreflight) checkMongoVersion(logStr string) (bool, error) {
 	// check mongo server version
-	api.LogDebugMessage("Minimum required mongo version: %s\n", qp.GetPreflightConfigObj().GetMinMongoVersion())
+	api.LogDebugMessage("Minimum required mongo version: %s\n", p.GetPreflightConfigObj().GetMinMongoVersion())
 	mongoVersionStrToCheck := "qlik mongo server version:"
 	if strings.Contains(logStr, mongoVersionStrToCheck) {
 		logLines := strings.Split(logStr, "\n")
@@ -169,13 +169,13 @@ func (qp *QliksensePreflight) checkMongoVersion(logStr string) (bool, error) {
 					err = fmt.Errorf("Unable to convert minimum mongo version into semver version:%v\n", err)
 					return false, err
 				}
-				minMongoVersionSemver, err := semver.NewVersion(qp.GetPreflightConfigObj().GetMinMongoVersion())
+				minMongoVersionSemver, err := semver.NewVersion(p.GetPreflightConfigObj().GetMinMongoVersion())
 				if err != nil {
 					err = fmt.Errorf("Unable to convert required minimum mongo version into semver version:%v\n", err)
 					return false, err
 				}
 				if currentMongoVersionSemver.GreaterThan(minMongoVersionSemver) || currentMongoVersionSemver.Equal(minMongoVersionSemver) {
-					qp.P.LogVerboseMessage("Current mongodb server version %s is greater than or equal to minimum required mongodb version: %s\n", currentMongoVersionSemver, minMongoVersionSemver)
+					p.CG.LogVerboseMessage("Current mongodb server version %s is greater than or equal to minimum required mongodb version: %s\n", currentMongoVersionSemver, minMongoVersionSemver)
 					return true, nil
 				}
 				err = fmt.Errorf("Current mongodb server version %s is less than minimum required mongodb version: %s", currentMongoVersionSemver, minMongoVersionSemver)
@@ -187,13 +187,13 @@ func (qp *QliksensePreflight) checkMongoVersion(logStr string) (bool, error) {
 	return false, err
 }
 
-func (qp *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
+func (p *QliksensePreflight) createSecret(clientset kubernetes.Interface, namespace, certFile, certSecretName string) (*apiv1.Secret, error) {
 	certBytes, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		return nil, err
 	}
 
-	certSecret, err := qp.createPreflightTestSecret(clientset, namespace, certSecretName, certBytes)
+	certSecret, err := p.CG.CreatePreflightTestSecret(clientset, namespace, certSecretName, certBytes)
 	if err != nil {
 		err = fmt.Errorf("unable to create secret with cert : %v\n", err)
 		return nil, err
@@ -201,7 +201,7 @@ func (qp *QliksensePreflight) createSecret(clientset *kubernetes.Clientset, name
 	return certSecret, nil
 }
 
-func (qp *QliksensePreflight) runMongoCleanup(clientset *kubernetes.Clientset, namespace, mongoPodName, caCertSecretName string) {
-	qp.deletePod(clientset, namespace, mongoPodName)
-	qp.deleteK8sSecret(clientset, namespace, caCertSecretName)
+func (p *QliksensePreflight) runMongoCleanup(clientset kubernetes.Interface, namespace, mongoPodName, caCertSecretName string) {
+	p.CG.DeletePod(clientset, namespace, mongoPodName)
+	p.CG.DeleteK8sSecret(clientset, namespace, caCertSecretName)
 }

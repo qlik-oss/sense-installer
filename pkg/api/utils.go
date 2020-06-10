@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -78,8 +79,9 @@ func ProcessConfigArgs(args []string, base64Encoded bool) ([]*ServiceKeyValue, e
 		if len(first) != 2 {
 			return nil, notValidErr
 		}
-		second := strings.SplitN(first[0], ".", 2)
-		if len(second) != 2 {
+
+		svcKey := getSvcAndKey(first[0])
+		if len(svcKey) != 2 {
 			return nil, notValidErr
 		}
 		resultValue := strings.Trim(first[1], "\"")
@@ -91,12 +93,31 @@ func ProcessConfigArgs(args []string, base64Encoded bool) ([]*ServiceKeyValue, e
 			}
 		}
 		resultSvcKV[i] = &ServiceKeyValue{
-			SvcName: second[0],
-			Key:     second[1],
+			SvcName: svcKey[0],
+			Key:     svcKey[1],
 			Value:   resultValue,
 		}
 	}
 	return resultSvcKV, nil
+}
+
+// input should be svc[key]
+func getSvcAndKey(arg string) []string {
+	// for key
+	re := regexp.MustCompile(`\[(.*)\]`)
+	// for service
+	re2 := regexp.MustCompile(`(.*)\[`)
+
+	keys := re.FindStringSubmatch(arg)
+
+	svcs := re2.FindStringSubmatch(arg)
+	if len(svcs) != 2 || len(keys) != 2 {
+		return strings.SplitN(arg, ".", 2)
+	}
+	if svcs[1] == "" || keys[1] == "" {
+		return []string{}
+	}
+	return []string{svcs[1], keys[1]}
 }
 
 func ExecuteTaskWithBlinkingStdoutFeedback(task func() (interface{}, error), feedback string) (result interface{}, err error) {

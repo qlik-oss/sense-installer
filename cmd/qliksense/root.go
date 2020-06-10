@@ -23,17 +23,17 @@ import (
 // qliksense <command>
 
 const (
-	qlikSenseHomeVar        = "QLIKSENSE_HOME"
-	qlikSenseDirVar         = ".qliksense"
-	keepPatchFilesFlagName  = "keep-config-repo-patches"
-	keepPatchFilesFlagUsage = "Keep config repo patch files (for debugging)"
-	pullFlagName            = "pull"
-	pullFlagShorthand       = "d"
-	pullFlagUsage           = "If using private docker registry, pull (download) all required Qliksense images before install"
-	pushFlagName            = "push"
-	pushFlagShorthand       = "u"
-	pushFlagUsage           = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
-	rootCommandName         = "qliksense"
+	qlikSenseHomeVar         = "QLIKSENSE_HOME"
+	qlikSenseDirVar          = ".qliksense"
+	cleanPatchFilesFlagName  = "clean"
+	cleanPatchFilesFlagUsage = "Set --clean=false to keep any prior config repo file changes on install (for debugging)"
+	pullFlagName             = "pull"
+	pullFlagShorthand        = "d"
+	pullFlagUsage            = "If using private docker registry, pull (download) all required Qliksense images before install"
+	pushFlagName             = "push"
+	pushFlagShorthand        = "u"
+	pushFlagUsage            = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
+	rootCommandName          = "qliksense"
 )
 
 func initAndExecute() error {
@@ -168,7 +168,9 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add config command
 	configCmd := configCmd(p)
 	cmd.AddCommand(configCmd)
+	/** disabling for now
 	configCmd.AddCommand(configApplyCmd(p))
+	**/
 	configCmd.AddCommand(configViewCmd(p))
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
@@ -211,7 +213,7 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	crdsCmd.AddCommand(crdsViewCmd(p))
 	crdsCmd.AddCommand(crdsInstallCmd(p))
 
-	// add preflight command
+	// add preflight commands
 	preflightCmd := preflightCmd(p)
 	preflightCmd.AddCommand(pfDnsCheckCmd(p))
 	preflightCmd.AddCommand(pfK8sVersionCheckCmd(p))
@@ -229,6 +231,12 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd.AddCommand(preflightCmd)
 	cmd.AddCommand(loadCrFile(p))
 	cmd.AddCommand((applyCmd(p)))
+
+	// add postflight command
+	postflightCmd := postflightCmd(p)
+	postflightCmd.AddCommand(pfMigrationCheck(p))
+
+	cmd.AddCommand(postflightCmd)
 	return cmd
 }
 

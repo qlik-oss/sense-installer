@@ -10,7 +10,7 @@ replace (
 	k8s.io/client-go => k8s.io/client-go v0.17.0
 	k8s.io/kubectl => k8s.io/kubectl v0.0.0-20191219154910-1528d4eea6dd
 
-	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200514233516-4ac83864b7bd
+	sigs.k8s.io/kustomize/api => github.com/qlik-oss/kustomize/api v0.3.3-0.20200604192606-17370c1af57b
 )
 
 require (
@@ -40,14 +40,14 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/otiai10/copy v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/qlik-oss/k-apis v0.1.4
+	github.com/qlik-oss/k-apis v0.1.7
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.1
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
+	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
 	golang.org/x/tools v0.0.0-20200312194400-c312e98713c2 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	gopkg.in/yaml.v2 v2.2.8

@@ -358,8 +358,6 @@ func (q *Qliksense) processSetOpsRunner(arg string, cr *api.QliksenseCR) error {
 		cr.Spec.OpsRunner.WatchBranch = args[1]
 	case "image":
 		cr.Spec.OpsRunner.Image = args[1]
-	case "crPvc":
-		cr.Spec.OpsRunner.CrPvc = args[1]
 	default:
 		return errors.New(arg + " does not match any cr spec")
 	}
@@ -521,8 +519,8 @@ func (q *Qliksense) SetUpQliksenseContext(contextName string) error {
 		return err
 	}
 
-	// set the encrypted default mongo
-	return q.SetSecrets([]string{`qliksense.mongodbUri="mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"`}, false, false)
+	// set the encrypted default mongo for the context in current CR
+	return q.SetSecrets([]string{fmt.Sprintf("qliksense.mongodbUri=mongodb://%s-mongodb:27017/qliksense?ssl=false", contextName)}, false, false)
 }
 
 func validateInput(input string) (string, error) {

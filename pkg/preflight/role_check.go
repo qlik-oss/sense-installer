@@ -14,15 +14,15 @@ import (
 func (qp *QliksensePreflight) CheckCreateRole(namespace string, cleanup bool) error {
 	// create a Role
 	if !cleanup {
-		qp.P.LogVerboseMessage("Preflight role check: \n")
-		qp.P.LogVerboseMessage("--------------------- \n")
+		fmt.Print("Preflight role check... ")
+		qp.CG.LogVerboseMessage("\n--------------------- \n")
 	}
 	err := qp.checkCreateEntity(namespace, "Role", cleanup)
 	if err != nil {
 		return err
 	}
 	if !cleanup {
-		qp.P.LogVerboseMessage("Completed preflight role check\n")
+		qp.CG.LogVerboseMessage("Completed preflight role check\n")
 	}
 	return nil
 }
@@ -30,15 +30,15 @@ func (qp *QliksensePreflight) CheckCreateRole(namespace string, cleanup bool) er
 func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string, cleanup bool) error {
 	// create a RoleBinding
 	if !cleanup {
-		qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
-		qp.P.LogVerboseMessage("---------------------------- \n")
+		fmt.Print("Preflight rolebinding check... ")
+		qp.CG.LogVerboseMessage("\n---------------------------- \n")
 	}
 	err := qp.checkCreateEntity(namespace, "RoleBinding", cleanup)
 	if err != nil {
 		return err
 	}
 	if !cleanup {
-		qp.P.LogVerboseMessage("Completed preflight rolebinding check\n")
+		qp.CG.LogVerboseMessage("Completed preflight rolebinding check\n")
 	}
 	return nil
 }
@@ -46,15 +46,15 @@ func (qp *QliksensePreflight) CheckCreateRoleBinding(namespace string, cleanup b
 func (qp *QliksensePreflight) CheckCreateServiceAccount(namespace string, cleanup bool) error {
 	// create a service account
 	if !cleanup {
-		qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
-		qp.P.LogVerboseMessage("------------------------------- \n")
+		fmt.Print("Preflight serviceaccount check... ")
+		qp.CG.LogVerboseMessage("\n------------------------------- \n")
 	}
 	err := qp.checkCreateEntity(namespace, "ServiceAccount", cleanup)
 	if err != nil {
 		return err
 	}
 	if !cleanup {
-		qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n")
+		qp.CG.LogVerboseMessage("Completed preflight serviceaccount check\n")
 	}
 	return nil
 }
@@ -67,13 +67,13 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, 
 	var err error
 	currentCR, err = qConfig.GetCurrentCR()
 	if err != nil {
-		qp.P.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
+		qp.CG.LogVerboseMessage("Unable to retrieve current CR: %v\n", err)
 		return err
 	}
 	if currentCR.IsRepoExist() {
 		mfroot = currentCR.Spec.GetManifestsRoot()
 	} else if tempDownloadedDir, err := qliksense.DownloadFromGitRepoToTmpDir(qliksense.QLIK_GIT_REPO, "master"); err != nil {
-		qp.P.LogVerboseMessage("Unable to Download from git repo to tmp dir: %v\n", err)
+		qp.CG.LogVerboseMessage("Unable to Download from git repo to tmp dir: %v\n", err)
 		return err
 	} else {
 		mfroot = tempDownloadedDir
@@ -95,7 +95,8 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, 
 	if sa != "" {
 		sa = strings.Replace(sa, "name: qliksense", "name: preflight", -1)
 	} else {
-		err := fmt.Errorf("Unable to retrieve yamls to apply on cluster from dir: %s, error: %v", kusDir, err)
+		err = fmt.Errorf(`We were unable to retrieve valid %ss from running "kustomize" in your %s directory. 
+Please check the value in the "Profile" field of your CR. `, strings.ToLower(entityToTest), kusDir)
 		return err
 	}
 	namespace = "" // namespace is handled when generating the manifests
@@ -107,10 +108,10 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, 
 	}
 
 	defer func() {
-		qp.P.LogVerboseMessage("Cleaning up resources...\n")
+		qp.CG.LogVerboseMessage("Cleaning up resources...\n")
 		err := api.KubectlDeleteVerbose(sa, namespace, qp.P.Verbose)
 		if err != nil {
-			qp.P.LogVerboseMessage("Preflight cleanup failed!\n")
+			qp.CG.LogVerboseMessage("Preflight cleanup failed!\n")
 		}
 	}()
 
@@ -120,55 +121,55 @@ func (qp *QliksensePreflight) checkCreateEntity(namespace, entityToTest string, 
 		return err
 	}
 
-	qp.P.LogVerboseMessage("Preflight %s check: PASSED\n", entityToTest)
+	qp.CG.LogVerboseMessage("Preflight %s check: PASSED\n", entityToTest)
 	return nil
 }
 
 func (qp *QliksensePreflight) CheckCreateRB(namespace string, kubeConfigContents []byte) error {
 
 	// create a role
-	qp.P.LogVerboseMessage("Preflight createRole check: \n")
-	qp.P.LogVerboseMessage("--------------------------- \n")
+	qp.CG.LogVerboseMessage("Preflight createRole check: \n")
+	qp.CG.LogVerboseMessage("--------------------------- \n")
 	errStr := strings.Builder{}
 	err1 := qp.checkCreateEntity(namespace, "Role", false)
 	if err1 != nil {
 		errStr.WriteString(err1.Error())
 		errStr.WriteString("\n")
-		qp.P.LogVerboseMessage("%v\n", err1)
-		qp.P.LogVerboseMessage("Preflight role check: FAILED\n")
+		qp.CG.LogVerboseMessage("%v\n", err1)
+		qp.CG.LogVerboseMessage("Preflight role check: FAILED\n")
 	}
-	qp.P.LogVerboseMessage("Completed preflight role check\n\n")
+	qp.CG.LogVerboseMessage("Completed preflight role check\n\n")
 
 	// create a roleBinding
-	qp.P.LogVerboseMessage("Preflight rolebinding check: \n")
-	qp.P.LogVerboseMessage("---------------------------- \n")
+	qp.CG.LogVerboseMessage("Preflight rolebinding check: \n")
+	qp.CG.LogVerboseMessage("---------------------------- \n")
 	err2 := qp.checkCreateEntity(namespace, "RoleBinding", false)
 	if err2 != nil {
 		errStr.WriteString(err2.Error())
 		errStr.WriteString("\n")
-		qp.P.LogVerboseMessage("%v\n", err2)
-		qp.P.LogVerboseMessage("Preflight rolebinding check: FAILED\n")
+		qp.CG.LogVerboseMessage("%v\n", err2)
+		qp.CG.LogVerboseMessage("Preflight rolebinding check: FAILED\n")
 	}
-	qp.P.LogVerboseMessage("Completed preflight rolebinding check\n\n")
+	qp.CG.LogVerboseMessage("Completed preflight rolebinding check\n\n")
 
 	// create a service account
-	qp.P.LogVerboseMessage("Preflight serviceaccount check: \n")
-	qp.P.LogVerboseMessage("------------------------------- \n")
+	qp.CG.LogVerboseMessage("Preflight serviceaccount check: \n")
+	qp.CG.LogVerboseMessage("------------------------------- \n")
 	err3 := qp.checkCreateEntity(namespace, "ServiceAccount", false)
 	if err3 != nil {
 		errStr.WriteString(err3.Error())
 		errStr.WriteString("\n")
-		qp.P.LogVerboseMessage("%v\n", err3)
-		qp.P.LogVerboseMessage("Preflight serviceaccount check: FAILED\n")
+		qp.CG.LogVerboseMessage("%v\n", err3)
+		qp.CG.LogVerboseMessage("Preflight serviceaccount check: FAILED\n")
 	}
-	qp.P.LogVerboseMessage("Completed preflight serviceaccount check\n\n")
+	qp.CG.LogVerboseMessage("Completed preflight serviceaccount check\n\n")
 
 	if err1 != nil || err2 != nil || err3 != nil {
-		qp.P.LogVerboseMessage("Preflight authcheck: FAILED\n")
-		qp.P.LogVerboseMessage("Completed preflight authcheck\n")
+		qp.CG.LogVerboseMessage("Preflight authcheck: FAILED\n")
+		qp.CG.LogVerboseMessage("Completed preflight authcheck\n")
 		return errors.New(errStr.String())
 	}
-	qp.P.LogVerboseMessage("Preflight authcheck: PASSED\n")
-	qp.P.LogVerboseMessage("Completed preflight authcheck\n")
+	qp.CG.LogVerboseMessage("Preflight authcheck: PASSED\n")
+	qp.CG.LogVerboseMessage("Completed preflight authcheck\n")
 	return nil
 }
