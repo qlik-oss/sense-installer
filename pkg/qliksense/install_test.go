@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -48,15 +47,15 @@ spec:
   profile: docker-desktop
   rotateKeys: "yes"`
 
-	crFile := filepath.Join(testDir, "install_test.yaml")
-	ioutil.WriteFile(crFile, []byte(sampleCr), 0644)
+	//crFile := filepath.Join(testDir, "install_test.yaml")
+	//ioutil.WriteFile(crFile, []byte(sampleCr), 0644)
 	q := New(testDir)
-	file, e := os.Open(crFile)
-	if e != nil {
-		t.Log(e)
-		t.FailNow()
-	}
-	if err := q.LoadCr(file, false); err != nil {
+	//file, e := os.Open(crFile)
+	//if e != nil {
+	//	t.Log(e)
+	//	t.FailNow()
+	//}
+	if err := q.LoadCr([]byte(sampleCr), false); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
