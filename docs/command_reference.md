@@ -130,7 +130,6 @@ In this case, the result of `qliksense about` command would display information 
 
 It supports the following flags:
 
-- `qliksense config apply` - generate the patches and apply manifests to K8s
 - `qliksense config list-contexts` - get and list contexts
 - `qliksense config set` - configure a key-value pair into the current context
 - `qliksense config set-configs` - set configurations into qliksense context as key-value pairs

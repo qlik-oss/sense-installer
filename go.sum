@@ -887,6 +887,10 @@ github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
 github.com/qlik-oss/k-apis v0.1.5 h1:IeqHuF1IIQCsuSmsUhL7GjdfkOFsNgh3z2UyX59GTsk=
 github.com/qlik-oss/k-apis v0.1.5/go.mod h1:yoYGgPJ/H0t9H3NSq64dWfyQY6QWi2L9c+hCJoVO03U=
+github.com/qlik-oss/k-apis v0.1.6 h1:4rTRwgIN1GtkmLa0VBjvpW2oyVC3h1fOcFHEg3NieNA=
+github.com/qlik-oss/k-apis v0.1.6/go.mod h1:r5hXo1mrHOzIdI0Ri9TI4SKjEXft1TZnAyJzOSm9pi0=
+github.com/qlik-oss/k-apis v0.7.1 h1:7XHTcIVTSgBM8s9LglWbOeWlnKm84cgHIm7Slrjxb9Y=
+github.com/qlik-oss/k-apis v0.7.1/go.mod h1:r5hXo1mrHOzIdI0Ri9TI4SKjEXft1TZnAyJzOSm9pi0=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200604192606-17370c1af57b h1:UqyMR9WA/MbUxCOaaDFk8D2VwM3fG98foDU5nG2HPoM=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200604192606-17370c1af57b/go.mod h1:zh3yFgE5zFk1kreqzVyyj1eXyIxQJT53l4zSg8Wt4SA=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
