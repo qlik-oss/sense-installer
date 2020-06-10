@@ -7,6 +7,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
+	"github.com/mattn/go-tty"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/qlik-oss/k-apis/pkg/config"
@@ -17,34 +20,38 @@ import (
 )
 
 type InstallCommandOptions struct {
-	StorageClass string
-	MongodbUri   string
-	RotateKeys   string
-	DryRun       bool
+	StorageClass    string
+	MongodbUri      string
+	RotateKeys      string
+	AcceptEULA      string
+	DryRun          bool
+	Pull            bool
+	Push            bool
+	CleanPatchFiles bool
 }
 
-func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cleanPatchFiles bool) error {
+const (
+	eulaText             = "Please read the end user license agreement at: https://www.qlik.com/us/legal/license-terms"
+	eulaPrompt           = "Do you accept our EULA? (y/n): "
+	eulaErrorInstruction = `You must enter "y" to continue or execute the command with the acceptEULA flag set to "yes"`
+)
 
-	// step1: fetch 1.0.0 # pull down qliksense-k8s@1.0.0
-	// step2: operator view | kubectl apply -f # operator manifest (CRD)
-	// step3: config apply | kubectl apply -f # generates patches (if required) in configuration directory, applies manifest
-	// step4: config view | kubectl apply -f # generates Custom Resource manifest (CR)
+func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) error {
 
-	// fetch the version
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	if cleanPatchFiles {
-		if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
-			fmt.Printf("error removing temporary changes to the config: %v\n", err)
-		}
-	}
-
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
 
+	if opts.AcceptEULA != "" && opts.AcceptEULA != "yes" {
+		enforceEula()
+	} else if opts.AcceptEULA == "" && !qcr.IsEULA() {
+		enforceEula()
+	}
 	qcr.SetEULA("yes")
+
 	if opts.MongodbUri != "" {
 		qcr.Spec.AddToSecrets("qliksense", "mongodbUri", opts.MongodbUri, "")
 	}
@@ -54,6 +61,13 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cle
 	if opts.RotateKeys != "" {
 		qcr.Spec.RotateKeys = opts.RotateKeys
 	}
+
+	if opts.CleanPatchFiles {
+		if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
+			fmt.Printf("error removing temporary changes to the config: %v\n", err)
+		}
+	}
+
 	// for debugging purpose
 	if opts.DryRun {
 		// generate patches
@@ -70,6 +84,22 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cle
 		return err
 	} else if !installed {
 		return errors.New(`please install CRDs by executing: $ qliksense crds install`)
+	}
+
+	if err := validatePullPushFlagsOnInstall(qcr, opts.Pull, opts.Push); err != nil {
+		return err
+	}
+	if opts.Pull {
+		fmt.Println("Pulling images...")
+		if err := q.PullImages(version, ""); err != nil {
+			return err
+		}
+	}
+	if opts.Push {
+		fmt.Println("Pushing images...")
+		if err := q.PushImagesForCurrentCR(); err != nil {
+			return err
+		}
 	}
 
 	if err := applyImagePullSecret(qConfig); err != nil {
@@ -108,11 +138,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cle
 		}
 	}
 
-	qcr, err = qConfig.GetCurrentCR()
-	if err != nil {
-		fmt.Println("cannot get the current-context cr", err)
-		return err
-	} else if qcr.Spec.GetManifestsRoot() == "" {
+	if qcr.Spec.GetManifestsRoot() == "" {
 		return errors.New("cannot get the manifest root. Use qliksense fetch <version> or qliksense set manifestsRoot")
 	}
 
@@ -123,7 +149,7 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cle
 		return err
 	} else {
 		if IsQliksenseInstalled(dcr.GetName()) {
-			return q.UpgradeQK8s(cleanPatchFiles)
+			return q.UpgradeQK8s(opts.CleanPatchFiles)
 		}
 		if err := q.applyConfigToK8s(dcr); err != nil {
 			fmt.Println("cannot do kubectl apply on manifests")
@@ -132,6 +158,21 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions, cle
 			return q.applyCR(dcr)
 		}
 	}
+}
+
+func IsQliksenseInstalled(crName string) bool {
+	args := []string{
+		"get",
+		"qliksense",
+		crName,
+		"-ogo-template",
+		`--template='{{ .metadata.name}}'`,
+	}
+	_, err := qapi.KubectlDirectOps(args, "")
+	if err != nil {
+		return false
+	}
+	return true
 }
 
 func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) (string, error) {
@@ -225,4 +266,27 @@ func (q *Qliksense) createK8sResourceBeforePatch(qcr *qapi.QliksenseCR) error {
 
 func isK8sSecretNeedToCreate(nv config.NameValue) bool {
 	return nv.ValueFrom != nil
+}
+
+func enforceEula() {
+	fmt.Println(eulaText)
+	fmt.Print(eulaPrompt)
+	answer := readAnswerFromTty()
+	if strings.ToLower(answer) != "y" {
+		fmt.Println(eulaErrorInstruction)
+		os.Exit(1)
+	}
+}
+
+func readAnswerFromTty() string {
+	t, err := tty.Open()
+	if err != nil {
+		panic(err)
+	}
+	defer t.Close()
+	answer, err := t.ReadString()
+	if err != nil {
+		panic(err)
+	}
+	return answer
 }
