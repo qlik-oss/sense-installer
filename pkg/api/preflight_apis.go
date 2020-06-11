@@ -131,8 +131,8 @@ func (p *PreflightConfig) Initialize() error {
 	}
 	p.AddMinK8sV("1.15")
 	p.AddMinMongoV("3.6")
-	p.AddImage("nginx", "nginx")
-	p.AddImage("netcat", "subfuzion/netcat")
-	p.AddImage("preflight-mongo", "qlik-docker-oss.bintray.io/preflight-mongo")
+	p.AddImage("nginx", "nginx:1.19.0-alpine")
+	p.AddImage("netcat", "qlik-docker-oss.bintray.io/preflight-netcat:v1.0.0")
+	p.AddImage("preflight-mongo", "qlik-docker-oss.bintray.io/preflight-mongo:v1.0.0")
 	return p.Write()
 }

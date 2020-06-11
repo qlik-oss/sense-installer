@@ -235,17 +235,17 @@ spec:
 		t.Fatal("expected to find the GitOps image in the list, but it wasn't there")
 	}
 	if !haveMatchingImage(func(image string) bool {
-		return image == "nginx"
+		return strings.Contains(image, "nginx")
 	}) {
 		t.Fatal("expected to find the nginx Preflight image in the list, but it wasn't there")
 	}
 	if !haveMatchingImage(func(image string) bool {
-		return image == "subfuzion/netcat"
+		return strings.Contains(image, "preflight-netcat")
 	}) {
 		t.Fatal("expected to find the netcat Preflight image in the list, but it wasn't there")
 	}
 	if !haveMatchingImage(func(image string) bool {
-		return image == "qlik-docker-oss.bintray.io/preflight-mongo"
+		return strings.Contains(image, "qlik-docker-oss.bintray.io/preflight-mongo")
 	}) {
 		t.Fatal("expected to find the preflight-mongo image in the list, but it wasn't there")
 	}
