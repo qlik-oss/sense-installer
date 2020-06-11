@@ -345,7 +345,7 @@ func (q *Qliksense) writeVersionOutput(versionOut *VersionOutput, imagesDir, ver
 
 func validatePullPushFlagsOnInstall(cr *qapi.QliksenseCR, pull, push bool) error {
 	if pull && !push {
-		fmt.Printf("WARNING: pulling images without pushing them")
+		fmt.Printf("WARNING: pulling images without pushing them\n")
 	}
 	if push {
 		return ensureImageRegistrySetInCR(cr)
