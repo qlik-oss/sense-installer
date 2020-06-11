@@ -235,7 +235,7 @@ spec:
 		t.Fatal("expected to find the GitOps image in the list, but it wasn't there")
 	}
 	if !haveMatchingImage(func(image string) bool {
-		return strings.Contains(image, "nginx:")
+		return strings.Contains(image, "nginx")
 	}) {
 		t.Fatal("expected to find the nginx Preflight image in the list, but it wasn't there")
 	}
