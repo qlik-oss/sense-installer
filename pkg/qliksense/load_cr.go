@@ -3,32 +3,18 @@ package qliksense
 import (
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"strings"
 
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) LoadCr(reader io.Reader, overwriteExistingContext bool) error {
-	if crBytes, err := ioutil.ReadAll(reader); err != nil {
-		return err
-	} else if crName, err := q.loadCrStringIntoFileSystem(string(crBytes), overwriteExistingContext); err != nil {
+func (q *Qliksense) LoadCr(crBytes []byte, overwriteExistingContext bool) error {
+	if crName, err := q.loadCrStringIntoFileSystem(string(crBytes), overwriteExistingContext); err != nil {
 		return err
 	} else {
 		fmt.Println("cr name: [ " + crName + " ] has been loaded")
 	}
 	return nil
-}
-
-func (q *Qliksense) IsEulaAcceptedInCrFile(reader io.Reader) (bool, error) {
-	if crBytes, err := ioutil.ReadAll(reader); err != nil {
-		return false, err
-	} else if cr, err := qapi.CreateCRObjectFromString(string(crBytes)); err != nil {
-		return false, err
-	} else {
-		return cr.IsEULA(), nil
-	}
 }
 
 func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingContext bool) (string, error) {

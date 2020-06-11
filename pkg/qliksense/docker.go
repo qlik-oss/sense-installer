@@ -30,19 +30,14 @@ const (
 
 func (q *Qliksense) PullImages(version, profile string) error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
-	if version != "" {
-		if !qConfig.IsRepoExistForCurrent(version) {
-			if err := q.FetchQK8s(version); err != nil {
-				return err
-			}
-		}
-	}
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
 	}
 	if !qcr.IsRepoExist() {
-		return errors.New("ManifestsRoot not found")
+		if err := fetchAndUpdateCR(qConfig, version); err != nil {
+			return err
+		}
 	}
 	if profile != "" {
 		qcr.Spec.Profile = profile
@@ -160,7 +155,10 @@ func (q *Qliksense) PushImagesForCurrentCR() error {
 	qcr, err := qConfig.GetCurrentCR()
 	if err != nil {
 		return err
+	} else if err := ensureImageRegistrySetInCR(qcr); err != nil {
+		return err
 	}
+
 	version := qcr.GetLabelFromCr("version")
 	profile := qcr.Spec.Profile
 	repoDir := qcr.Spec.ManifestsRoot
@@ -341,6 +339,23 @@ func (q *Qliksense) writeVersionOutput(versionOut *VersionOutput, imagesDir, ver
 		return err
 	} else if err = ioutil.WriteFile(versionFile, versionOutBytes, os.ModePerm); err != nil {
 		return err
+	}
+	return nil
+}
+
+func validatePullPushFlagsOnInstall(cr *qapi.QliksenseCR, pull, push bool) error {
+	if pull && !push {
+		fmt.Printf("WARNING: pulling images without pushing them\n")
+	}
+	if push {
+		return ensureImageRegistrySetInCR(cr)
+	}
+	return nil
+}
+
+func ensureImageRegistrySetInCR(cr *qapi.QliksenseCR) error {
+	if registry := cr.Spec.GetImageRegistry(); registry == "" {
+		return errors.New("no image registry set in the CR; to set it use: qliksense config set-image-registry")
 	}
 	return nil
 }

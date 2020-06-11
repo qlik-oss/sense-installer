@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -106,7 +105,6 @@ func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 		Args:  cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			if commandUsesContext(cmd.CommandPath()) {
-				globalEulaPreRun(cmd, p)
 				if err := p.SetUpQliksenseDefaultContext(); err != nil {
 					panic(err)
 				}
@@ -114,25 +112,10 @@ func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 				if err := pf.Initialize(); err != nil {
 					panic(err)
 				}
-				globalEulaPostRun(cmd, p)
-			}
-		},
-		PersistentPostRun: func(cmd *cobra.Command, args []string) {
-			if commandUsesContext(cmd.CommandPath()) {
-				globalEulaPostRun(cmd, p)
 			}
 		},
 		SilenceUsage: true,
 	}
-	origHelpFunc := cmd.HelpFunc()
-	cmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
-		if !commandUsesContext(cmd.CommandPath()) {
-			cmd.Flags().MarkHidden("acceptEULA")
-		}
-		origHelpFunc(cmd, args)
-	})
-	accept := ""
-	cmd.PersistentFlags().StringVarP(&accept, "acceptEULA", "a", "", "Accept EULA for qliksense")
 	cmd.Flags().SetInterspersed(false)
 	return cmd
 }
@@ -238,34 +221,6 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	cmd.AddCommand(postflightCmd)
 	return cmd
-}
-
-func copy(src, dst string) (int64, error) {
-	var (
-		source, destination *os.File
-		sourceFileStat      os.FileInfo
-		err                 error
-		nBytes              int64
-	)
-	if sourceFileStat, err = os.Stat(src); err != nil {
-		return 0, err
-	}
-
-	if !sourceFileStat.Mode().IsRegular() {
-		return 0, fmt.Errorf("%s is not a regular file", src)
-	}
-
-	if source, err = os.Open(src); err != nil {
-		return 0, err
-	}
-	defer source.Close()
-
-	if destination, err = os.Create(dst); err != nil {
-		return 0, err
-	}
-	defer destination.Close()
-	nBytes, err = io.Copy(destination, source)
-	return nBytes, err
 }
 
 func levenstein(cmd *cobra.Command) {
