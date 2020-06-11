@@ -240,7 +240,7 @@ spec:
 		t.Fatal("expected to find the nginx Preflight image in the list, but it wasn't there")
 	}
 	if !haveMatchingImage(func(image string) bool {
-		return strings.Contains(image, "subfuzion/netcat")
+		return strings.Contains(image, "preflight-netcat")
 	}) {
 		t.Fatal("expected to find the netcat Preflight image in the list, but it wasn't there")
 	}
