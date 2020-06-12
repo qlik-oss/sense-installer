@@ -16,7 +16,9 @@ func TestUnsetAll(t *testing.T) {
 	testPepareDir(qHome)
 	defer os.RemoveAll(qHome)
 	//fmt.Print(qHome)
-	args := []string{"rotateKeys", "qliksense", "qliksense2.acceptEula3", "serviceA.acceptEula"}
+	args := []string{"rotateKeys", "qliksense", "qliksense2.acceptEula3", "serviceA.acceptEula", "opsRunner.watchBranch"}
+	//args := []string{"opsRunner"}
+	//args := []string{"opsRunner.watchBranch"}
 	if err := unsetAll(qHome, args); err != nil {
 		t.Log("error during unset", err)
 		t.FailNow()
@@ -42,6 +44,14 @@ func TestUnsetAll(t *testing.T) {
 	}
 	if qcr.Spec.Configs["serviceA"] != nil {
 		t.Log("serviceA not deleted")
+		t.Fail()
+	}
+	if qcr.Spec.OpsRunner == nil {
+		t.Log("opsRunner not deleted")
+		t.Fail()
+	}
+	if qcr.Spec.OpsRunner.WatchBranch != "" {
+		t.Log("opsRunner.watchBranch not deleted")
 		t.Fail()
 	}
 }
@@ -73,6 +83,9 @@ metadata:
 spec:
   profile: docker-desktop
   rotateKeys: "yes"
+  opsRunner:
+    enabled: "yes"
+    watchBranch: something
   configs:
     qliksense:
     - name: acceptEula

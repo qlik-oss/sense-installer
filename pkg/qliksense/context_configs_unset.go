@@ -38,7 +38,11 @@ func unsetAll(qHome string, args []string) error {
 		}
 		// delete key inside configs if present
 		// delete key inside secrets if present
-		if isRemoved = unsetServiceKey(arg, qcr); !isRemoved {
+		if isRemoved = unsetServiceKey(arg, qcr); isRemoved {
+			//return qConfig.WriteCR(qcr)
+			continue
+		}
+		if isRemoved = unsetTopAttrKey(arg, qcr); !isRemoved {
 			return fmt.Errorf("%s not found in the context", arg)
 		}
 	}
@@ -49,7 +53,7 @@ func unsetOnlyKey(key string, qcr *api.QliksenseCR) bool {
 
 	v := reflect.ValueOf(qcr.Spec).Elem().FieldByName(strings.Title(key))
 	if v.IsValid() && v.CanSet() {
-		v.SetString("")
+		v.Set(reflect.Zero(v.Type()))
 		return true
 	}
 	return false
@@ -99,6 +103,21 @@ func unsetServiceKey(svcKey string, qcr *api.QliksenseCR) bool {
 	return false
 }
 
+func unsetTopAttrKey(attKey string, qcr *api.QliksenseCR) bool {
+	sk := strings.Split(attKey, ".")
+	attStruct := sk[0]
+	key := sk[1]
+	attV := reflect.ValueOf(qcr.Spec).Elem().FieldByName(strings.Title(attStruct))
+	if !attV.IsValid() || attV.IsZero() || attV.IsNil() {
+		return false
+	}
+	v := attV.Elem().FieldByName(strings.Title(key))
+	if v.IsValid() && v.CanSet() {
+		v.Set(reflect.Zero(v.Type()))
+		return true
+	}
+	return false
+}
 func findIndex(elem string, nvs kconfig.NameValues) int {
 	for i, nv := range nvs {
 		if nv.Name == elem {
