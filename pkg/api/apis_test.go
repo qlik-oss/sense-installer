@@ -127,7 +127,7 @@ func TestGetDecryptedCr(t *testing.T) {
 	if decryptedValue == orignalValue {
 		t.Fail()
 	}
-	if newCr.Spec.FetchSource.AccessToken != "mytoken" {
+	if newCr.Spec.Git.AccessToken != "mytoken" {
 		t.Fail()
 	}
 	td()
