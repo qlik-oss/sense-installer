@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
+	"gopkg.in/yaml.v2"
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	"github.com/qlik-oss/sense-installer/pkg/api"
@@ -85,6 +86,9 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 	}
 	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
+	b, _ := yaml.Marshal(qcr.KApiCr)
+	fmt.Printf("%v", string(b))
+	// os.Exit(0)
 	// generate patches
 	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests

@@ -1,6 +1,7 @@
 package qliksense
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -9,6 +10,7 @@ import (
 )
 
 func TestFetchAndUpdateCR(t *testing.T) {
+	ver := "v1.58.17"
 	tempHome, _ := ioutil.TempDir("", "")
 
 	q := &Qliksense{
@@ -16,7 +18,7 @@ func TestFetchAndUpdateCR(t *testing.T) {
 	}
 	q.SetUpQliksenseContext("test1")
 	qConfig := qapi.NewQConfig(tempHome)
-	if err := fetchAndUpdateCR(qConfig, "v0.0.2"); err != nil {
+	if err := fetchAndUpdateCR(qConfig, ver); err != nil {
 		t.Log(err)
 		t.FailNow()
 	}
@@ -28,8 +30,8 @@ func TestFetchAndUpdateCR(t *testing.T) {
 		t.FailNow()
 	}
 
-	if cr.Spec.ManifestsRoot != "contexts/test1/qlik-k8s/v0.0.2" {
-		t.Log("actual path: " + cr.Spec.ManifestsRoot + ", expected path: contexts/test1/qlik-k8s/v0.0.2")
+	if cr.Spec.ManifestsRoot != fmt.Sprintf("contexts/test1/qlik-k8s/%s", ver) {
+		t.Logf("actual path: %s, expected path: contexts/test1/qlik-k8s/%s", cr.Spec.ManifestsRoot, ver)
 		t.FailNow()
 	}
 	//testing latest tag is fetched
@@ -43,7 +45,7 @@ func TestFetchAndUpdateCR(t *testing.T) {
 	cr = &qapi.QliksenseCR{}
 	qapi.ReadFromFile(cr, actualCrFile)
 	v := cr.GetLabelFromCr("version")
-	if v == "" || v == "v0.0.2" {
+	if v == "" || v == ver {
 		t.Log("should get latest but got version: " + v)
 		t.Fail()
 	}
