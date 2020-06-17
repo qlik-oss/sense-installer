@@ -23,7 +23,6 @@ const (
 	QliksenseKind           = "Qliksense"
 	QliksenseGroup          = "qlik.com"
 	QliksenseDefaultProfile = "docker-desktop"
-	DefaultRotateKeys       = "yes"
 	QliksenseMetadataName   = "QliksenseConfigMetadata"
 	DefaultMongodbUri       = "mongodb://qlik-default-mongodb:27017/qliksense?ssl=false"
 	DefaultMongodbUriKey    = "mongodbUri"
@@ -38,8 +37,7 @@ func (qliksenseCR *QliksenseCR) AddCommonConfig(contextName string) {
 	})
 	qliksenseCR.SetName(contextName)
 	qliksenseCR.Spec = &config.CRSpec{
-		Profile:    QliksenseDefaultProfile,
-		RotateKeys: DefaultRotateKeys,
+		Profile: QliksenseDefaultProfile,
 	}
 	qliksenseCR.Spec.AddToSecrets("qliksense", DefaultMongodbUriKey, strings.Replace(DefaultMongodbUri, "qlik-default", contextName, 1), "")
 }

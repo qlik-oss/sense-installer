@@ -34,8 +34,7 @@ spec:
     qliksense:
     - name: mongodbUri
       value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
-  profile: docker-desktop
-  rotateKeys: "yes"`
+  profile: docker-desktop`
 	sampleCr2 := `
 apiVersion: qlik.com/v1
 kind: Qliksense
@@ -61,8 +60,7 @@ spec:
     qliksense:
     - name: mongodbUri
       value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
-  profile: docker-desktop
-  rotateKeys: "yes"`
+  profile: docker-desktop`
 
 	duplicateCr := `
 apiVersion: qlik.com/v1

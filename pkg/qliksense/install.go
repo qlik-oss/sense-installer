@@ -22,7 +22,6 @@ import (
 type InstallCommandOptions struct {
 	StorageClass    string
 	MongodbUri      string
-	RotateKeys      string
 	AcceptEULA      string
 	DryRun          bool
 	Pull            bool
@@ -58,9 +57,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
 	}
-	if opts.RotateKeys != "" {
-		qcr.Spec.RotateKeys = opts.RotateKeys
-	}
 
 	if opts.CleanPatchFiles {
 		if err := q.DiscardAllUnstagedChangesFromGitRepo(qConfig); err != nil {
@@ -71,10 +67,9 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	// for debugging purpose
 	if opts.DryRun {
 		// generate patches
-		qcr.Spec.RotateKeys = "None"
 		userHomeDir, _ := homedir.Dir()
 		fmt.Println("Generating patches only")
-		cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
+		cr.GeneratePatches(&qcr.KApiCr, config.KeysActionDoNothing, path.Join(userHomeDir, ".kube", "config"))
 		return nil
 	}
 	qConfig.WriteCurrentContextCR(qcr)

@@ -276,9 +276,11 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config")
 	if repo, err := kapis_git.CloneRepository(configPath, defaultConfigRepoGitUrl, nil); err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
-	} else if err := kapis_git.Checkout(repo, "e38df644e759abf0b5941c1511d1a2cd5e3c42fa", "", nil); err != nil {
+	} else if err := kapis_git.Checkout(repo, "e38df644e759abf0b5941c1511d1a2cd5e3c42fa", "commit-e38df644e759abf0b5941c1511d1a2cd5e3c42fa", nil); err != nil {
 		t.Fatalf("unexpected error: %v\n", err)
 	}
+	//tmpDir := "/var/folders/mf/5hs1qkq508q_scjbhxhmf9qwjrp346/T/679268230"
+	//configPath := "/var/folders/mf/5hs1qkq508q_scjbhxhmf9qwjrp346/T/679268230/config"
 
 	cr := &config.CRSpec{
 		ManifestsRoot: configPath,
@@ -310,8 +312,8 @@ func Test_executeKustomizeBuild_onQlikConfig_regenerateKeys(t *testing.T) {
 			}
 			break
 		}
-		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[interface {}]interface {})["name"].(string), "users-secrets-") {
-			keyIdBase64 = resource["data"].(map[interface {}]interface {})["tokenAuthPrivateKeyId"].(string)
+		if resource["kind"].(string) == "Secret" && strings.Contains(resource["metadata"].(map[interface{}]interface{})["name"].(string), "users-secrets-") {
+			keyIdBase64 = resource["data"].(map[interface{}]interface{})["tokenAuthPrivateKeyId"].(string)
 			break
 		}
 	}

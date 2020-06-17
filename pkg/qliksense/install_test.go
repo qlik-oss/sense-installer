@@ -44,8 +44,7 @@ spec:
     qliksense:
     - name: mongodbUri
       value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
-  profile: docker-desktop
-  rotateKeys: "yes"`
+  profile: docker-desktop`
 
 	q := New(testDir)
 	if err := q.LoadCr([]byte(sampleCr), false); err != nil {

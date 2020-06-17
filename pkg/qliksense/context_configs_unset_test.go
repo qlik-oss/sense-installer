@@ -16,7 +16,7 @@ func TestUnsetAll(t *testing.T) {
 	testPepareDir(qHome)
 	defer os.RemoveAll(qHome)
 	//fmt.Print(qHome)
-	args := []string{"rotateKeys", "qliksense", "qliksense2.acceptEula3", "serviceA.acceptEula", "opsRunner.watchBranch"}
+	args := []string{"qliksense", "qliksense2.acceptEula3", "serviceA.acceptEula", "opsRunner.watchBranch"}
 	//args := []string{"opsRunner"}
 	//args := []string{"opsRunner.watchBranch"}
 	if err := unsetAll(qHome, args); err != nil {
@@ -28,10 +28,6 @@ func TestUnsetAll(t *testing.T) {
 	if err != nil {
 		t.Log("error while getting current cr", err)
 		t.FailNow()
-	}
-	if qcr.Spec.RotateKeys != "" {
-		t.Log("Expected empty rotateKeys but got: " + qcr.Spec.RotateKeys)
-		t.Fail()
 	}
 
 	if qcr.Spec.Configs["qliksense"] != nil {
@@ -82,7 +78,6 @@ metadata:
   name: qlik-default
 spec:
   profile: docker-desktop
-  rotateKeys: "yes"
   opsRunner:
     enabled: "yes"
     watchBranch: something

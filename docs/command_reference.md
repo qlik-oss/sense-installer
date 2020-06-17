@@ -74,7 +74,6 @@ spec:
     - name: mongodbUri
       value: mongodb://qlik-test-mongodb:27017/qliksense?ssl=false
   profile: docker-desktop
-  rotateKeys: "yes"
 ```
 
 `qliksense apply` does everything `qliksense load` does but will install Qlik Sense into the cluster as well
