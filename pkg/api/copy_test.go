@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
@@ -60,7 +61,7 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := kapis_git.Checkout(repo2, "v0.0.2", "", nil); err != nil {
+	if err := kapis_git.Checkout(repo2, "v0.0.8", "", nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -69,7 +70,7 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := kapis_git.Checkout(repo1, "v0.0.2", "", nil); err != nil {
+	if err := kapis_git.Checkout(repo1, "v0.0.8", "", nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -78,9 +79,15 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if string(repo2Manifest) != string(repo1Manifest) {
-		t.Logf("manifest generated on the original config:\n%v", string(repo1Manifest))
-		t.Logf("manifest generated on the copied config:\n%v", string(repo2Manifest))
+	re, err := regexp.Compile(`name: qliksense-ca-certificates-[a-z]{5}`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	repo1ManifestTweaked := re.ReplaceAllString(string(repo1Manifest), "name: qliksense-ca-certificates")
+	repo2ManifestTweaked := re.ReplaceAllString(string(repo2Manifest), "name: qliksense-ca-certificates")
+	if repo2ManifestTweaked != repo1ManifestTweaked {
+		t.Logf("manifest generated on the original config:\n%v", repo1ManifestTweaked)
+		t.Logf("manifest generated on the copied config:\n%v", repo2ManifestTweaked)
 		t.Fatal("expected manifests to be equal, but they were not")
 	}
 }
