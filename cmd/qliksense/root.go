@@ -217,7 +217,8 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 
 	// add postflight command
 	postflightCmd := postflightCmd(p)
-	postflightCmd.AddCommand(pfMigrationCheck(p))
+	postflightCmd.AddCommand(postflightMigrationCheck(p))
+	postflightCmd.AddCommand(AllPostflightChecks(p))
 
 	cmd.AddCommand(postflightCmd)
 	return cmd
