@@ -56,6 +56,7 @@ Download the executable for your platform from [releases page](https://github.co
 ### Setting the contexts
 
 By default a `qlik-default` configuration context is provided and can be used, as is.  In effect, this is the name of the Qlik Sense instance in the target cluster. All resources installed into the target namespace will be prefixed with `qlik-default`.  The name of the Qlik Sense application will correspondingly be `qliksense`.
+
 Ex.: To change this to `qliksense-dev`:
 
 ```shell
