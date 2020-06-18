@@ -1,6 +1,6 @@
 # How CLI works
 
-At the initialization, `qliksense` cli creates few files in the director `~/.qliksene` and it contains following files:
+At the initialization, `qliksense` cli creates few files in the director `~/.qliksense` and it contains following files:
 
 ```console
 .qliksense
