@@ -298,7 +298,12 @@ func (q *Qliksense) processSetGit(arg string, cr *api.QliksenseCR) error {
 	case "repository":
 		cr.Spec.Git.Repository = tArg1
 	case "accessToken":
-		cr.Spec.Git.AccessToken = tArg1
+		qConfig := api.NewQConfig(q.QliksenseHome)
+		key, err := qConfig.GetEncryptionKeyFor(cr.GetName())
+		if err != nil {
+			return err
+		}
+		return cr.SetFetchAccessToken(tArg1, key)
 	case "secretName":
 		cr.Spec.Git.SecretName = tArg1
 	case "userName":
