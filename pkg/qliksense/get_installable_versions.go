@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/qlik-oss/k-apis/pkg/git"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
@@ -22,8 +24,20 @@ func (q *Qliksense) GetInstallableVersions(opts *LsRemoteCmdOptions) error {
 	}
 
 	var repoPath string
+	var auth transport.AuthMethod
 	if qcr.Spec.GetManifestsRoot() != "" {
 		repoPath = qcr.Spec.GetManifestsRoot()
+		encKey, err := qConfig.GetEncryptionKeyFor(qcr.GetName())
+		if err != nil {
+			return err
+		}
+		accessToken := qcr.GetFetchAccessToken(encKey)
+		if accessToken != "" {
+			auth = &http.BasicAuth{
+				Username: "something",
+				Password: accessToken,
+			}
+		}
 	} else {
 		repoPath, err = DownloadFromGitRepoToTmpDir(defaultConfigRepoGitUrl, "master")
 		if err != nil {
@@ -36,7 +50,7 @@ func (q *Qliksense) GetInstallableVersions(opts *LsRemoteCmdOptions) error {
 		return err
 	}
 
-	remoteRefsList, err := git.GetRemoteRefs(r, nil,
+	remoteRefsList, err := git.GetRemoteRefs(r, auth,
 		&git.RemoteRefConstraints{
 			Include:   true,
 			Sort:      true,
@@ -96,13 +110,18 @@ func getLatestTag(repoUrl, accessToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	r, err := git.OpenRepository(repoPath)
 	if err != nil {
 		return "", err
 	}
-
-	remoteRefsList, err := git.GetRemoteRefs(r, nil,
+	var auth transport.AuthMethod
+	if accessToken != "" {
+		auth = &http.BasicAuth{
+			Username: "something",
+			Password: accessToken,
+		}
+	}
+	remoteRefsList, err := git.GetRemoteRefs(r, auth,
 		&git.RemoteRefConstraints{
 			Include:   true,
 			Sort:      true,

@@ -144,17 +144,17 @@ func (cr *QliksenseCR) IsRepoExist() bool {
 }
 
 func (cr *QliksenseCR) GetFetchUrl() string {
-	if cr.Spec.FetchSource == nil || cr.Spec.FetchSource.Repository == "" {
+	if cr.Spec.Git == nil || cr.Spec.Git.Repository == "" {
 		return QLIK_GIT_REPO
 	}
-	return cr.Spec.FetchSource.Repository
+	return cr.Spec.Git.Repository
 }
 
 func (cr *QliksenseCR) GetFetchAccessToken(encryptionKey string) string {
-	if cr.Spec.FetchSource == nil {
+	if cr.Spec.Git == nil {
 		return ""
 	}
-	if tok, err := cr.Spec.FetchSource.GetAccessToken(); err != nil {
+	if tok, err := cr.Spec.Git.GetAccessToken(); err != nil {
 		fmt.Println(err)
 		return ""
 	} else if tok == "" {
@@ -171,29 +171,29 @@ func (cr *QliksenseCR) GetFetchAccessToken(encryptionKey string) string {
 }
 
 func (cr *QliksenseCR) SetFetchUrl(url string) {
-	if cr.Spec.FetchSource == nil {
-		cr.Spec.FetchSource = &config.Repo{}
+	if cr.Spec.Git == nil {
+		cr.Spec.Git = &config.Repo{}
 	}
-	cr.Spec.FetchSource.Repository = url
+	cr.Spec.Git.Repository = url
 }
 
 func (cr *QliksenseCR) SetFetchAccessToken(token, encryptionKey string) error {
-	if cr.Spec.FetchSource == nil {
-		cr.Spec.FetchSource = &config.Repo{}
+	if cr.Spec.Git == nil {
+		cr.Spec.Git = &config.Repo{}
 	}
 	res, err := EncryptData([]byte(token), encryptionKey)
 	if err != nil {
 		return err
 	}
-	cr.Spec.FetchSource.AccessToken = b64.StdEncoding.EncodeToString(res)
+	cr.Spec.Git.AccessToken = b64.StdEncoding.EncodeToString(res)
 	return nil
 }
 
 func (cr *QliksenseCR) SetFetchAccessSecretName(sec string) {
-	if cr.Spec.FetchSource == nil {
-		cr.Spec.FetchSource = &config.Repo{}
+	if cr.Spec.Git == nil {
+		cr.Spec.Git = &config.Repo{}
 	}
-	cr.Spec.FetchSource.SecretName = sec
+	cr.Spec.Git.SecretName = sec
 }
 
 //DeleteRepo delete the manifest repo and unset manifestsRoot
@@ -524,9 +524,9 @@ func (qc *QliksenseConfig) GetDecryptedCr(cr *QliksenseCR) (*QliksenseCR, error)
 	}
 	newCr.Spec.Secrets = finalSecrets
 
-	if newCr.Spec.FetchSource != nil && newCr.Spec.FetchSource.AccessToken != "" {
+	if newCr.Spec.Git != nil && newCr.Spec.Git.AccessToken != "" {
 		decData := cr.GetFetchAccessToken(encryptionKey)
-		newCr.Spec.FetchSource.AccessToken = decData
+		newCr.Spec.Git.AccessToken = decData
 	}
 	return newCr, nil
 }

@@ -55,8 +55,8 @@ func (q *Qliksense) loadCrStringIntoFileSystem(crstr string, overwriteExistingCo
 			}
 		}
 	}
-	if cr.Spec.FetchSource != nil && cr.Spec.FetchSource.AccessToken != "" {
-		if err := cr.SetFetchAccessToken(cr.Spec.FetchSource.AccessToken, encryptionKey); err != nil {
+	if cr.Spec.Git != nil && cr.Spec.Git.AccessToken != "" {
+		if err := cr.SetFetchAccessToken(cr.Spec.Git.AccessToken, encryptionKey); err != nil {
 			return "", err
 		}
 	}
