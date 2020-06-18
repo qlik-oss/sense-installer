@@ -24,10 +24,15 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 			}
 
 			if filePath != "" {
-				return apply(q, cmd, opts)
+				if err := apply(q, cmd, opts); err != nil {
+					return err
+				}
 			} else {
-				return q.InstallQK8s(version, opts)
+				if err1 := q.InstallQK8s(version, opts); err1 != nil {
+					return err1
+				}
 			}
+			return AllPostflightChecks(q).Execute()
 		},
 	}
 
