@@ -885,10 +885,6 @@ github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/prometheus/procfs v0.0.5 h1:3+auTFlqw+ZaQYJARz6ArODtkaIwtvBTx3N2NehQlL8=
 github.com/prometheus/procfs v0.0.5/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
-github.com/qlik-oss/k-apis v0.1.7 h1:3QPymn+xMhwslm1F0oqdVqtJ/FdfAJn4vNnmS9NFIoY=
-github.com/qlik-oss/k-apis v0.1.7/go.mod h1:r5hXo1mrHOzIdI0Ri9TI4SKjEXft1TZnAyJzOSm9pi0=
-github.com/qlik-oss/k-apis v0.1.9 h1:91av71IL8vHYq8GvVJkSMHJvz+06vv3mC/NvmZzlLtQ=
-github.com/qlik-oss/k-apis v0.1.9/go.mod h1:q2tCPHE+ZfdgkLmFNgT19unkTGDV2Qv5zwBd1sgS2+k=
 github.com/qlik-oss/k-apis v0.1.11 h1:e6S59wLdXQnZxXGETkPtwiy0zC6h/VCcHRE5qyCVv54=
 github.com/qlik-oss/k-apis v0.1.11/go.mod h1:AkNa/kaZHpGVs9l+pHe6nvz99Sp9WO1f9ylBES95o+I=
 github.com/qlik-oss/kustomize/api v0.3.3-0.20200612023448-4c1f2f38ea9b h1:RDh3OZJOriy/ap1NUHVKsPG07N4DALaCzaqXFFK57T0=
