@@ -47,7 +47,7 @@ require (
 	github.com/spf13/viper v1.6.1
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/exp v0.0.0-20200119233911-0405dc783f0a // indirect
-	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
+	golang.org/x/net 627f9648deb9
 	golang.org/x/tools v0.0.0-20200312194400-c312e98713c2 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	gopkg.in/yaml.v2 v2.2.8
