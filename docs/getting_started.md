@@ -74,9 +74,9 @@ For the purposes of the Quick Start we will be using the default namespace. (`de
 ### Downloading a version of Qlik Sense on Kubernetes
 
 To download the latest version of Qlik Sense on Kubernetes from qliksense-k8s
-  ```shell
+
+```shell
 qliksense fetch
-  ```
 #### More Options
 - To download a specific version `v1.59.20` from qliksense-k8s [releases](https://github.com/qlik-oss/qliksense-k8s/releases).
 ```shell
