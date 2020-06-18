@@ -24,7 +24,7 @@ func postflightCmd(q *qliksense.Qliksense) *cobra.Command {
 	return postflightCmd
 }
 
-func pfMigrationCheck(q *qliksense.Qliksense) *cobra.Command {
+func postflightMigrationCheck(q *qliksense.Qliksense) *cobra.Command {
 	out := ansi.NewColorableStdout()
 	postflightOpts := &postflight.PostflightOptions{}
 	var postflightMigrationCmd = &cobra.Command{
@@ -57,4 +57,40 @@ func pfMigrationCheck(q *qliksense.Qliksense) *cobra.Command {
 	f := postflightMigrationCmd.Flags()
 	f.BoolVarP(&postflightOpts.Verbose, "verbose", "v", false, "verbose mode")
 	return postflightMigrationCmd
+}
+
+func AllPostflightChecks(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
+	postflightOpts := &postflight.PostflightOptions{}
+	var postflightAllChecksCmd = &cobra.Command{
+		Use:     "all",
+		Short:   "perform all checks",
+		Long:    `perform all postflight checks`,
+		Example: `qliksense postflight all`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			pf := &postflight.QliksensePostflight{Q: q, P: postflightOpts, CG: &api.ClientGoUtils{Verbose: postflightOpts.Verbose}}
+
+			// run all postflight checks
+			fmt.Printf("Running all postflight checks...\n\n")
+			namespace, kubeConfigContents, err := pf.CG.LoadKubeConfigAndNamespace()
+			if err != nil {
+				fmt.Fprintf(out, "%s\n", Red("Unable to run all postflight checks"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+			if namespace == "" {
+				namespace = "default"
+			}
+			if err = pf.RunAllPostflightChecks(namespace, kubeConfigContents, postflightOpts); err != nil {
+				fmt.Fprintf(out, "%s\n", Red("1 or more preflight checks have FAILED"))
+				fmt.Printf("Completed running all postflight checks")
+				return nil
+			}
+			fmt.Fprintf(out, "%s\n", Green("All postflight checks have PASSED"))
+			return nil
+		},
+	}
+	f := postflightAllChecksCmd.Flags()
+	f.BoolVarP(&postflightOpts.Verbose, "verbose", "v", false, "verbose mode")
+	return postflightAllChecksCmd
 }
