@@ -472,3 +472,42 @@ func pfCleanupCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
 	return pfCleanCmd
 }
+
+func pfVerifyCAChainCmd(q *qliksense.Qliksense) *cobra.Command {
+	out := ansi.NewColorableStdout()
+	preflightOpts := &preflight.PreflightOptions{
+		MongoOptions: &preflight.MongoOptions{},
+	}
+
+	var pfVerifyCAChainCmd = &cobra.Command{
+		Use:     "verify-ca-chain",
+		Short:   "verify-ca-chain using openssl verify",
+		Long:    `verify the CA chain using openssl verify to ensure that mongodb certificate is valid`,
+		Example: `qliksense preflight verify-ca-chain`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			qp := &preflight.QliksensePreflight{Q: q, P: preflightOpts, CG: &api.ClientGoUtils{Verbose: preflightOpts.Verbose}}
+
+			// Preflight service check
+			namespace, kubeConfigContents, err := qp.CG.LoadKubeConfigAndNamespace()
+			if err != nil {
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+
+			if namespace == "" {
+				namespace = "default"
+			}
+			if err = qp.VerifyCAChain(kubeConfigContents, namespace, preflightOpts, false); err != nil {
+				fmt.Fprintf(out, "%s\n", Red("FAILED"))
+				fmt.Printf("Error: %v\n", err)
+				return nil
+			}
+			fmt.Fprintf(out, "%s\n", Green("PASSED"))
+			return nil
+		},
+	}
+	f := pfVerifyCAChainCmd.Flags()
+	f.BoolVarP(&preflightOpts.Verbose, "verbose", "v", false, "verbose mode")
+	return pfVerifyCAChainCmd
+}
