@@ -126,7 +126,8 @@ File location:
 
 #### Custom Resource Definitions (CRDs)
 
-Besides the CLI, a Kubernetes operator (read here) is a core component of the Qlik Sense Operator. Additionally, there are other Kubernetes operators in Qlik Sense on Kubernetes that provide other types functionality (ex. scaling). Depending on the profile chosen (see above), additional CRDs can also be installed for third-party components. (see gke-demo).
+Besides the CLI, a Kubernetes operator (read here) is a core component of the Qlik Sense Operator. Additionally, there are other Kubernetes operators in Qlik Sense on Kubernetes that provide other types functionality (ex. scaling). Depending on the profile chosen [(see Deployment profiles)](#deployment-profiles), additional CRDs can also be installed for third-party components (see gke-demo).
+
 
 Kubernetes operators require Custom resource definitions (CRD) (read here), which are YAML schemas for custom resources (CR). The Qlik Sense application instance, corresponding to the name of the configuration context, corresponds to a CR (ex. `qlik-default`).
 
