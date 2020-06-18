@@ -26,14 +26,16 @@ Download the executable for your platform from [releases page](https://github.co
 
 ??? tldr "MacOS"
 
-```bash
-curl -LOJ https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/darwin/amd64/kubectl
-curl -LOJ https://github.com/qlik-oss/sense-installer/releases/latest/download/qliksense-darwin-amd64
-sudo mv qliksense-darwin-amd64 kubectl /usr/local/bin
-sudo chmod ugo+x /usr/local/bin/qliksense-darwin-amd64 /usr/local/bin/kubectl
-sudo ln -s /usr/local/bin/qliksense-darwin-amd64 /usr/local/bin/qliksense
-sudo ln -s /usr/local/bin/qliksense-darwin-amd64 /usr/local/bin/kubectl-qliksense
-```
+    ``` bash
+    # bash
+
+    curl -LOJ https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/darwin/amd64/kubectl
+    curl -LOJ https://github.com/qlik-oss/sense-installer/releases/latest/download/qliksense-darwin-amd64
+    sudo mv qliksense-darwin-amd64 kubectl /usr/local/bin
+    sudo chmod ugo+x /usr/local/bin/qliksense-darwin-amd64 /usr/local/bin/kubectl
+    sudo ln -s /usr/local/bin/qliksense-darwin-amd64 /usr/local/bin/qliksense
+    sudo ln -s /usr/local/bin/qliksense-darwin-amd64 /usr/local/bin/kubectl-qliksense
+    ```
 
 ??? tldr "Windows"
 
