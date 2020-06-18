@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
+	"regexp"
 	"testing"
 
 	kapis_git "github.com/qlik-oss/k-apis/pkg/git"
@@ -51,20 +51,44 @@ func TestCopyDirectory_withGit_withKuz(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	repo1, err := kapis_git.OpenRepository(repoPath1)
+
+	if err := CopyDirectory(repoPath1, tmpDir2); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	repoPath2 := tmpDir2
+	repo2, err := kapis_git.OpenRepository(repoPath2)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if err := kapis_git.Checkout(repo1, ver, "", nil); err != nil {
+
+	if err := kapis_git.Checkout(repo2, "v0.0.8", "", nil); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	repo2Manifest, err := kuz(path.Join(repoPath2, "manifests", "docker-desktop"))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := kapis_git.Checkout(repo1, "v0.0.8", "", nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
 	if err := CopyDirectory(repoPath1, tmpDir2); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if d, _ := directoryContentsEqual(repoPath1, tmpDir2); !d {
-		t.Log("Directory was not copied properly")
-		t.Fail()
+
+	re, err := regexp.Compile(`name: qliksense-ca-certificates-[a-z]{5}`)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	repo1ManifestTweaked := re.ReplaceAllString(string(repo1Manifest), "name: qliksense-ca-certificates")
+	repo2ManifestTweaked := re.ReplaceAllString(string(repo2Manifest), "name: qliksense-ca-certificates")
+	if repo2ManifestTweaked != repo1ManifestTweaked {
+		t.Logf("manifest generated on the original config:\n%v", repo1ManifestTweaked)
+		t.Logf("manifest generated on the copied config:\n%v", repo2ManifestTweaked)
+		t.Fatal("expected manifests to be equal, but they were not")
 	}
 }
 
