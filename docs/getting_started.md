@@ -67,9 +67,8 @@ For the purposes of the Quick Start we will be using `qlik-default`
 The target namespace is determined by the kubectl connection context. 
 ex. Ensure a connection to cluster to change the configuration context's target namespace with kubectl to `qliksense`
 
- ```shell
+```shell
 kubectl config set-context --current --namespace=qliksense 
- ```
 For the purposes of the Quick Start we will be using the default namespace. (`default`)
 
 ### Downloading a version of Qlik Sense on Kubernetes
