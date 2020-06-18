@@ -14,6 +14,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.tabbed
 nav:
   - Overview: index.md
   - getting_started.md
