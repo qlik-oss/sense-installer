@@ -99,7 +99,8 @@ Profiles can be developed and added to the qliksense-k8s repo but is considered 
 By default, the `docker-desktop` profile is associated with the configuration context when initially created. This profile is guaranteed to work on Docker Desktop but can generally be used on other types of Kubernetes clusters, provided that the required configuration tweaks are provided specific to the hosting requirements (Ex. storage class).
 
 
-The docker-desktop profile does not have any scaling characteristics and is generally set up to have the ability to work on a reasonably large laptop (16GB, 4 cores minimum, greater is better).  It also includes a self-contained mongodb instance for non-production purposes.
+The docker-desktop profile does not have any scaling characteristics and is generally set up to have the ability to work on a reasonably powerful computer (16GB, 4 cores minimum, greater is better).  It also includes a self-contained mongodb instance for non-production purposes.
+
 
 It generally doesn't typically require any configuration to work except an acceptance of the Qlik User License Agreement (QULA), which is prompted on install but can also be set in advance (having read the QULA). Ex:
 
