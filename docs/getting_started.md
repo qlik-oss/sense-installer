@@ -141,6 +141,10 @@ qliksense crds install
 
 #### Preflight Checks
 
+To check that your environment fullfills Qlik Sense requirements
+
+```shell
+qliksense preflight all
 #### Qlik Sense
 
 To install Qlik Sense into a namespace in the Kubernetes cluster where `kubectl` is pointing to.
