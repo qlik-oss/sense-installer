@@ -1,7 +1,6 @@
 package qliksense
 
 import (
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -10,7 +9,6 @@ import (
 )
 
 func TestFetchAndUpdateCR(t *testing.T) {
-	ver := "v1.58.17"
 	tempHome, _ := ioutil.TempDir("", "")
 
 	q := &Qliksense{
