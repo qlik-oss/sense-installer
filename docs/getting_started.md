@@ -116,25 +116,11 @@ To access an installation of the docker desktop profile in docker desktop  the h
 127.0.0.1 elastic.example
 ```
 
-??? tldr "Linux"
+File location:
 
-```bash
-/etc/hosts
-```
-
-??? tldr "MacOS"
-
-```bash
-/etc/hosts
-```
-
-??? tldr "Windows"
-
-```powershell
-C:\Windows\System32\drivers\etc\hosts
-```
-
-## 
+  - Linux - `/etc/hosts`
+  - MacOS - `/etc/hosts`
+  - Windows - `C:\Windows\System32\drivers\etc\hosts`
 
 ### Installing Qlik Sense on Kubernetes
 
