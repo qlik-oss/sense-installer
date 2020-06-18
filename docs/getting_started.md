@@ -39,15 +39,17 @@ Download the executable for your platform from [releases page](https://github.co
 
 ??? tldr "Windows"
 
-```powershell
-Invoke-WebRequest https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/windows/amd64/kubectl.exe -O C:\bin\kubectl.exe
-Invoke-WebRequest https://github.com/qlik-oss/sense-installer/releases/latest/download/qliksense-windows-amd64.exe -O C:\bin\qliksense.exe
-Copy-Item C:\bin\qliksense.exe C:\bin\kubectl-qliksense.exe
-# Add C:\bin to current Path
-$Env:Path += ";C:\bin"
-# Save Path to User environment scope
-[Environment]::SetEnvironmentVariable("Path",[Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User) + ";C:\bin",[EnvironmentVariableTarget]::User)
-```
+    ``` powershell
+    # powershell
+
+    Invoke-WebRequest https://storage.googleapis.com/kubernetes-release/release/v1.16.8/bin/windows/amd64/kubectl.exe -O C:\bin\kubectl.exe
+    Invoke-WebRequest https://github.com/qlik-oss/sense-installer/releases/latest/download/qliksense-windows-amd64.exe -O C:\bin\qliksense.exe
+    Copy-Item C:\bin\qliksense.exe C:\bin\kubectl-qliksense.exe
+    # Add C:\bin to current Path
+    $Env:Path += ";C:\bin"
+    # Save Path to User environment scope
+    [Environment]::SetEnvironmentVariable("Path",[Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::User) + ";C:\bin",[EnvironmentVariableTarget]::User)
+    ```
 
 ## Quick start
 
