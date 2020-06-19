@@ -221,6 +221,10 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	postflightCmd.AddCommand(AllPostflightChecks(p))
 
 	cmd.AddCommand(postflightCmd)
+
+	// add keys command
+	cmd.AddCommand(keysCmd)
+	keysCmd.AddCommand(keysRotateCmd(p))
 	return cmd
 }
 

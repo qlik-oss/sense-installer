@@ -4,6 +4,7 @@ go 1.13
 
 replace (
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
+	github.com/qlik-oss/k-apis => /Users/dlx/go/mod/k-apis
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.0
