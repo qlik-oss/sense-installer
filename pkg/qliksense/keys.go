@@ -8,7 +8,7 @@ import (
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
-func (q *Qliksense) RotateKeys() error {
+func (q *Qliksense) DeleteKeysClusterBackup() error {
 	qConfig := qapi.NewQConfig(q.QliksenseHome)
 	if qcr, err := qConfig.GetCurrentCR(); err != nil {
 		return err
