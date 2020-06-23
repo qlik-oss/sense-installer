@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
+
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v2"
 
@@ -74,23 +76,21 @@ func (q *Qliksense) configEjson() error {
 }
 
 func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
-	if qcr.Spec.RotateKeys != "None" {
-		if err := q.configEjson(); err != nil {
-			return err
-		}
+	if err := q.configEjson(); err != nil {
+		return err
 	}
+
 	userHomeDir, err := homedir.Dir()
 	if err != nil {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
 		return err
 	}
-	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
 	b, _ := yaml.Marshal(qcr.KApiCr)
 	fmt.Printf("%v", string(b))
 	// os.Exit(0)
 	// generate patches
-	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
+	cr.GeneratePatches(&qcr.KApiCr, config.KeysActionRestoreOrRotate, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
 	fmt.Printf("Generating manifests for profile: %v\n", profilePath)

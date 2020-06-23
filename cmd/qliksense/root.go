@@ -28,10 +28,10 @@ const (
 	cleanPatchFilesFlagUsage = "Set --clean=false to keep any prior config repo file changes on install (for debugging)"
 	pullFlagName             = "pull"
 	pullFlagShorthand        = "d"
-	pullFlagUsage            = "If using private docker registry, pull (download) all required Qliksense images before install"
+	pullFlagUsage            = "If using private docker registry, pull (download) all required qliksense images before install"
 	pushFlagName             = "push"
 	pushFlagShorthand        = "u"
-	pushFlagUsage            = "If using private docker registry, push (upload) all downloaded Qliksense images to that registry before install"
+	pushFlagUsage            = "If using private docker registry, push (upload) all downloaded qliksense images to that registry before install"
 	rootCommandName          = "qliksense"
 )
 
@@ -100,7 +100,7 @@ func commandUsesContext(commandName string) bool {
 func getRootCmd(p *qliksense.Qliksense) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   rootCommandName,
-		Short: "Qliksense cli tool",
+		Short: "qliksense cli tool",
 		Long:  `qliksense cli tool provides functionality to perform operations on qliksense-k8s, qliksense operator, and kubernetes cluster`,
 		Args:  cobra.ArbitraryArgs,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -221,6 +221,10 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	postflightCmd.AddCommand(AllPostflightChecks(p))
 
 	cmd.AddCommand(postflightCmd)
+
+	// add keys command
+	cmd.AddCommand(keysCmd)
+	keysCmd.AddCommand(keysRotateCmd(p))
 	return cmd
 }
 

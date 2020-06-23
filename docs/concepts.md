@@ -25,7 +25,6 @@ spec:
     qliksense:
     - name: mongodbUri
       value: mongodb://qlik-default-mongodb:27017/qliksense?ssl=false
-  rotateKeys: "yes"
   releaseName: qlik-default
 ```
 

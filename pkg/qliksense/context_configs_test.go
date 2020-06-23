@@ -96,7 +96,6 @@ metadata:
   name: qlik-default
 spec:
   profile: docker-desktop
-  rotateKeys: "yes"
   releaseName: qlik-default
 `
 	qlikDefaultContext := "qlik-default"
@@ -244,7 +243,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"profile=minikube", "rotateKeys=yes", "storageClassName=efs", "opsRunner.enabled=yes", "opsRunner.schedule=30 * * * *", "git.repository=master", "git.userName=foo", "git.accessToken=1234"},
+				args: []string{"profile=minikube", "storageClassName=efs", "opsRunner.enabled=yes", "opsRunner.schedule=30 * * * *", "git.repository=master", "git.userName=foo", "git.accessToken=1234"},
 			},
 			wantErr: false,
 		},
@@ -254,7 +253,7 @@ func TestSetOtherConfigs(t *testing.T) {
 				q: &Qliksense{
 					QliksenseHome: testDir,
 				},
-				args: []string{"someconfig=somevalue, opsRunner.schedule=bar", "opsRunner.enabled=bar", "git.foo=bar", "rotateKeys=bar"},
+				args: []string{"someconfig=somevalue, opsRunner.schedule=bar", "opsRunner.enabled=bar", "git.foo=bar"},
 			},
 			wantErr: true,
 		},
@@ -744,7 +743,6 @@ metadata:
   name: qlik-default
 spec:
   profile: docker-desktop
-  rotateKeys: "yes"
   releaseName: qlik-default
   `
 	qlikDefaultContext := "qlik-default"
@@ -763,7 +761,6 @@ metadata:
   name: qlik1
 spec:
   profile: docker-desktop
-  rotateKeys: "yes"
   releaseName: qlik1`
 
 	contextYaml2 :=
@@ -774,7 +771,6 @@ metadata:
   name: qlik2
 spec:
   profile: docker-desktop
-  rotateKeys: "yes"
   releaseName: qlik2`
 
 	contextsDir := filepath.Join(testDir, contexts, "qlik1")

@@ -23,8 +23,7 @@ func TestAddCommonConfig(t *testing.T) {
 	q.SetName("myqliksense")
 	q.SetGroupVersionKind(gvk)
 	q.Spec = &config.CRSpec{
-		Profile:    QliksenseDefaultProfile,
-		RotateKeys: DefaultRotateKeys,
+		Profile: QliksenseDefaultProfile,
 		Secrets: map[string]config.NameValues{
 			"qliksense": []config.NameValue{{
 				Name:  DefaultMongodbUriKey,

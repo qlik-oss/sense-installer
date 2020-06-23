@@ -176,53 +176,6 @@ func caseInsenstiveFieldByName(v reflect.Value, name string) reflect.Value {
 	return v.FieldByNameFunc(func(n string) bool { return strings.ToLower(n) == name })
 }
 
-func validateCR(key string, keySub string, value string, crSpec *api.QliksenseCR) (bool, *api.QliksenseCR) {
-	cr := reflect.ValueOf(crSpec.Spec)
-	keyValid := caseInsenstiveFieldByName(reflect.Indirect(cr), key)
-	if !keyValid.IsValid() {
-		//not in main spec
-		fmt.Println(key, "is an invalid key")
-		return false, crSpec
-	} else if keySub == "" {
-		if key == "rotatekeys" {
-			if _, err := validateInput(value); err != nil {
-				return false, crSpec
-			}
-		}
-	}
-	// checks if it is git or gitops
-	if keySub != "" {
-		if !keyValid.IsNil() {
-			if !caseInsenstiveFieldByName(reflect.Indirect(keyValid), keySub).IsValid() {
-				fmt.Println(keySub, "is an invalid key")
-				return false, crSpec
-			} else {
-				// verify gitops enabled and gitops schedule
-				switch keySub {
-				case "schedule":
-					if _, err := cron.ParseStandard(value); err != nil {
-						fmt.Println("Please enter string with standard cron scheduling syntax ")
-						return false, crSpec
-					}
-				case "enabled":
-					if !strings.EqualFold(value, "yes") && !strings.EqualFold(value, "no") {
-						fmt.Println("Please use yes or no for key enabled")
-						return false, crSpec
-					}
-				}
-			}
-		} else {
-			switch key {
-			case "opsrunner":
-				crSpec.Spec.OpsRunner = &config.OpsRunner{}
-			case "git":
-				crSpec.Spec.Git = &config.Repo{}
-			}
-		}
-	}
-	return true, crSpec
-}
-
 // SetOtherConfigs - set profile/storageclassname/git.repository/manifestRoot commands
 func (q *Qliksense) SetOtherConfigs(args []string) error {
 	// retieve current context from config.yaml
@@ -269,19 +222,8 @@ func processSetSingleArg(arg string, cr *api.QliksenseCR) error {
 		cr.Spec.Profile = nv[1]
 	case "storageClassName":
 		cr.Spec.StorageClassName = nv[1]
-	case "rotateKeys":
-		valid := false
-		for _, v := range []string{"yes", "no", "None"} {
-			if nv[1] == v {
-				valid = true
-			}
-		}
-		if !valid {
-			return errors.New("please povide rotateKeys=yes|no|None")
-		}
-		cr.Spec.RotateKeys = nv[1]
 	default:
-		return errors.New("Please enter one of: profile, storageClassName,rotateKeys, manifestRoot, git to configure the current context")
+		return errors.New("Please enter one of: profile, storageClassName, manifestRoot, git to configure the current context")
 	}
 	return nil
 }
