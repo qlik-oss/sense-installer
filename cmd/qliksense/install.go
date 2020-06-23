@@ -28,11 +28,13 @@ func installCmd(q *qliksense.Qliksense) *cobra.Command {
 					return err
 				}
 			} else {
-				if err1 := q.InstallQK8s(version, opts); err1 != nil {
-					return err1
+				if err := q.InstallQK8s(version, opts); err != nil {
+					return err
 				}
 			}
-			return AllPostflightChecks(q).Execute()
+			postflightChecksCmd := AllPostflightChecks(q)
+			postflightChecksCmd.DisableFlagParsing = true
+			return postflightChecksCmd.Execute()
 		},
 	}
 

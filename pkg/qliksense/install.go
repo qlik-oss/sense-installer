@@ -7,7 +7,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mattn/go-tty"
 
@@ -27,6 +29,7 @@ type InstallCommandOptions struct {
 	Pull            bool
 	Push            bool
 	CleanPatchFiles bool
+	RotateKeys      bool
 }
 
 const (
@@ -44,6 +47,14 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 
+	if !qcr.IsRepoExist() {
+		if err := fetchAndUpdateCR(qConfig, version); err != nil {
+			return err
+		} else if qcr, err = qConfig.GetCurrentCR(); err != nil {
+			return err
+		}
+	}
+
 	if opts.AcceptEULA != "" && opts.AcceptEULA != "yes" {
 		enforceEula()
 	} else if opts.AcceptEULA == "" && !qcr.IsEULA() {
@@ -56,6 +67,10 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 	}
 	if opts.StorageClass != "" {
 		qcr.Spec.StorageClassName = opts.StorageClass
+	}
+
+	if err := qConfig.WriteCurrentContextCR(qcr); err != nil {
+		return err
 	}
 
 	if opts.CleanPatchFiles {
@@ -72,7 +87,6 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		cr.GeneratePatches(&qcr.KApiCr, config.KeysActionDoNothing, path.Join(userHomeDir, ".kube", "config"))
 		return nil
 	}
-	qConfig.WriteCurrentContextCR(qcr)
 
 	if installed, err := q.CheckAllCrdsInstalled(); err != nil {
 		fmt.Println("error verifying whether CRDs are installed", err)
@@ -118,6 +132,18 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 		return err
 	}
 
+	if opts.RotateKeys {
+		fmt.Println("Deleting stored application keys")
+		if err := q.DeleteKeysClusterBackup(); err != nil {
+			return err
+		} else {
+			qcr.AddLabelToCr("keys-rotated", strconv.FormatInt(time.Now().Unix(), 10))
+			if err := qConfig.WriteCurrentContextCR(qcr); err != nil {
+				return err
+			}
+		}
+	}
+
 	if qcr.Spec.OpsRunner != nil {
 		// fetching and applying manifest will be in the operator controller
 		// get decrypted cr
@@ -127,47 +153,17 @@ func (q *Qliksense) InstallQK8s(version string, opts *InstallCommandOptions) err
 			return q.applyCR(dcr)
 		}
 	}
-	if !qcr.IsRepoExist() {
-		if err := fetchAndUpdateCR(qConfig, version); err != nil {
-			return err
-		}
-	}
-
-	if qcr.Spec.GetManifestsRoot() == "" {
-		return errors.New("cannot get the manifest root. Use qliksense fetch <version> or qliksense set manifestsRoot")
-	}
 
 	// install generated manifests into cluster
 	fmt.Println("Installing generated manifests into the cluster")
-
 	if dcr, err := qConfig.GetDecryptedCr(qcr); err != nil {
 		return err
+	} else if err := q.applyConfigToK8s(dcr); err != nil {
+		fmt.Println("cannot do kubectl apply on manifests")
+		return err
 	} else {
-		if IsQliksenseInstalled(dcr.GetName()) {
-			return q.UpgradeQK8s(opts.CleanPatchFiles)
-		}
-		if err := q.applyConfigToK8s(dcr); err != nil {
-			fmt.Println("cannot do kubectl apply on manifests")
-			return err
-		} else {
-			return q.applyCR(dcr)
-		}
+		return q.applyCR(dcr)
 	}
-}
-
-func IsQliksenseInstalled(crName string) bool {
-	args := []string{
-		"get",
-		"qliksense",
-		crName,
-		"-ogo-template",
-		`--template='{{ .metadata.name}}'`,
-	}
-	_, err := qapi.KubectlDirectOps(args, "")
-	if err != nil {
-		return false
-	}
-	return true
 }
 
 func (q *Qliksense) getProcessedOperatorControllerString(qcr *qapi.QliksenseCR) (string, error) {

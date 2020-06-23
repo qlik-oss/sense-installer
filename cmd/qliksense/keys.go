@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/qlik-oss/sense-installer/pkg/qliksense"
 	"github.com/spf13/cobra"
 )
@@ -17,12 +15,16 @@ func keysRotateCmd(q *qliksense.Qliksense) *cobra.Command {
 		Use:   "rotate",
 		Short: "Rotate qliksense application keys",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println("deleting stored application keys")
-			if err := q.DeleteKeysClusterBackup(); err != nil {
+			if err := q.InstallQK8s("", &qliksense.InstallCommandOptions{
+				CleanPatchFiles: true,
+				RotateKeys:      true,
+			}); err != nil {
 				return err
+			} else {
+				postFlightChecksCmd := AllPostflightChecks(q)
+				postFlightChecksCmd.DisableFlagParsing = true
+				return postFlightChecksCmd.Execute()
 			}
-			fmt.Println("next install will rotate all qliksense keys")
-			return nil
 		},
 	}
 	return c

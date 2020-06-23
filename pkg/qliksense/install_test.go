@@ -8,13 +8,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gobuffalo/packr/v2"
+	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 	"sigs.k8s.io/kustomize/api/k8sdeps/kunstruct"
 	"sigs.k8s.io/kustomize/api/resid"
 	"sigs.k8s.io/kustomize/api/resmap"
 	"sigs.k8s.io/kustomize/api/resource"
-
-	"github.com/gobuffalo/packr/v2"
-	qapi "github.com/qlik-oss/sense-installer/pkg/api"
 )
 
 func TestCreateK8sResourceBeforePatch(t *testing.T) {

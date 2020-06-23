@@ -85,7 +85,6 @@ func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
 		return err
 	}
-	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
 	b, _ := yaml.Marshal(qcr.KApiCr)
 	fmt.Printf("%v", string(b))
