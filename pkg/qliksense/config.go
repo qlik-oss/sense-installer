@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -18,6 +17,7 @@ import (
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
+	"k8s.io/kubectl/pkg/cmd/util/editor"
 )
 
 const (
@@ -196,13 +196,12 @@ func (q *Qliksense) EditCR(contextName string) error {
 	if err := ioutil.WriteFile(tempFile.Name(), crContent, os.ModePerm); err != nil {
 		return nil
 	}
-	cmd := exec.Command(getKubeEditorTool(), tempFile.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
-	if err != nil {
+
+	currentEditor := editor.NewDefaultEditor([]string{"KUBE_EDITOR", "EDITOR"})
+	if err = currentEditor.Launch(tempFile.Name()); err != nil {
 		return err
 	}
+
 	newCr, err := qapi.GetCRObject(tempFile.Name())
 	if err != nil {
 		return errors.New("cannot save the cr. Someting wrong in the file format. It is not saved\n" + err.Error())
@@ -216,12 +215,4 @@ func (q *Qliksense) EditCR(contextName string) error {
 		return qConfig.WriteCR(newCr)
 	}
 	return nil
-}
-
-func getKubeEditorTool() string {
-	editor := os.Getenv("KUBE_EDITOR")
-	if editor == "" {
-		editor = "vim"
-	}
-	return editor
 }
