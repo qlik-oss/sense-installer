@@ -103,6 +103,16 @@ func (qp *QliksensePreflight) RunAllPreflightChecks(kubeConfigContents []byte, n
 	}
 	totalCount++
 
+	// Preflight verify ca chain check
+	if err := qp.VerifyCAChain(kubeConfigContents, namespace, preflightOpts, false); err != nil {
+		fmt.Fprintf(out, "%s\n", Red("FAILED"))
+		fmt.Printf("Error: %v\n\n", err)
+	} else {
+		fmt.Fprintf(out, "%s\n\n", Green("PASSED"))
+		checkCount++
+	}
+	totalCount++
+
 	if checkCount == totalCount {
 		// All preflight checks were successful
 		return nil
