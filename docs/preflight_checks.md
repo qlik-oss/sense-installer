@@ -305,3 +305,21 @@ Removing mongo check components...
 Preflight cleanup complete
 
 ```
+
+### Verify-ca-chain check
+We use the command below to verify the ca certificate chain and server certificate. We run this check over mongodbUrl and discoveryUrl we inferred from idpconfigs in the CR.
+```shell
+$ qliksense preflight preflight verify-ca-chain -v
+
+Preflight verify-ca-chain check... 
+----------------------------------- 
+Openssl verify mongodbUrl:
+Mongodb url inferred form CR: <mongodbUrl_from_CR>
+Host: <host extracted from mongodbUrl>
+
+Openssl verify discoveryUrl:
+Discovery url: <discoveryUrl_from_CR>
+Host: <host extracted from discoveryUrl>
+Completed preflight verify-CA-chain check
+PASSED
+```
