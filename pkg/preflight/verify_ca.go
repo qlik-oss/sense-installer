@@ -62,6 +62,8 @@ func (qp *QliksensePreflight) VerifyCAChain(kubeConfigContents []byte, namespace
 	if err := qp.extractCertAndVerify(discoveryUrl, caCertificates); err != nil {
 		return err
 	}
+
+	qp.CG.LogVerboseMessage("Completed preflight verify-ca-chain check\n")
 	return nil
 }
 
@@ -82,6 +84,7 @@ func (qp *QliksensePreflight) extractCertAndVerify(server string, caCertificates
 
 	qp.CG.LogVerboseMessage("Host: %s, port: %s\n", u.Host, u.Port())
 	conn, err := tls.Dial("tcp", u.Host, &tls.Config{})
+	qp.CG.LogVerboseMessage("Host: %s\n", u.Host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: " + err.Error())
 	}
