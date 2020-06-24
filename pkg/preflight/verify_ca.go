@@ -81,9 +81,7 @@ func (qp *QliksensePreflight) extractCertAndVerify(server string, caCertificates
 	}
 
 	qp.CG.LogVerboseMessage("Host: %s, port: %s\n", u.Host, u.Port())
-	conn, err := tls.Dial("tcp", u.Host, &tls.Config{
-		// InsecureSkipVerify: true,
-	})
+	conn, err := tls.Dial("tcp", u.Host, &tls.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to connect: " + err.Error())
 	}
@@ -104,7 +102,7 @@ func (qp *QliksensePreflight) extractCertAndVerify(server string, caCertificates
 	if !ok {
 		return fmt.Errorf("failed to parse root certificate.")
 	}
-	// roots.AddCert(x509Certificates[0]) // TESTING....
+
 	opts := x509.VerifyOptions{
 		Roots:         roots,
 		DNSName:       u.Hostname(),
