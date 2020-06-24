@@ -34,8 +34,8 @@ func crdsInstallCmd(q *qliksense.Qliksense) *cobra.Command {
 	}
 	c := &cobra.Command{
 		Use:   "install",
-		Short: "Install CRDs for Qliksense application. Use install --all=false to exclude the operator CRD",
-		Long:  "Install CRDs for Qliksense application. Use install --all=false to exclude the operator CRD",
+		Short: "Install CRDs for qliksense application. Use install --all=false to exclude the operator CRD",
+		Long:  "Install CRDs for qliksense application. Use install --all=false to exclude the operator CRD",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return q.InstallCrds(opts)
 		},

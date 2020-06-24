@@ -24,7 +24,6 @@ func applyCmd(q *qliksense.Qliksense) *cobra.Command {
 	f.StringVarP(&filePath, "file", "f", "", "Install from a CR file")
 	f.StringVarP(&opts.StorageClass, "storageClass", "s", "", "Storage class for qliksense")
 	f.StringVarP(&opts.MongodbUri, "mongodbUri", "m", "", "mongodbUri for qliksense (i.e. mongodb://qlik-default-mongodb:27017/qliksense?ssl=false)")
-	f.StringVarP(&opts.RotateKeys, "rotateKeys", "r", "", "Rotate JWT keys for qliksense (yes:rotate keys/ no:use exising keys from cluster/ None: use default EJSON_KEY from env")
 	f.BoolVar(&opts.CleanPatchFiles, cleanPatchFilesFlagName, opts.CleanPatchFiles, cleanPatchFilesFlagUsage)
 	f.BoolVarP(&opts.Pull, pullFlagName, pullFlagShorthand, opts.Pull, pullFlagUsage)
 	f.BoolVarP(&opts.Push, pushFlagName, pushFlagShorthand, opts.Push, pushFlagUsage)

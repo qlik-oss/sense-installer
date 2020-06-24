@@ -25,7 +25,6 @@ func (q *Qliksense) UpgradeQK8s(cleanPatchFiles bool) error {
 		fmt.Println("cannot get the current-context cr", err)
 		return err
 	}
-	qcr.Spec.RotateKeys = "no"
 
 	dcr, err := qConfig.GetDecryptedCr(qcr)
 	if err != nil {

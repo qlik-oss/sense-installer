@@ -22,7 +22,7 @@ require (
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
 	github.com/containers/image/v5 v5.1.0
 	github.com/docker/go-metrics v0.0.1 // indirect
-	github.com/go-git/go-git/v5 v5.0.0
+	github.com/go-git/go-git/v5 v5.1.0
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/logger v1.0.3 // indirect
 	github.com/gobuffalo/packd v1.0.0 // indirect
@@ -40,7 +40,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/otiai10/copy v1.1.1
 	github.com/pkg/errors v0.9.1
-	github.com/qlik-oss/k-apis v0.1.7
+	github.com/qlik-oss/k-apis v0.1.16
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rogpeppe/go-internal v1.5.2 // indirect
 	github.com/spf13/cobra v0.0.6
@@ -55,6 +55,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.17.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/kubectl v0.17.2
 	sigs.k8s.io/kustomize/api v0.3.2
 	sigs.k8s.io/yaml v1.1.0
 )

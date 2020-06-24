@@ -20,6 +20,22 @@ Flags:
   -v, --verbose   verbose mode
 ```
 
+### Run all postflight checks
+This command runs all the postflight checks available.
+
+```shell
+$ qliksense postflight all  
+Running all postflight checks...
+
+Postflight db migration check... 
+Logs from pod: qliksense-users-6977cb7788-qlgmv
+{"caller":"main.go:39","environment":"qseok","error":"error parsing uri: scheme must be \"mongodb\" or \"mongodb+srv\"","level":"error","message":"failed to connect to ","timestamp":"2020-06-17T04:10:11.7891913Z","version":""}
+To view more logs in this context, please run the command: kubectl logs -n test_ns qliksense-users-6977cb7788-qlgmv migration
+PASSED
+
+All postflight checks have PASSED
+```
+
 ### DB migration check
 This command checks init containers for successful database migrarion completions, and reports failure, if any to the user.
 
@@ -29,5 +45,7 @@ An example run of this check produces an output as shown below:
 $ qliksense postflight db-migration-check   
 Logs from pod: qliksense-users-6977cb7788-cxxwh
 {"caller":"main.go:39","environment":"qseok","error":"error parsing uri: scheme must be \"mongodb\" or \"mongodb+srv\"","level":"error","message":"failed to connect to ","timestamp":"2020-06-01T01:07:18.4170507Z","version":""}
+To view more logs in this context, please run the command: kubectl logs -n test_ns qliksense-users-6977cb7788-qlgmv migration
+PASSED
 Postflight db_migration_check completed
 ```

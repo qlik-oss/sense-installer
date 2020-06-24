@@ -268,7 +268,6 @@ spec:
     - name: imageRegistry
       value: %s
   manifestsRoot: %s
-  rotateKeys: "yes"
   releaseName: qlik-default
 `, version, registry.url, manifestsRootDir)
 	setupQliksenseTestDefaultContext(t, tmpQlikSenseHome, cr)

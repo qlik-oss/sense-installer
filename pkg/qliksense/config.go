@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"github.com/qlik-oss/k-apis/pkg/config"
+
 	"github.com/mitchellh/go-homedir"
+	"gopkg.in/yaml.v2"
 
 	"github.com/qlik-oss/k-apis/pkg/cr"
 	"github.com/qlik-oss/sense-installer/pkg/api"
 	qapi "github.com/qlik-oss/sense-installer/pkg/api"
+	"k8s.io/kubectl/pkg/cmd/util/editor"
 )
 
 const (
@@ -73,20 +76,21 @@ func (q *Qliksense) configEjson() error {
 }
 
 func (q *Qliksense) applyConfigToK8s(qcr *qapi.QliksenseCR) error {
-	if qcr.Spec.RotateKeys != "None" {
-		if err := q.configEjson(); err != nil {
-			return err
-		}
+	if err := q.configEjson(); err != nil {
+		return err
 	}
+
 	userHomeDir, err := homedir.Dir()
 	if err != nil {
 		fmt.Printf(`error fetching user's home directory: %v\n`, err)
 		return err
 	}
-	fmt.Println("Manifests root: " + qcr.Spec.GetManifestsRoot())
 	qcr.SetNamespace(qapi.GetKubectlNamespace())
+	b, _ := yaml.Marshal(qcr.KApiCr)
+	fmt.Printf("%v", string(b))
+	// os.Exit(0)
 	// generate patches
-	cr.GeneratePatches(&qcr.KApiCr, path.Join(userHomeDir, ".kube", "config"))
+	cr.GeneratePatches(&qcr.KApiCr, config.KeysActionRestoreOrRotate, path.Join(userHomeDir, ".kube", "config"))
 	// apply generated manifests
 	profilePath := filepath.Join(qcr.Spec.GetManifestsRoot(), qcr.Spec.GetProfileDir())
 	fmt.Printf("Generating manifests for profile: %v\n", profilePath)
@@ -192,13 +196,12 @@ func (q *Qliksense) EditCR(contextName string) error {
 	if err := ioutil.WriteFile(tempFile.Name(), crContent, os.ModePerm); err != nil {
 		return nil
 	}
-	cmd := exec.Command(getKubeEditorTool(), tempFile.Name())
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	err = cmd.Run()
-	if err != nil {
+
+	currentEditor := editor.NewDefaultEditor([]string{"KUBE_EDITOR", "EDITOR"})
+	if err = currentEditor.Launch(tempFile.Name()); err != nil {
 		return err
 	}
+
 	newCr, err := qapi.GetCRObject(tempFile.Name())
 	if err != nil {
 		return errors.New("cannot save the cr. Someting wrong in the file format. It is not saved\n" + err.Error())
@@ -212,12 +215,4 @@ func (q *Qliksense) EditCR(contextName string) error {
 		return qConfig.WriteCR(newCr)
 	}
 	return nil
-}
-
-func getKubeEditorTool() string {
-	editor := os.Getenv("KUBE_EDITOR")
-	if editor == "" {
-		editor = "vim"
-	}
-	return editor
 }

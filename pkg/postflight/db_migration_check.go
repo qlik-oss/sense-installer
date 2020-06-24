@@ -11,7 +11,8 @@ import (
 const initContainerNameToCheck = "migration"
 
 func (p *QliksensePostflight) DbMigrationCheck(namespace string, kubeConfigContents []byte) error {
-
+	fmt.Printf("Postflight db migration check... \n")
+	p.CG.LogVerboseMessage("\n----------------------------------- \n")
 	clientset, _, err := p.CG.GetK8SClientSet(kubeConfigContents, "")
 	if err != nil {
 		err = fmt.Errorf("unable to create a kubernetes client: %v", err)

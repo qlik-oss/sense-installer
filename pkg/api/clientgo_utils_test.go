@@ -508,7 +508,7 @@ func TestClientGoUtils_CreatePreflightTestPod(t *testing.T) {
 							ImagePullPolicy: apiv1.PullIfNotPresent,
 							Command:         []string{"echo"},
 							VolumeMounts: []apiv1.VolumeMount{
-								apiv1.VolumeMount{
+								{
 									Name:      "secret1",
 									MountPath: filepath.Dir("/etc/secret1"),
 									ReadOnly:  true,
@@ -517,7 +517,7 @@ func TestClientGoUtils_CreatePreflightTestPod(t *testing.T) {
 						},
 					},
 					Volumes: []apiv1.Volume{
-						apiv1.Volume{
+						{
 							Name: "secret1",
 							VolumeSource: apiv1.VolumeSource{
 								Secret: &apiv1.SecretVolumeSource{
@@ -844,7 +844,7 @@ func TestClientGoUtils_WaitForPod(t *testing.T) {
 		},
 		Spec: apiv1.PodSpec{
 			Containers: []apiv1.Container{
-				apiv1.Container{},
+				{},
 			},
 		},
 		Status: apiv1.PodStatus{
@@ -895,7 +895,7 @@ func TestClientGoUtils_WaitForPod(t *testing.T) {
 					},
 					Spec: apiv1.PodSpec{
 						Containers: []apiv1.Container{
-							apiv1.Container{},
+							{},
 						},
 					},
 					Status: apiv1.PodStatus{
@@ -942,7 +942,7 @@ func TestClientGoUtils_WaitForPod(t *testing.T) {
 					},
 					Spec: apiv1.PodSpec{
 						Containers: []apiv1.Container{
-							apiv1.Container{},
+							{},
 						},
 					},
 					Status: apiv1.PodStatus{
@@ -1059,7 +1059,7 @@ func TestClientGoUtils_WaitForPodToDie(t *testing.T) {
 		},
 		Spec: apiv1.PodSpec{
 			Containers: []apiv1.Container{
-				apiv1.Container{},
+				{},
 			},
 		},
 		Status: apiv1.PodStatus{
@@ -1131,7 +1131,7 @@ func TestClientGoUtils_WaitForPodToDie(t *testing.T) {
 					},
 					Spec: apiv1.PodSpec{
 						Containers: []apiv1.Container{
-							apiv1.Container{},
+							{},
 						},
 					},
 					Status: apiv1.PodStatus{
@@ -1885,10 +1885,10 @@ func TestClientGoUtils_waitForStatefulsetToDelete(t *testing.T) {
 		statefulsetName string
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
+		name                           string
+		fields                         fields
+		args                           args
+		wantErr                        bool
 		timeoutForChangingReplicaCount time.Duration
 	}{
 		{
@@ -1897,8 +1897,8 @@ func TestClientGoUtils_waitForStatefulsetToDelete(t *testing.T) {
 				Verbose: true,
 			},
 			args: args{
-				clientset:      fake.NewSimpleClientset(ss),
-				namespace:      "test-ns",
+				clientset:       fake.NewSimpleClientset(ss),
+				namespace:       "test-ns",
 				statefulsetName: ss.Name,
 			},
 			wantErr:                        false,
@@ -1910,11 +1910,11 @@ func TestClientGoUtils_waitForStatefulsetToDelete(t *testing.T) {
 				Verbose: true,
 			},
 			args: args{
-				clientset:      fake.NewSimpleClientset(),
-				namespace:      "test-ns",
+				clientset:       fake.NewSimpleClientset(),
+				namespace:       "test-ns",
 				statefulsetName: ss.Name,
 			},
-			wantErr:                        false,
+			wantErr: false,
 		},
 		{
 			name: "timeout",
@@ -1922,11 +1922,11 @@ func TestClientGoUtils_waitForStatefulsetToDelete(t *testing.T) {
 				Verbose: true,
 			},
 			args: args{
-				clientset:      fake.NewSimpleClientset(ss),
-				namespace:      "test-ns",
+				clientset:       fake.NewSimpleClientset(ss),
+				namespace:       "test-ns",
 				statefulsetName: ss.Name,
 			},
-			wantErr:                        true,
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

@@ -19,7 +19,7 @@ func about(q *qliksense.Qliksense) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "about ref",
-		Short: "Displays information pertaining to Qliksense on Kubernetes",
+		Short: "Displays information pertaining to qliksense on Kubernetes",
 		Long:  "Gives the version of QLik Sense on Kubernetes and versions of images.",
 		Example: `
 qliksense about 1.0.0
