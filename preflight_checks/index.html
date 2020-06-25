@@ -1,0 +1,732 @@
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="shortcut icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1, mkdocs-material-5.1.0">
+    
+    
+      
+        <title>Preflight checks - Qlik Sense on Kubernetes CLI</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.89dc9fe3.min.css">
+      
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ecd4686e.min.css">
+      
+      
+        
+        
+        <meta name="theme-color" content="#4caf50">
+      
+    
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    <body dir="ltr" data-md-color-primary="green" data-md-color-accent="indigo">
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#preflight-checks" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href=".." title="Qlik Sense on Kubernetes CLI" class="md-header-nav__button md-logo" aria-label="Qlik Sense on Kubernetes CLI">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,8A3,3 0 0,0 15,5A3,3 0 0,0 12,2A3,3 0 0,0 9,5A3,3 0 0,0 12,8M12,11.54C9.64,9.35 6.5,8 3,8V19C6.5,19 9.64,20.35 12,22.54C14.36,20.35 17.5,19 21,19V8C17.5,8 14.36,9.35 12,11.54Z" /></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z" /></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            Qlik Sense on Kubernetes CLI
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              Preflight checks
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active">
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" /></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/qlik-oss/sense-installer/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+        
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Qlik Sense on Kubernetes CLI" class="md-nav__button md-logo" aria-label="Qlik Sense on Kubernetes CLI">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,8A3,3 0 0,0 15,5A3,3 0 0,0 12,2A3,3 0 0,0 9,5A3,3 0 0,0 12,8M12,11.54C9.64,9.35 6.5,8 3,8V19C6.5,19 9.64,20.35 12,22.54C14.36,20.35 17.5,19 21,19V8C17.5,8 14.36,9.35 12,11.54Z" /></svg>
+
+    </a>
+    Qlik Sense on Kubernetes CLI
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/qlik-oss/sense-installer/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href=".." title="Overview" class="md-nav__link">
+      Overview
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../getting_started/" title="Getting started" class="md-nav__link">
+      Getting started
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../command_reference/" title="CLI reference" class="md-nav__link">
+      CLI reference
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../concepts/" title="How CLI works" class="md-nav__link">
+      How CLI works
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../air_gap/" title="Air gap" class="md-nav__link">
+      Air gap
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="https://github.com/qlik-oss/sense-installer/releases" title="Releases ⧉" class="md-nav__link">
+      Releases ⧉
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z" /></svg>
+      </span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dns-check" class="md-nav__link">
+    DNS check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#kubernetes-version-check" class="md-nav__link">
+    Kubernetes version check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#service-check" class="md-nav__link">
+    Service check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deployment-check" class="md-nav__link">
+    Deployment check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pod-check" class="md-nav__link">
+    Pod check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#role-check" class="md-nav__link">
+    Role check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#rolebinding-check" class="md-nav__link">
+    RoleBinding check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#create-serviceaccount-check" class="md-nav__link">
+    Create-ServiceAccount check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auth-check" class="md-nav__link">
+    Auth check
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#mongodb-check" class="md-nav__link">
+    Mongodb check
+  </a>
+  
+    <nav class="md-nav" aria-label="Mongodb check">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mongodb-check-with-mutual-tls" class="md-nav__link">
+    Mongodb check with mutual tls
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-all-checks" class="md-nav__link">
+    Running all checks
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clean" class="md-nav__link">
+    Clean
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#verify-ca-chain-check" class="md-nav__link">
+    Verify-ca-chain check
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/qlik-oss/sense-installer/edit/master/docs/preflight_checks.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" /></svg>
+                  </a>
+                
+                
+                  
+                
+                
+                <h1 id="preflight-checks">Preflight checks<a class="headerlink" href="#preflight-checks" title="Permanent link">&para;</a></h1>
+<p>Preflight checks provide pre-installation cluster conformance testing and validation before we install qliksense on the cluster. We gather a suite of conformance tests that can be easily written and run on the target cluster to verify that cluster-specific requirements are met.</p>
+<p>We support a couple of tests at the moment as part of preflight checks, and the range of the suite will be expanded in future.</p>
+<p>Run the following command to view help about the commands supported by preflight at any moment:
+<div class="highlight"><pre><span></span><code>$ qliksense preflight
+perform preflight checks on the cluster
+
+Usage:
+  qliksense preflight <span class="o">[</span>command<span class="o">]</span>
+
+Examples:
+qliksense preflight &lt;preflight_check_to_run&gt;
+
+Available Commands:
+  all            perform all checks
+  authcheck      preflight authcheck
+  clean          perform preflight clean
+  deployment     perform preflight deployment check
+  dns            perform preflight dns check
+  k8s-version   check kubernetes version
+  mongo          preflight mongo OR preflight mongo --url<span class="o">=</span>&lt;url&gt;
+  pod            perform preflight pod check
+  role           preflight create role check
+  rolebinding    preflight create rolebinding check
+  service        perform preflight service check
+  serviceaccount preflight create ServiceAccount check
+
+Flags:
+  -h, --help   <span class="nb">help</span> <span class="k">for</span> preflight
+  -v, --verbose   verbose mode
+</code></pre></div></p>
+<h3 id="dns-check">DNS check<a class="headerlink" href="#dns-check" title="Permanent link">&para;</a></h3>
+<p>Run the following command to perform preflight DNS check. We setup a kubernetes deployment and try to reach it as part of establishing DNS connectivity in this check. 
+The expected output should be similar to the one shown below.
+<div class="highlight"><pre><span></span><code>$ qliksense preflight dns -v
+
+Preflight DNS check
+---------------------
+Created deployment <span class="s2">&quot;dep-dns-preflight-check&quot;</span>
+Created service <span class="s2">&quot;svc-dns-pf-check&quot;</span>
+Created pod: pf-pod-1
+Fetching pod: pf-pod-1
+Fetching pod: pf-pod-1
+Exec-ing into the container...
+Preflight DNS check: PASSED
+Completed preflight DNS check
+Cleaning up resources...
+Deleted pod: pf-pod-1
+Deleted service: svc-dns-pf-check
+Deleted deployment: dep-dns-preflight-check
+</code></pre></div></p>
+<h3 id="kubernetes-version-check">Kubernetes version check<a class="headerlink" href="#kubernetes-version-check" title="Permanent link">&para;</a></h3>
+<p>We check the version of the target kubernetes cluster and ensure that it falls in the valid range of kubernetes versions that are supported by qliksense. 
+The command to run this check and the expected similar output are as shown below:
+<div class="highlight"><pre><span></span><code>$ qliksense preflight k8s-version -v
+
+Preflight kubernetes minimum version check
+------------------------------------------
+Kubernetes API Server version: v1.15.5
+Current K8s Version: <span class="m">1</span>.15.5
+Current <span class="m">1</span>.15.5 is greater than minimum required version:1.11.0, hence good to go
+Preflight minimum kubernetes version check: PASSED
+Completed Preflight kubernetes minimum version check
+</code></pre></div></p>
+<h3 id="service-check">Service check<a class="headerlink" href="#service-check" title="Permanent link">&para;</a></h3>
+<p>We use the commmand below to test if we are able to create a service in the cluster.
+<div class="highlight"><pre><span></span><code>$ qliksense preflight service -v
+
+Preflight service check
+-----------------------
+
+Preflight service check: 
+Created service <span class="s2">&quot;svc-pf-check&quot;</span>
+Preflight service creation check: PASSED
+Cleaning up resources...
+Deleted service: svc-pf-check
+Completed preflight service check
+</code></pre></div></p>
+<h3 id="deployment-check">Deployment check<a class="headerlink" href="#deployment-check" title="Permanent link">&para;</a></h3>
+<p>We use the commmand below to test if we are able to create a deployment in the cluster. After the test exexutes, we wait until the created deployment terminates before we exit the command. 
+<div class="highlight"><pre><span></span><code>$ qliksense preflight deployment -v
+
+Preflight deployment check
+-----------------------
+Preflight deployment check: 
+Created deployment <span class="s2">&quot;deployment-preflight-check&quot;</span>
+Preflight Deployment check: PASSED
+Cleaning up resources...
+Deleted deployment: deployment-preflight-check
+Completed preflight deployment check
+</code></pre></div></p>
+<h3 id="pod-check">Pod check<a class="headerlink" href="#pod-check" title="Permanent link">&para;</a></h3>
+<p>We use the commmand below to test if we are able to create a pod in the cluster.
+<div class="highlight"><pre><span></span><code>$ qliksense preflight pod -v
+
+Preflight pod check
+--------------------
+
+Preflight pod check: 
+Created pod: pod-pf-check
+Preflight pod creation check: PASSED
+Cleaning up resources...
+Deleted pod: pod-pf-check
+Completed preflight pod check
+</code></pre></div></p>
+<h3 id="role-check">Role check<a class="headerlink" href="#role-check" title="Permanent link">&para;</a></h3>
+<p>We use the command below to test if we are able to create a role in the cluster
+<div class="highlight"><pre><span></span><code>$ qliksense preflight role -v
+Preflight role check
+---------------------------
+Preflight role check: 
+Created role: role-preflight-check
+Preflight role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight role check
+</code></pre></div></p>
+<h3 id="rolebinding-check">RoleBinding check<a class="headerlink" href="#rolebinding-check" title="Permanent link">&para;</a></h3>
+<p>We use the command below to test if we are able to create a role binding in the cluster
+<div class="highlight"><pre><span></span><code>$ qliksense preflight rolebinding -v
+
+Preflight rolebinding check
+---------------------------
+Preflight rolebinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight rolebinding check: PASSED
+Cleaning up resources...
+Deleting RoleBinding: role-binding-preflight-check
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight rolebinding check
+</code></pre></div></p>
+<h3 id="create-serviceaccount-check">Create-ServiceAccount check<a class="headerlink" href="#create-serviceaccount-check" title="Permanent link">&para;</a></h3>
+<p>We use the command below to test if we are able to create a service account in the cluster
+<div class="highlight"><pre><span></span><code>$ qliksense preflight serviceaccount -v
+
+Preflight ServiceAccount check
+-------------------------------------
+Preflight serviceaccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight serviceaccount check: PASSED
+Cleaning up resources...
+Deleting ServiceAccount: preflight-check-test-serviceaccount
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight serviceaccount check
+</code></pre></div></p>
+<h3 id="auth-check">Auth check<a class="headerlink" href="#auth-check" title="Permanent link">&para;</a></h3>
+<p>We use the command below to combine creation of role, role binding, and service account tests
+<div class="highlight"><pre><span></span><code>$ qliksense preflight authcheck -v
+
+Preflight auth check
+-------------------------------------
+Preflight create-role check: 
+Created role: role-preflight-check
+Preflight create-role check: PASSED
+Cleaning up resources...
+Deleted role: role-preflight-check
+
+Completed preflight create-role check
+
+Preflight create RoleBinding check: 
+Created RoleBinding: role-binding-preflight-check
+Preflight create RoleBinding check: PASSED
+Cleaning up resources...
+Deleted RoleBinding: role-binding-preflight-check
+
+Completed preflight create RoleBinding check
+
+Preflight createServiceAccount check: 
+Created Service Account: preflight-check-test-serviceaccount
+Preflight createServiceAccount check: PASSED
+Cleaning up resources...
+Deleted ServiceAccount: preflight-check-test-serviceaccount
+
+Completed preflight createServiceAccount check
+Completed preflight auth check
+</code></pre></div></p>
+<h3 id="mongodb-check">Mongodb check<a class="headerlink" href="#mongodb-check" title="Permanent link">&para;</a></h3>
+<p>We can check if we are able to connect to an instance of mongodb on the cluster by either supplying the mongodbUri as part of the command or infer it from the current context.</p>
+<p><div class="highlight"><pre><span></span><code>qliksense preflight mongo --url<span class="o">=</span>&lt;url&gt; -v OR
+qliksense preflight mongo -v
+qliksense preflight mongo --url<span class="o">=</span>&lt;mongo-server url&gt; --ca-cert<span class="o">=</span>&lt;path to ca-cert file&gt; -v
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>Preflight mongo check
+---------------------
+Preflight mongodb check: 
+Created pod: pf-mongo-pod
+stdout: MongoDB shell version v4.2.5
+connecting to: &lt;url&gt;/?compressors<span class="o">=</span>disabled<span class="p">&amp;</span><span class="nv">gssapiServiceName</span><span class="o">=</span>mongodb
+Implicit session: session <span class="o">{</span> <span class="s2">&quot;id&quot;</span> : UUID<span class="o">(</span><span class="s2">&quot;...&quot;</span><span class="o">)</span> <span class="o">}</span>
+MongoDB server version: <span class="m">4</span>.2.5
+bye
+stderr: 
+Preflight mongo check: PASSED
+Deleted pod: pf-mongo-pod
+Completed preflight mongodb check
+</code></pre></div></p>
+<h4 id="mongodb-check-with-mutual-tls">Mongodb check with mutual tls<a class="headerlink" href="#mongodb-check-with-mutual-tls" title="Permanent link">&para;</a></h4>
+<p>In order to perform mutual tls with mongo we need to:
+- append client certificate to the beginning/end of CA certificate. Make sure to include the beginning and end tags on each certificate. 
+The CA certificate file should look like this in the end:
+<div class="highlight"><pre><span></span><code>&lt;existing contents of CA cert&gt;
+...
+-----BEGIN RSA PRIVATE KEY-----
+&lt;private key&gt;
+-----END RSA PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+&lt;public key&gt;
+-----END CERTIFICATE-----
+</code></pre></div>
+- Run the command below to set the ca certificate into the CR
+<div class="highlight"><pre><span></span><code>cat &lt;path_to_ca.crt&gt; <span class="p">|</span> base64 <span class="p">|</span> qliksense config set-secrets qliksense.caCertificates --base64
+</code></pre></div></p>
+<p>Next, run: 
+<div class="highlight"><pre><span></span><code>qliksense preflight mongo -v
+</code></pre></div></p>
+<h3 id="running-all-checks">Running all checks<a class="headerlink" href="#running-all-checks" title="Permanent link">&para;</a></h3>
+<p>Run the command shown below to execute all preflight checks.
+<div class="highlight"><pre><span></span><code>$ qliksense preflight all --mongodb-url<span class="o">=</span>&lt;url&gt; -v OR
+$ qliksense preflight all --mongodb-url<span class="o">=</span>&lt;mongo-server url&gt; --mongodb-ca-cert<span class="o">=</span>&lt;path to ca-cert file&gt; -v
+
+Running all preflight checks
+
+Preflight DNS check
+-------------------
+Created deployment <span class="s2">&quot;dep-dns-preflight-check&quot;</span>
+Created service <span class="s2">&quot;svc-dns-pf-check&quot;</span>
+Created pod: pf-pod-1
+Fetching pod: pf-pod-1
+Fetching pod: pf-pod-1
+Exec-ing into the container...
+Preflight DNS check: PASSED
+Completed preflight DNS check
+Cleaning up resources...
+Deleted pod: pf-pod-1
+Deleted service: svc-dns-pf-check
+Deleted deployment: dep-dns-preflight-check
+
+Preflight kubernetes minimum version check
+------------------------------------------
+Kubernetes API Server version: v1.15.5
+Current K8s Version: <span class="m">1</span>.15.5
+Current <span class="m">1</span>.15.5 is greater than minimum required version:1.11.0, hence good to go
+Preflight minimum kubernetes version check: PASSED
+Completed Preflight kubernetes minimum version check
+...
+...
+All preflight checks have PASSED
+Completed running all preflight checks
+</code></pre></div></p>
+<h3 id="clean">Clean<a class="headerlink" href="#clean" title="Permanent link">&para;</a></h3>
+<p>Run the command below to cleanup entities that were created for the purpose of running preflight checks and left behind in the cluster.
+<div class="highlight"><pre><span></span><code>$ qliksense preflight clean -v
+
+Preflight clean
+----------------
+Removing deployment...
+Removing service...
+Removing pod...
+Removing role...
+Removing rolebinding...
+Removing serviceaccount...
+Removing DNS check components...
+Removing mongo check components...
+Preflight cleanup <span class="nb">complete</span>
+</code></pre></div></p>
+<h3 id="verify-ca-chain-check">Verify-ca-chain check<a class="headerlink" href="#verify-ca-chain-check" title="Permanent link">&para;</a></h3>
+<p>We use the command below to verify the ca certificate chain and server certificate. We run this check over mongodbUrl and discoveryUrl we inferred from idpconfigs in the CR.
+<div class="highlight"><pre><span></span><code>$ qliksense preflight preflight verify-ca-chain -v
+
+Preflight verify-ca-chain check... 
+----------------------------------- 
+Openssl verify mongodbUrl:
+Mongodb url inferred form CR: &lt;mongodbUrl_from_CR&gt;
+Host: &lt;host extracted from mongodbUrl&gt;
+
+Openssl verify discoveryUrl:
+Discovery url: &lt;discoveryUrl_from_CR&gt;
+Host: &lt;host extracted from discoveryUrl&gt;
+Completed preflight verify-CA-chain check
+PASSED
+</code></pre></div></p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../assets/javascripts/vendor.36cbf620.min.js"></script>
+      <script src="../assets/javascripts/bundle.00c583dd.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents"}</script>
+      
+      <script>
+        app = initialize({
+          base: "..",
+          features: [],
+          search: Object.assign({
+            worker: "../assets/javascripts/worker/search.7f7c8775.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
