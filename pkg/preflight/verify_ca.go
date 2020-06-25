@@ -97,6 +97,7 @@ func (qp *QliksensePreflight) extractCertAndVerify(server string, caCertificates
 	if len(x509Certificates) == 0 {
 		return fmt.Errorf("no server certificates retrieved from the server")
 	}
+	// we retrieve and verify the server certificate, we ignore intermediate certificates at this point.
 	for _, x509Cert := range x509Certificates {
 		if !x509Cert.IsCA {
 			serverCert = x509Cert
