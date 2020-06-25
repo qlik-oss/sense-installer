@@ -1,11 +1,13 @@
 site_name: Qlik Sense on Kubernetes CLI
 repo_url: 'https://github.com/qlik-oss/sense-installer'
 strict: true
+
 theme:
   name: "material"
   palette:
     primary: 'green'
     accent: 'indigo'
+
 markdown_extensions:
   - toc:
       permalink: true
@@ -15,6 +17,7 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.details
   - pymdownx.tabbed
+
 nav:
   - Overview: index.md
   - getting_started.md
