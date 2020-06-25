@@ -93,25 +93,30 @@ func (qp *QliksensePreflight) extractCertAndVerify(server string, caCertificates
 	// Get the ConnectionState struct as that's the one which gives us x509.Certificate struct
 	x509Certificates := conn.ConnectionState().PeerCertificates
 
+	var serverCert *x509.Certificate
 	if len(x509Certificates) == 0 {
 		return fmt.Errorf("no server certificates retrieved from the server")
 	}
-	if len(x509Certificates) > 1 {
-		return fmt.Errorf("more than 1 server certificate retrieved from the server")
+	// we retrieve and verify the server certificate, we ignore intermediate certificates at this point.
+	for _, x509Cert := range x509Certificates {
+		if !x509Cert.IsCA {
+			serverCert = x509Cert
+			break
+		}
 	}
-	//  execute verify cmd
+	if serverCert == nil {
+		return fmt.Errorf("no valid server certificates retrieved from the server")
+	}
 	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM([]byte(caCertificates))
-	if !ok {
+	if ok := roots.AppendCertsFromPEM([]byte(caCertificates)); !ok {
 		return fmt.Errorf("failed to parse root certificate.")
 	}
 
 	opts := x509.VerifyOptions{
-		Roots:         roots,
-		DNSName:       u.Hostname(),
-		Intermediates: x509.NewCertPool(),
+		Roots:   roots,
+		DNSName: u.Hostname(),
 	}
-	if _, err := x509Certificates[0].Verify(opts); err != nil {
+	if _, err := serverCert.Verify(opts); err != nil {
 		return fmt.Errorf("failed to verify certificate: " + err.Error())
 	}
 	return nil
