@@ -93,11 +93,15 @@ func getQliksenseInitCrds(qcr *qapi.QliksenseCR) (string, error) {
 		}
 	}
 
-	qInitMsPath := filepath.Join(repoPath, Q_INIT_CRD_PATH)
+	qInitMsPath := filepath.Join(repoPath, "manifests", qcr.Spec.Profile, "crds")
 	if _, err := os.Lstat(qInitMsPath); err != nil {
-		// older version of qliksense-init used
-		qInitMsPath = filepath.Join(repoPath, "manifests/base/manifests/qliksense-init")
+		qInitMsPath = filepath.Join(repoPath, Q_INIT_CRD_PATH)
+		if _, err := os.Lstat(qInitMsPath); err != nil {
+			// older version of qliksense-init used
+			qInitMsPath = filepath.Join(repoPath, "manifests/base/manifests/")
+		}
 	}
+
 	qInitByte, err := ExecuteKustomizeBuild(qInitMsPath)
 	if err != nil {
 		fmt.Println("cannot generate crds for qliksense-init", err)
