@@ -98,7 +98,7 @@ func getQliksenseInitCrds(qcr *qapi.QliksenseCR) (string, error) {
 		qInitMsPath = filepath.Join(repoPath, Q_INIT_CRD_PATH)
 		if _, err := os.Lstat(qInitMsPath); err != nil {
 			// older version of qliksense-init used
-			qInitMsPath = filepath.Join(repoPath, "manifests/base/manifests/")
+			qInitMsPath = filepath.Join(repoPath, "manifests/base/manifests/qliksense-init")
 		}
 	}
 
