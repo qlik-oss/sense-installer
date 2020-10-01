@@ -3,7 +3,17 @@ PKG = github.com/qlik-oss/sense-installer
 # --no-print-directory avoids verbose logging when invoking targets that utilize sub-makes
 MAKE_OPTS ?= --no-print-directory
 
-LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION) -X $(PKG)/pkg.Commit=$(COMMIT) -X "$(PKG)/pkg.CommitDate=$(COMMIT_DATE)"
+
+# get latest k3s version: grep the tag and replace + with - (difference between git and dockerhub tags)
+K3S_TAG		:= $(shell curl --silent "https://update.k3s.io/v1-release/channels/stable" | egrep -o '/v[^ ]+"' | sed -E 's/\/|\"//g' | sed -E 's/\+/\-/')
+
+ifeq ($(K3S_TAG),)
+$(warning K3S_TAG undefined: couldn't get latest k3s image tag!)
+$(warning Output of curl: $(shell curl --silent "https://update.k3s.io/v1-release/channels/stable"))
+$(error exiting)
+endif
+
+LDFLAGS = -w -X $(PKG)/pkg.Version=$(VERSION) -X $(PKG)/pkg.Commit=$(COMMIT) -X "$(PKG)/pkg.CommitDate=$(COMMIT_DATE)" -X github.com/rancher/k3d/v3/version.K3sVersion=${K3S_TAG}
 XBUILD = CGO_ENABLED=0 go build -a -tags "$(BUILDTAGS)" -ldflags '$(LDFLAGS)'
 BINDIR = bin
 

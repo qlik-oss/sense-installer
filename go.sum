@@ -842,6 +842,8 @@ github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lN
 github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9AWI=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
+github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 h1:n6/2gBQ3RWajuToeY6ZtZTIKv2v7ThUy5KKusIT0yc0=
+github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00/go.mod h1:Pm3mSP3c5uWn86xMLZ5Sa7JB9GsEZySvHYXCTK4E9q4=
 github.com/morikuni/aec v0.0.0-20170113033406-39771216ff4c/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=
 github.com/morikuni/aec v1.0.0 h1:nP9CBfwrvYnBRgY6qfDQkygYDmYwOilePFkwzv4dU8A=
 github.com/morikuni/aec v1.0.0/go.mod h1:BbKIizmSmc5MMPqRYbxO4ZU0S0+P200+tUnFx7PXmsc=
@@ -968,6 +970,8 @@ github.com/qlik-oss/k-apis v0.1.16 h1:R3gCZs4A3EHPNx4B7p1idWD+OhyaU/bAlGYBWc0ZNz
 github.com/qlik-oss/k-apis v0.1.16/go.mod h1:AkNa/kaZHpGVs9l+pHe6nvz99Sp9WO1f9ylBES95o+I=
 github.com/qlik-oss/kustomize/api v0.5.2-0.20200820111149-1a59db58525f h1:a6TNAGEyKqlMzDQwwoVwBjcRZ47ZnXxk3ue+zy5I4Qk=
 github.com/qlik-oss/kustomize/api v0.5.2-0.20200820111149-1a59db58525f/go.mod h1:H7m776WsaBG9jFljChQXd2bGlzTJvQRHDESRQ96psXU=
+github.com/qlik-oss/kustomize/api v0.6.3-0.20201001044635-f23c10b755f6 h1:hyF9LmNW4nIdqkmK+iL1mI5JDoT6BJR+vwjODS1pgh0=
+github.com/qlik-oss/kustomize/api v0.6.3-0.20201001044635-f23c10b755f6/go.mod h1:UosDKw+lSkkEvX2MIW6UNxZpNHXz0XVtyg7GfCAU04U=
 github.com/qri-io/starlib v0.4.2-0.20200213133954-ff2e8cd5ef8d h1:K6eOUihrFLdZjZnA4XlRp864fmWXv9YTIk7VPLhRacA=
 github.com/qri-io/starlib v0.4.2-0.20200213133954-ff2e8cd5ef8d/go.mod h1:7DPO4domFU579Ga6E61sB9VFNaniPVwJP5C4bBCu3wA=
 github.com/quasilyte/go-consistent v0.0.0-20190521200055-c6f3937de18c/go.mod h1:5STLWrekHfjyYwxBRVRXNOSewLJ3PWfDJd1VyTS21fI=
@@ -1507,6 +1511,8 @@ gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555 h1:4Yrwvx9yMvZx+vK3wdX7aX2UC
 gopkg.in/yaml.v3 v3.0.0-20190924164351-c8b7dadae555/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.0-20191120175047-4206685974f2 h1:XZx7nhd5GMaZpmDaEHFVafUZC7ya0fuo7cSJ3UCKYmM=
 gopkg.in/yaml.v3 v3.0.0-20191120175047-4206685974f2/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.0-20200121175148-a6ecf24a6d71 h1:Xe2gvTZUJpsvOWUnvmL/tmhVBZUmHSvLbMjRj6NUUKo=
+gopkg.in/yaml.v3 v3.0.0-20200121175148-a6ecf24a6d71/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
 gotest.tools v2.2.0+incompatible/go.mod h1:DsYFclhRJ6vuDpmuTbkuFWG+y2sxOXAzmJt81HFBacw=
 gotest.tools/v3 v3.0.0 h1:d+tVGRu6X0ZBQ+kyAR8JKi6AXhTP2gmQaoIYaGFz634=
@@ -1575,6 +1581,8 @@ sigs.k8s.io/kustomize v2.0.3+incompatible h1:JUufWFNlI44MdtnjUqVnvh29rR37PQFzPbL
 sigs.k8s.io/kustomize v2.0.3+incompatible/go.mod h1:MkjgH3RdOWrievjo6c9T245dYlB5QeXV4WCbnt/PEpU=
 sigs.k8s.io/kustomize/kyaml v0.4.1 h1:NEqA/35upoAjb+I5vh1ODUqxoX4DOrezeQa9BhhG5Co=
 sigs.k8s.io/kustomize/kyaml v0.4.1/go.mod h1:XJL84E6sOFeNrQ7CADiemc1B0EjIxHo3OhW4o1aJYNw=
+sigs.k8s.io/kustomize/kyaml v0.8.1 h1:5GRanVGU6+iq3ERTiQD9VIfyGByFVB4z4GthP8NkRYE=
+sigs.k8s.io/kustomize/kyaml v0.8.1/go.mod h1:UTm64bSWVdBUA8EQoYCxVOaBQxUdIOr5LKWxA4GNbkw=
 sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e/go.mod h1:wWxsB5ozmmv/SG7nM11ayaAW51xMvak/t1r0CSlcokI=
 sigs.k8s.io/structured-merge-diff v1.0.1-0.20191108220359-b1b620dd3f06/go.mod h1:/ULNhyfzRopfcjskuui0cTITekDduZ7ycKN3oUT9R18=
 sigs.k8s.io/yaml v1.1.0 h1:4A07+ZFc2wgJwo8YNlQpr1rVlgUDlxXHhPJciaPY5gs=

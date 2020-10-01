@@ -13,5 +13,5 @@ func main() {
 func init() {
 	// initialize runtime for k3d
 	fmt.Println("GOT INITIALIZE")
-	cobra.OnInitialize(initRuntime)
+	cobra.OnInitialize(initLogging, initRuntime)
 }
