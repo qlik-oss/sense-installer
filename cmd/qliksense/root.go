@@ -226,6 +226,9 @@ func rootCmd(p *qliksense.Qliksense) *cobra.Command {
 	// add keys command
 	cmd.AddCommand(keysCmd)
 	keysCmd.AddCommand(keysRotateCmd(p))
+
+	// add k3d commands
+	cmd.AddCommand(getK3dCmd())
 	return cmd
 }
 
