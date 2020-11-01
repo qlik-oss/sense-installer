@@ -56,7 +56,7 @@ require (
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kubectl v0.17.2
-	sigs.k8s.io/kustomize/api v0.3.2
+	sigs.k8s.io/kustomize/api/v3/v3 v3.3.1
 	sigs.k8s.io/yaml v1.1.0
 )
 
