@@ -52,7 +52,7 @@ require (
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.17.2
-	k8s.io/apiextensions-apiserver v0.17.2
+	k8s.io/apiextensions-apiserver v0.22.2
 	k8s.io/apimachinery v0.17.2
 	k8s.io/client-go v11.0.0+incompatible
 	k8s.io/kubectl v0.17.2
