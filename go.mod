@@ -26,7 +26,7 @@ require (
 	github.com/gobuffalo/envy v1.9.0 // indirect
 	github.com/gobuffalo/logger v1.0.3 // indirect
 	github.com/gobuffalo/packd v1.0.0 // indirect
-	github.com/gobuffalo/packr/v2 v2.7.1
+	github.com/gobuffalo/packr/v2 v2.8.3
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.3.3 // indirect
