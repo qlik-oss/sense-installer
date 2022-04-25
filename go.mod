@@ -17,7 +17,7 @@ require (
 	cloud.google.com/go v0.52.0 // indirect
 	cloud.google.com/go/storage v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.1.0
-	github.com/Shopify/ejson v1.2.1
+	github.com/Shopify/ejson v1.3.3
 	github.com/aws/aws-sdk-go v1.28.9 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.3 // indirect
 	github.com/containers/image/v5 v5.1.0
