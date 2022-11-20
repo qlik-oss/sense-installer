@@ -3,7 +3,7 @@ module github.com/qlik-oss/sense-installer
 go 1.13
 
 replace (
-	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309
+	github.com/docker/docker => github.com/moby/moby/v20 v20.10.20+incompatible
 	golang.org/x/sys => golang.org/x/sys v0.0.0-20190813064441-fde4db37ae7a
 
 	k8s.io/apimachinery => k8s.io/apimachinery v0.17.0
