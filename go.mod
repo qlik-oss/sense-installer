@@ -50,7 +50,7 @@ require (
 	golang.org/x/net v0.0.0-20200528225125-3c3fba18258b
 	golang.org/x/tools v0.0.0-20200312194400-c312e98713c2 // indirect
 	google.golang.org/genproto v0.0.0-20200128133413-58ce757ed39b // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.17.2
 	k8s.io/apiextensions-apiserver v0.17.2
 	k8s.io/apimachinery v0.17.2
